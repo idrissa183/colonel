@@ -27,6 +27,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.longrich.smartgestion.dto.ProduitDto;
@@ -37,6 +38,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!headless")
 public class ProduitPanel extends JPanel {
 
     private final ProduitService produitService;
@@ -66,7 +68,7 @@ public class ProduitPanel extends JPanel {
         createFormPanel();
         createTablePanel();
         createButtonPanel();
-        
+
         loadProduits();
     }
 
@@ -74,15 +76,13 @@ public class ProduitPanel extends JPanel {
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(new Color(0, 51, 204));
         formPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.WHITE),
-                "Données des Produits",
-                0, 0,
-                new Font("Segoe UI", Font.BOLD, 14),
-                Color.WHITE
-            ),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+                BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(Color.WHITE),
+                        "Données des Produits",
+                        0, 0,
+                        new Font("Segoe UI", Font.BOLD, 14),
+                        Color.WHITE),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
         formPanel.setPreferredSize(new Dimension(350, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -92,7 +92,8 @@ public class ProduitPanel extends JPanel {
         int row = 0;
 
         // Code barre
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Code barre:"), gbc);
         gbc.gridx = 1;
         codeBarreField = createTextField();
@@ -100,7 +101,8 @@ public class ProduitPanel extends JPanel {
 
         // Libellé
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Libellé:"), gbc);
         gbc.gridx = 1;
         libelleField = createTextField();
@@ -108,7 +110,8 @@ public class ProduitPanel extends JPanel {
 
         // Description
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Description:"), gbc);
         gbc.gridx = 1;
         descriptionArea = new JTextArea(3, 20);
@@ -119,7 +122,8 @@ public class ProduitPanel extends JPanel {
 
         // Date de péremption
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Date péremption:"), gbc);
         gbc.gridx = 1;
         datePeremptionField = createTextField();
@@ -128,7 +132,8 @@ public class ProduitPanel extends JPanel {
 
         // Prix d'achat
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Prix d'achat:"), gbc);
         gbc.gridx = 1;
         prixAchatField = createTextField();
@@ -136,7 +141,8 @@ public class ProduitPanel extends JPanel {
 
         // Prix de revente
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Prix de revente:"), gbc);
         gbc.gridx = 1;
         prixReventeField = createTextField();
@@ -144,7 +150,8 @@ public class ProduitPanel extends JPanel {
 
         // PV
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Nombre de PV:"), gbc);
         gbc.gridx = 1;
         pvField = createTextField();
@@ -152,7 +159,8 @@ public class ProduitPanel extends JPanel {
 
         // Famille
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Famille:"), gbc);
         gbc.gridx = 1;
         familleCombo = new JComboBox<>();
@@ -162,7 +170,8 @@ public class ProduitPanel extends JPanel {
 
         // Stock minimum
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Stock minimum:"), gbc);
         gbc.gridx = 1;
         stockMinimumField = createTextField();
@@ -170,7 +179,8 @@ public class ProduitPanel extends JPanel {
 
         // Actif
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Actif:"), gbc);
         gbc.gridx = 1;
         activeCheckBox = new JCheckBox();
@@ -204,15 +214,16 @@ public class ProduitPanel extends JPanel {
         searchField = new JTextField(20);
         JButton searchButton = new JButton("Rechercher");
         searchButton.addActionListener(e -> searchProduits());
-        
+
         searchPanel.add(new JLabel("Rechercher:"));
         searchPanel.add(searchField);
         searchPanel.add(searchButton);
-        
+
         tablePanel.add(searchPanel, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"ID", "Code barre", "Libellé", "Description", "Prix d'achat", "Prix de revente", "PV", "Stock"};
+        String[] columns = { "ID", "Code barre", "Libellé", "Description", "Prix d'achat", "Prix de revente", "PV",
+                "Stock" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -236,7 +247,7 @@ public class ProduitPanel extends JPanel {
 
     private void createButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        
+
         JButton saveButton = createButton("Sauvegarder", new Color(3, 168, 25), e -> saveProduit());
         JButton updateButton = createButton("Mettre à jour", new Color(184, 101, 18), e -> updateProduit());
         JButton clearButton = createButton("Vider", new Color(110, 14, 83), e -> clearFields());
@@ -271,17 +282,17 @@ public class ProduitPanel extends JPanel {
     private void loadProduits() {
         List<ProduitDto> produits = produitService.getActiveProduits();
         tableModel.setRowCount(0);
-        
+
         for (ProduitDto produit : produits) {
             Object[] row = {
-                produit.getId(),
-                produit.getCodeBarre(),
-                produit.getLibelle(),
-                produit.getDescription(),
-                produit.getPrixAchat(),
-                produit.getPrixRevente(),
-                produit.getPv(),
-                produit.getQuantiteStock() != null ? produit.getQuantiteStock() : 0
+                    produit.getId(),
+                    produit.getCodeBarre(),
+                    produit.getLibelle(),
+                    produit.getDescription(),
+                    produit.getPrixAchat(),
+                    produit.getPrixRevente(),
+                    produit.getPv(),
+                    produit.getQuantiteStock() != null ? produit.getQuantiteStock() : 0
             };
             tableModel.addRow(row);
         }
@@ -296,17 +307,17 @@ public class ProduitPanel extends JPanel {
 
         List<ProduitDto> produits = produitService.searchProduits(searchText);
         tableModel.setRowCount(0);
-        
+
         for (ProduitDto produit : produits) {
             Object[] row = {
-                produit.getId(),
-                produit.getCodeBarre(),
-                produit.getLibelle(),
-                produit.getDescription(),
-                produit.getPrixAchat(),
-                produit.getPrixRevente(),
-                produit.getPv(),
-                produit.getQuantiteStock() != null ? produit.getQuantiteStock() : 0
+                    produit.getId(),
+                    produit.getCodeBarre(),
+                    produit.getLibelle(),
+                    produit.getDescription(),
+                    produit.getPrixAchat(),
+                    produit.getPrixRevente(),
+                    produit.getPv(),
+                    produit.getQuantiteStock() != null ? produit.getQuantiteStock() : 0
             };
             tableModel.addRow(row);
         }
@@ -340,7 +351,8 @@ public class ProduitPanel extends JPanel {
         try {
             ProduitDto produit = createProduitFromFields();
             produitService.saveProduit(produit);
-            JOptionPane.showMessageDialog(this, "Produit sauvegardé avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Produit sauvegardé avec succès", "Succès",
+                    JOptionPane.INFORMATION_MESSAGE);
             clearFields();
             loadProduits();
         } catch (Exception e) {
@@ -350,14 +362,16 @@ public class ProduitPanel extends JPanel {
 
     private void updateProduit() {
         if (currentProduit == null) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit à modifier", "Avertissement", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit à modifier", "Avertissement",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
             ProduitDto produit = createProduitFromFields();
             produitService.updateProduit(currentProduit.getId(), produit);
-            JOptionPane.showMessageDialog(this, "Produit mis à jour avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Produit mis à jour avec succès", "Succès",
+                    JOptionPane.INFORMATION_MESSAGE);
             clearFields();
             loadProduits();
         } catch (Exception e) {
@@ -367,21 +381,22 @@ public class ProduitPanel extends JPanel {
 
     private void deleteProduit() {
         if (currentProduit == null) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit à supprimer", "Avertissement", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit à supprimer", "Avertissement",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         int option = JOptionPane.showConfirmDialog(
-            this,
-            "Êtes-vous sûr de vouloir supprimer ce produit ?",
-            "Confirmation",
-            JOptionPane.YES_NO_OPTION
-        );
+                this,
+                "Êtes-vous sûr de vouloir supprimer ce produit ?",
+                "Confirmation",
+                JOptionPane.YES_NO_OPTION);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
                 produitService.deleteProduit(currentProduit.getId());
-                JOptionPane.showMessageDialog(this, "Produit supprimé avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Produit supprimé avec succès", "Succès",
+                        JOptionPane.INFORMATION_MESSAGE);
                 clearFields();
                 loadProduits();
             } catch (Exception e) {

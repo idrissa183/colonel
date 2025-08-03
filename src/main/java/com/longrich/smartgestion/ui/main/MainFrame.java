@@ -11,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.longrich.smartgestion.ui.components.Navbar;
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!headless")
 public class MainFrame extends JFrame {
 
     private final Sidebar sidebar;
@@ -48,7 +50,7 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1200, 800));
-        
+
         // Icône de l'application
         try {
             ImageIcon icon = new ImageIcon(getClass().getResource("/icons/logo.png"));
@@ -61,27 +63,27 @@ public class MainFrame extends JFrame {
     private void createComponents() {
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
-        
+
         // Ajouter les panneaux au CardLayout
         contentPanel.add(dashboardPanel, "dashboard");
         contentPanel.add(clientPanel, "clients");
         contentPanel.add(produitPanel, "produits");
-        
+
         // Configurer la sidebar pour la navigation
         sidebar.setNavigationHandler(this::showPanel);
     }
 
     private void layoutComponents() {
         setLayout(new BorderLayout());
-        
+
         // Sidebar à gauche
         add(sidebar, BorderLayout.WEST);
-        
+
         // Panel principal avec navbar et contenu
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(navbar, BorderLayout.NORTH);
         mainPanel.add(contentPanel, BorderLayout.CENTER);
-        
+
         add(mainPanel, BorderLayout.CENTER);
     }
 
@@ -90,13 +92,12 @@ public class MainFrame extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 int option = JOptionPane.showConfirmDialog(
-                    MainFrame.this,
-                    "Êtes-vous sûr de vouloir quitter l'application ?",
-                    "Confirmation",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE
-                );
-                
+                        MainFrame.this,
+                        "Êtes-vous sûr de vouloir quitter l'application ?",
+                        "Confirmation",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE);
+
                 if (option == JOptionPane.YES_OPTION) {
                     System.exit(0);
                 }
@@ -106,7 +107,7 @@ public class MainFrame extends JFrame {
 
     public void showPanel(String panelName) {
         cardLayout.show(contentPanel, panelName);
-        
+
         // Mettre à jour le titre de la navbar
         String title = switch (panelName) {
             case "dashboard" -> "Tableau de bord";
@@ -119,7 +120,7 @@ public class MainFrame extends JFrame {
             case "ventes" -> "Gestion des ventes";
             default -> "SmartGestion";
         };
-        
+
         navbar.setTitle(title);
     }
 

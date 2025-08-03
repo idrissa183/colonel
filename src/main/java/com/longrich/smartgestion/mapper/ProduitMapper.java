@@ -32,5 +32,8 @@ public interface ProduitMapper {
     @Mapping(target = "familleProduit", ignore = true)
     @Mapping(target = "stocks", ignore = true)
     @Mapping(target = "lignesCommande", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     void updateEntity(ProduitDTO produitDTO, @MappingTarget Produit produit);
 }

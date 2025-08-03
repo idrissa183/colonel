@@ -65,15 +65,19 @@ public class Facture extends BaseEntity {
 
     // Méthodes utilitaires
     @PrePersist
-    public void generateNumeroFacture() {
+    public void prePersist() {
         if (numeroFacture == null) {
             numeroFacture = "FACT-" + System.currentTimeMillis();
         }
+        calculerMontantRestant();
     }
 
-    @PrePersist
     @PreUpdate
-    public void calculerMontantRestant() {
+    public void preUpdate() {
+        calculerMontantRestant();
+    }
+
+    private void calculerMontantRestant() {
         if (montantTotal != null && montantPaye != null) {
             montantRestant = montantTotal.subtract(montantPaye);
             payee = montantRestant.compareTo(BigDecimal.ZERO) <= 0;

@@ -79,8 +79,8 @@ public class ProduitService {
                 .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé"));
 
         // Vérifier si le code barre est modifié et s'il existe déjà
-        if (!existingProduit.getCodeBarre().equals(produitDto.getCodeBarre()) && 
-            produitRepository.existsByCodeBarre(produitDto.getCodeBarre())) {
+        if (!existingProduit.getCodeBarre().equals(produitDto.getCodeBarre()) &&
+                produitRepository.existsByCodeBarre(produitDto.getCodeBarre())) {
             throw new IllegalArgumentException("Un produit avec ce code barre existe déjà");
         }
 
@@ -93,7 +93,7 @@ public class ProduitService {
     public void deleteProduit(Long id) {
         Produit produit = produitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé"));
-        
+
         // Soft delete
         produit.setActive(false);
         produitRepository.save(produit);
@@ -116,9 +116,9 @@ public class ProduitService {
                 .pourcentageMarge(produit.getPourcentageMarge())
                 .build();
 
-        if (produit.getFamille() != null) {
-            dto.setFamilleId(produit.getFamille().getId());
-            dto.setFamilleName(produit.getFamille().getLibelle());
+        if (produit.getFamilleProduit() != null) {
+            dto.setFamilleId(produit.getFamilleProduit().getId());
+            dto.setFamilleName(produit.getFamilleProduit().getLibelleFamille());
         }
 
         // Calculer la quantité en stock
@@ -134,23 +134,24 @@ public class ProduitService {
     }
 
     private Produit convertToEntity(ProduitDto dto) {
-        Produit produit = Produit.builder()
-                .id(dto.getId())
-                .codeBarre(dto.getCodeBarre())
-                .libelle(dto.getLibelle())
-                .description(dto.getDescription())
-                .datePeremption(dto.getDatePeremption())
-                .prixAchat(dto.getPrixAchat())
-                .prixRevente(dto.getPrixRevente())
-                .pv(dto.getPv())
-                .active(dto.getActive() != null ? dto.getActive() : true)
-                .stockMinimum(dto.getStockMinimum())
-                .build();
+        Produit produit = new Produit();
+        if (dto.getId() != null) {
+            produit.setId(dto.getId());
+        }
+        produit.setCodeBarre(dto.getCodeBarre());
+        produit.setLibelle(dto.getLibelle());
+        produit.setDescription(dto.getDescription());
+        produit.setDatePeremption(dto.getDatePeremption());
+        produit.setPrixAchat(dto.getPrixAchat());
+        produit.setPrixRevente(dto.getPrixRevente());
+        produit.setPv(dto.getPv());
+        produit.setActive(Boolean.TRUE.equals(dto.getActive()));
+        produit.setStockMinimum(dto.getStockMinimum());
 
         if (dto.getFamilleId() != null) {
             FamilleProduit famille = familleProduitRepository.findById(dto.getFamilleId())
                     .orElseThrow(() -> new IllegalArgumentException("Famille de produit non trouvée"));
-            produit.setFamille(famille);
+            produit.setFamilleProduit(famille);
         }
 
         return produit;
@@ -165,7 +166,7 @@ public class ProduitService {
         produit.setPrixRevente(dto.getPrixRevente());
         produit.setPv(dto.getPv());
         produit.setStockMinimum(dto.getStockMinimum());
-        
+
         if (dto.getActive() != null) {
             produit.setActive(dto.getActive());
         }
@@ -173,7 +174,7 @@ public class ProduitService {
         if (dto.getFamilleId() != null) {
             FamilleProduit famille = familleProduitRepository.findById(dto.getFamilleId())
                     .orElseThrow(() -> new IllegalArgumentException("Famille de produit non trouvée"));
-            produit.setFamille(famille);
+            produit.setFamilleProduit(famille);
         }
     }
 }

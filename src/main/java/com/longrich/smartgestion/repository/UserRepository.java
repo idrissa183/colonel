@@ -12,22 +12,22 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    
+
     Optional<User> findByUsername(String username);
-    
+
     Optional<User> findByEmail(String email);
-    
+
     boolean existsByUsername(String username);
-    
+
     boolean existsByEmail(String email);
-    
+
     List<User> findByActiveTrue();
-    
+
     List<User> findByRole(UserRole role);
-    
+
     @Query("SELECT u FROM User u WHERE u.active = true AND " +
-           "(LOWER(u.nom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(u.prenom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "(LOWER(u.nom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.prenom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+            "LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<User> searchActiveUsers(@Param("search") String search);
 }

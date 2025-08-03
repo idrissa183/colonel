@@ -16,20 +16,24 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.swing.FontIcon;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import lombok.Setter;
 
 @Component
+@Profile("!headless")
 public class Sidebar extends JPanel {
 
     private static final int EXPANDED_WIDTH = 250;
     private static final int COLLAPSED_WIDTH = 60;
-    
+
     private boolean isExpanded = true;
     private JPanel menuPanel;
     private JLabel titleLabel;
-    
+
     @Setter
     private Consumer<String> navigationHandler;
 
@@ -57,8 +61,8 @@ public class Sidebar extends JPanel {
         JPanel logoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         logoPanel.setBackground(new Color(35, 35, 35));
 
-        JLabel logoLabel = new JLabel("🏪");
-        logoLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        FontIcon logoIcon = FontIcon.of(FontAwesomeSolid.STORE, 24, Color.WHITE);
+        JLabel logoLabel = new JLabel(logoIcon);
         logoPanel.add(logoLabel);
 
         titleLabel = new JLabel("SmartGestion");
@@ -69,14 +73,14 @@ public class Sidebar extends JPanel {
         headerPanel.add(logoPanel, BorderLayout.CENTER);
 
         // Bouton toggle
-        JButton toggleButton = new JButton("☰");
+        FontIcon toggleIcon = FontIcon.of(FontAwesomeSolid.BARS, 16, Color.WHITE);
+        JButton toggleButton = new JButton(toggleIcon);
         toggleButton.setPreferredSize(new Dimension(30, 30));
         toggleButton.setBackground(new Color(60, 60, 60));
-        toggleButton.setForeground(Color.WHITE);
         toggleButton.setBorder(BorderFactory.createEmptyBorder());
         toggleButton.setFocusPainted(false);
         toggleButton.addActionListener(e -> toggleSidebar());
-        
+
         headerPanel.add(toggleButton, BorderLayout.EAST);
         add(headerPanel, BorderLayout.NORTH);
     }
@@ -88,19 +92,19 @@ public class Sidebar extends JPanel {
         menuPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
 
         // Items du menu
-        String[][] menuItems = {
-            {"📊", "Tableau de bord", "dashboard"},
-            {"👥", "Clients", "clients"},
-            {"📦", "Produits", "produits"},
-            {"📋", "Stock", "stock"},
-            {"🛒", "Commandes", "commandes"},
-            {"🧾", "Factures", "factures"},
-            {"🏭", "Fournisseurs", "fournisseurs"},
-            {"💰", "Ventes", "ventes"}
+        Object[][] menuItems = {
+                { FontAwesomeSolid.CHART_BAR, "Tableau de bord", "dashboard" },
+                { FontAwesomeSolid.USERS, "Clients", "clients" },
+                { FontAwesomeSolid.BOX, "Produits", "produits" },
+                { FontAwesomeSolid.WAREHOUSE, "Stock", "stock" },
+                { FontAwesomeSolid.SHOPPING_CART, "Commandes", "commandes" },
+                { FontAwesomeSolid.FILE_INVOICE, "Factures", "factures" },
+                { FontAwesomeSolid.INDUSTRY, "Fournisseurs", "fournisseurs" },
+                { FontAwesomeSolid.MONEY_BILL_WAVE, "Ventes", "ventes" }
         };
 
-        for (String[] item : menuItems) {
-            JButton menuButton = createMenuButton(item[0], item[1], item[2]);
+        for (Object[] item : menuItems) {
+            JButton menuButton = createMenuButton((FontAwesomeSolid) item[0], (String) item[1], (String) item[2]);
             menuPanel.add(menuButton);
             menuPanel.add(Box.createVerticalStrut(5));
         }
@@ -112,7 +116,7 @@ public class Sidebar extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
-    private JButton createMenuButton(String icon, String text, String action) {
+    private JButton createMenuButton(FontAwesomeSolid iconType, String text, String action) {
         JButton button = new JButton();
         button.setLayout(new BorderLayout());
         button.setBackground(new Color(45, 45, 45));
@@ -123,9 +127,8 @@ public class Sidebar extends JPanel {
         button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
 
         // Icône
+        FontIcon icon = FontIcon.of(iconType, 18, Color.WHITE);
         JLabel iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        iconLabel.setForeground(Color.WHITE);
         button.add(iconLabel, BorderLayout.WEST);
 
         // Texte
@@ -173,30 +176,30 @@ public class Sidebar extends JPanel {
 
     private void toggleSidebar() {
         isExpanded = !isExpanded;
-        
+
         int newWidth = isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH;
         setPreferredSize(new Dimension(newWidth, getHeight()));
-        
+
         // Masquer/afficher le texte des boutons
         java.awt.Component[] components = menuPanel.getComponents();
         for (java.awt.Component comp : components) {
             if (comp instanceof JButton button) {
                 java.awt.Component[] buttonComponents = button.getComponents();
                 for (java.awt.Component buttonComp : buttonComponents) {
-                    if (buttonComp instanceof JLabel label && 
-                        label.getParent() == button && 
-                        !label.getText().matches("[\uD83C-\uDBFF\uDC00-\uDFFF]+")) {
+                    if (buttonComp instanceof JLabel label &&
+                            label.getParent() == button &&
+                            !label.getText().matches("[\uD83C-\uDBFF\uDC00-\uDFFF]+")) {
                         label.setVisible(isExpanded);
                     }
                 }
             }
         }
-        
+
         titleLabel.setVisible(isExpanded);
-        
+
         revalidate();
         repaint();
-        
+
         // Notifier le parent pour qu'il se redessine
         Container parent = getParent();
         if (parent != null) {

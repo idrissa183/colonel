@@ -15,4 +15,8 @@ public enum TypeClient {
     public String getDisplayName() {
         return displayName;
     }
+
+    public String getLibelle() {
+        return displayName;
+    }
 }

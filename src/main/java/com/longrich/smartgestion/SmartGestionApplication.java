@@ -1,6 +1,5 @@
 package com.longrich.smartgestion;
 
-import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.longrich.smartgestion.ui.main.MainFrame;
 import lombok.extern.slf4j.Slf4j;
@@ -37,5 +36,8 @@ public class SmartGestionApplication {
                 log.error("Erreur lors du lancement de l'interface", e);
             }
         });
+
+        log.info(
+                "SmartGestion application started successfully. Access H2 console at: http://localhost:8080/h2-console");
     }
 }

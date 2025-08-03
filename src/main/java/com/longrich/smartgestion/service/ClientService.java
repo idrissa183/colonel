@@ -68,8 +68,8 @@ public class ClientService {
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
 
         // Vérifier si le code est modifié et s'il existe déjà
-        if (!existingClient.getCode().equals(clientDTO.getCode()) && 
-            clientRepository.existsByCode(clientDTO.getCode())) {
+        if (!existingClient.getCode().equals(clientDTO.getCode()) &&
+                clientRepository.existsByCode(clientDTO.getCode())) {
             throw new IllegalArgumentException("Un client avec ce code existe déjà");
         }
 
@@ -82,7 +82,7 @@ public class ClientService {
     public void deleteClient(Long id) {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
-        
+
         // Soft delete
         client.setActive(false);
         clientRepository.save(client);
@@ -108,7 +108,7 @@ public class ClientService {
     public ClientDTO promouvoirVersPartenaire(Long clientId) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
-        
+
         if (!client.peutDeveniPartenaire()) {
             throw new IllegalArgumentException("Le client ne peut pas devenir partenaire (PV insuffisants)");
         }
@@ -123,7 +123,7 @@ public class ClientService {
     public void ajouterPV(Long clientId, Integer pv) {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
-        
+
         client.setTotalPv(client.getTotalPv() + pv);
         clientRepository.save(client);
         log.info("PV ajoutés au client {}: +{} (Total: {})", client.getCode(), pv, client.getTotalPv());

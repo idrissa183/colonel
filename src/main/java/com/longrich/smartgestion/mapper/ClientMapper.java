@@ -26,5 +26,8 @@ public interface ClientMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "commandes", ignore = true)
     @Mapping(target = "factures", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
     void updateEntity(ClientDTO clientDTO, @MappingTarget Client client);
 }

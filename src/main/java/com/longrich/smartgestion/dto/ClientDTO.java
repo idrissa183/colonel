@@ -14,29 +14,29 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ClientDTO {
-    
+
     private Long id;
-    
+
     @NotBlank(message = "Le code est obligatoire")
     private String code;
-    
+
     @NotBlank(message = "Le nom est obligatoire")
     private String nom;
-    
+
     @NotBlank(message = "Le prénom est obligatoire")
     private String prenom;
-    
+
     private String province;
     private String lieuNaissance;
     private String cnib;
     private String telephone;
-    
+
     @Email(message = "Format d'email invalide")
     private String email;
-    
+
     @NotNull(message = "Le type de client est obligatoire")
     private TypeClient typeClient;
-    
+
     private String adresse;
     private String localisation;
     private String codeParrain;
@@ -44,7 +44,7 @@ public class ClientDTO {
     private Integer totalPv;
     private Boolean codeDefinitif;
     private Boolean active;
-    
+
     // Computed fields
     private String nomComplet;
     private String clientId;

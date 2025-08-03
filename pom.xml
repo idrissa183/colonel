@@ -79,7 +79,6 @@
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf</artifactId>
 			<version>3.6.1</version>
-			<scope>runtime</scope>
 		</dependency>
 
 		<!-- Icons -->

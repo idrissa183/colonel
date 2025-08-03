@@ -1,11 +1,12 @@
 package com.longrich.smartgestion.ui.panel;
 
-import com.longrich.smartgestion.dto.ClientDto;
+import com.longrich.smartgestion.dto.ClientDTO;
 import com.longrich.smartgestion.enums.TypeClient;
 import com.longrich.smartgestion.service.ClientService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
@@ -20,6 +21,7 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!headless")
 public class ClientPanel extends JPanel {
 
     private final ClientService clientService;
@@ -38,7 +40,7 @@ public class ClientPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField searchField;
 
-    private ClientDto currentClient;
+    private ClientDTO currentClient;
 
     @PostConstruct
     public void initializeUI() {
@@ -48,7 +50,7 @@ public class ClientPanel extends JPanel {
         createFormPanel();
         createTablePanel();
         createButtonPanel();
-        
+
         loadClients();
     }
 
@@ -56,15 +58,13 @@ public class ClientPanel extends JPanel {
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(new Color(0, 51, 204));
         formPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.WHITE),
-                "Données des Clients",
-                0, 0,
-                new Font("Segoe UI", Font.BOLD, 14),
-                Color.WHITE
-            ),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+                BorderFactory.createTitledBorder(
+                        BorderFactory.createLineBorder(Color.WHITE),
+                        "Données des Clients",
+                        0, 0,
+                        new Font("Segoe UI", Font.BOLD, 14),
+                        Color.WHITE),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
         formPanel.setPreferredSize(new Dimension(350, 0));
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -74,7 +74,8 @@ public class ClientPanel extends JPanel {
         int row = 0;
 
         // Type client
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Type client:"), gbc);
         gbc.gridx = 1;
         typeClientCombo = new JComboBox<>(TypeClient.values());
@@ -84,7 +85,8 @@ public class ClientPanel extends JPanel {
 
         // Code
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Code Partenaire:"), gbc);
         gbc.gridx = 1;
         codeField = createTextField();
@@ -92,7 +94,8 @@ public class ClientPanel extends JPanel {
 
         // Nom
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Nom:"), gbc);
         gbc.gridx = 1;
         nomField = createTextField();
@@ -100,7 +103,8 @@ public class ClientPanel extends JPanel {
 
         // Prénom
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Prénom(s):"), gbc);
         gbc.gridx = 1;
         prenomField = createTextField();
@@ -108,7 +112,8 @@ public class ClientPanel extends JPanel {
 
         // Province
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Province:"), gbc);
         gbc.gridx = 1;
         provinceCombo = new JComboBox<>();
@@ -118,7 +123,8 @@ public class ClientPanel extends JPanel {
 
         // Téléphone
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Téléphone:"), gbc);
         gbc.gridx = 1;
         telephoneField = createTextField();
@@ -126,7 +132,8 @@ public class ClientPanel extends JPanel {
 
         // Email
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Email:"), gbc);
         gbc.gridx = 1;
         emailField = createTextField();
@@ -134,7 +141,8 @@ public class ClientPanel extends JPanel {
 
         // Adresse
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Adresse:"), gbc);
         gbc.gridx = 1;
         adresseField = createTextField();
@@ -142,7 +150,8 @@ public class ClientPanel extends JPanel {
 
         // Actif
         row++;
-        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.gridy = row;
         formPanel.add(createLabel("Actif:"), gbc);
         gbc.gridx = 1;
         activeCheckBox = new JCheckBox();
@@ -176,15 +185,15 @@ public class ClientPanel extends JPanel {
         searchField = new JTextField(20);
         JButton searchButton = new JButton("Rechercher");
         searchButton.addActionListener(e -> searchClients());
-        
+
         searchPanel.add(new JLabel("Rechercher:"));
         searchPanel.add(searchField);
         searchPanel.add(searchButton);
-        
+
         tablePanel.add(searchPanel, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"#", "Code", "Nom", "Prénom(s)", "Province", "Téléphone", "Email", "Type"};
+        String[] columns = { "#", "Code", "Nom", "Prénom(s)", "Province", "Téléphone", "Email", "Type" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -208,7 +217,7 @@ public class ClientPanel extends JPanel {
 
     private void createButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        
+
         JButton saveButton = createButton("Sauvegarder", new Color(3, 168, 25), e -> saveClient());
         JButton updateButton = createButton("Mettre à jour", new Color(184, 101, 18), e -> updateClient());
         JButton clearButton = createButton("Vider", new Color(110, 14, 83), e -> clearFields());
@@ -239,30 +248,52 @@ public class ClientPanel extends JPanel {
     }
 
     private void loadProvinces() {
-        List<String> provinces = clientService.getAllProvinces();
-        provinceCombo.removeAllItems();
-        for (String province : provinces) {
-            provinceCombo.addItem(province);
+        try {
+            List<String> provinces = clientService.getAllProvinces();
+            provinceCombo.removeAllItems();
+            for (String province : provinces) {
+                provinceCombo.addItem(province);
+            }
+        } catch (Exception e) {
+            // Database might not be ready yet, add default provinces
+            provinceCombo.removeAllItems();
+            String[] defaultProvinces = {
+                    "Balé", "Bam", "Banwa", "Bazèga", "Bougouriba", "Boulgou", "Boulkiemdé",
+                    "Comoé", "Ganzourgou", "Gnagna", "Gourma", "Houet", "Ioba", "Kadiogo",
+                    "Kénédougou", "Komondjari", "Kompienga", "Kossi", "Koulpélogo", "Kouritenga",
+                    "Kourwéogo", "Léraba", "Loroum", "Mouhoun", "Nahouri", "Namentenga", "Nayala",
+                    "Noumbiel", "Oubritenga", "Oudalan", "Passoré", "Poni", "Sanguié", "Sanmatenga",
+                    "Séno", "Sissili", "Soum", "Sourou", "Tapoa", "Tuy", "Yagha", "Yatenga", "Ziro", "Zondoma",
+                    "Zoundwéogo"
+            };
+            for (String province : defaultProvinces) {
+                provinceCombo.addItem(province);
+            }
         }
     }
 
     private void loadClients() {
-        List<ClientDto> clients = clientService.getActiveClients();
-        tableModel.setRowCount(0);
-        
-        for (int i = 0; i < clients.size(); i++) {
-            ClientDto client = clients.get(i);
-            Object[] row = {
-                i + 1,
-                client.getCode(),
-                client.getNom(),
-                client.getPrenom(),
-                client.getProvince(),
-                client.getTelephone(),
-                client.getEmail(),
-                client.getTypeClient().getLibelle()
-            };
-            tableModel.addRow(row);
+        try {
+            List<ClientDTO> clients = clientService.getActiveClients();
+            tableModel.setRowCount(0);
+
+            for (int i = 0; i < clients.size(); i++) {
+                ClientDTO client = clients.get(i);
+                Object[] row = {
+                        i + 1,
+                        client.getCode(),
+                        client.getNom(),
+                        client.getPrenom(),
+                        client.getProvince(),
+                        client.getTelephone(),
+                        client.getEmail(),
+                        client.getTypeClient().getLibelle()
+                };
+                tableModel.addRow(row);
+            }
+        } catch (Exception e) {
+            // Database might not be ready yet, clear table
+            tableModel.setRowCount(0);
         }
     }
 
@@ -273,20 +304,20 @@ public class ClientPanel extends JPanel {
             return;
         }
 
-        List<ClientDto> clients = clientService.searchClients(searchText);
+        List<ClientDTO> clients = clientService.searchClients(searchText);
         tableModel.setRowCount(0);
-        
+
         for (int i = 0; i < clients.size(); i++) {
-            ClientDto client = clients.get(i);
+            ClientDTO client = clients.get(i);
             Object[] row = {
-                i + 1,
-                client.getCode(),
-                client.getNom(),
-                client.getPrenom(),
-                client.getProvince(),
-                client.getTelephone(),
-                client.getEmail(),
-                client.getTypeClient().getLibelle()
+                    i + 1,
+                    client.getCode(),
+                    client.getNom(),
+                    client.getPrenom(),
+                    client.getProvince(),
+                    client.getTelephone(),
+                    client.getEmail(),
+                    client.getTypeClient().getLibelle()
             };
             tableModel.addRow(row);
         }
@@ -303,7 +334,7 @@ public class ClientPanel extends JPanel {
         }
     }
 
-    private void populateFields(ClientDto client) {
+    private void populateFields(ClientDTO client) {
         codeField.setText(client.getCode());
         nomField.setText(client.getNom());
         prenomField.setText(client.getPrenom());
@@ -317,9 +348,10 @@ public class ClientPanel extends JPanel {
 
     private void saveClient() {
         try {
-            ClientDto client = createClientFromFields();
+            ClientDTO client = createClientFromFields();
             clientService.saveClient(client);
-            JOptionPane.showMessageDialog(this, "Client sauvegardé avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Client sauvegardé avec succès", "Succès",
+                    JOptionPane.INFORMATION_MESSAGE);
             clearFields();
             loadClients();
         } catch (Exception e) {
@@ -329,14 +361,16 @@ public class ClientPanel extends JPanel {
 
     private void updateClient() {
         if (currentClient == null) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client à modifier", "Avertissement", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client à modifier", "Avertissement",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
-            ClientDto client = createClientFromFields();
+            ClientDTO client = createClientFromFields();
             clientService.updateClient(currentClient.getId(), client);
-            JOptionPane.showMessageDialog(this, "Client mis à jour avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Client mis à jour avec succès", "Succès",
+                    JOptionPane.INFORMATION_MESSAGE);
             clearFields();
             loadClients();
         } catch (Exception e) {
@@ -346,21 +380,22 @@ public class ClientPanel extends JPanel {
 
     private void deleteClient() {
         if (currentClient == null) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client à supprimer", "Avertissement", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client à supprimer", "Avertissement",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         int option = JOptionPane.showConfirmDialog(
-            this,
-            "Êtes-vous sûr de vouloir supprimer ce client ?",
-            "Confirmation",
-            JOptionPane.YES_NO_OPTION
-        );
+                this,
+                "Êtes-vous sûr de vouloir supprimer ce client ?",
+                "Confirmation",
+                JOptionPane.YES_NO_OPTION);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
                 clientService.deleteClient(currentClient.getId());
-                JOptionPane.showMessageDialog(this, "Client supprimé avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Client supprimé avec succès", "Succès",
+                        JOptionPane.INFORMATION_MESSAGE);
                 clearFields();
                 loadClients();
             } catch (Exception e) {
@@ -369,8 +404,8 @@ public class ClientPanel extends JPanel {
         }
     }
 
-    private ClientDto createClientFromFields() {
-        return ClientDto.builder()
+    private ClientDTO createClientFromFields() {
+        return ClientDTO.builder()
                 .code(codeField.getText().trim())
                 .nom(nomField.getText().trim())
                 .prenom(prenomField.getText().trim())

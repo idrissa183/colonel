@@ -9,12 +9,14 @@ import java.util.Optional;
 
 @Repository
 public interface FamilleProduitRepository extends JpaRepository<FamilleProduit, Long> {
-    
-    Optional<FamilleProduit> findByLibelle(String libelle);
+
+    Optional<FamilleProduit> findByLibelleFamille(String libelleFamille);
+
     Optional<FamilleProduit> findByCodeFamille(String codeFamille);
-    
-    boolean existsByLibelle(String libelle);
+
+    boolean existsByLibelleFamille(String libelleFamille);
+
     boolean existsByCodeFamille(String codeFamille);
-    
+
     List<FamilleProduit> findByActiveTrue();
 }

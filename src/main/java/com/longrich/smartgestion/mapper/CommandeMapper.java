@@ -9,7 +9,8 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {LigneCommandeMapper.class}, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", uses = {
+        LigneCommandeMapper.class }, nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public interface CommandeMapper {
 
     @Mapping(target = "clientId", source = "client.id")
@@ -35,5 +36,9 @@ public interface CommandeMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "lignes", ignore = true)
     @Mapping(target = "facture", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "active", ignore = true)
     void updateEntity(CommandeDTO commandeDTO, @MappingTarget Commande commande);
 }

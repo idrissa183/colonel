@@ -13,24 +13,26 @@ import java.util.List;
 
 @Repository
 public interface SuiviPVRepository extends JpaRepository<SuiviPV, Long> {
-    
+
     List<SuiviPV> findByClientId(Long clientId);
+
     List<SuiviPV> findByProduitId(Long produitId);
+
     List<SuiviPV> findByTypeVente(TypeVente typeVente);
-    
+
     @Query("SELECT SUM(s.pvGagne) FROM SuiviPV s WHERE s.client.id = :clientId")
     BigDecimal getTotalPVByClient(@Param("clientId") Long clientId);
-    
+
     @Query("SELECT SUM(s.pvGagne) FROM SuiviPV s WHERE s.client.id = :clientId AND s.dateVente BETWEEN :debut AND :fin")
     BigDecimal getTotalPVByClientAndPeriod(@Param("clientId") Long clientId,
-                                           @Param("debut") LocalDate debut,
-                                           @Param("fin") LocalDate fin);
-    
+            @Param("debut") LocalDate debut,
+            @Param("fin") LocalDate fin);
+
     @Query("SELECT s FROM SuiviPV s WHERE s.dateVente BETWEEN :debut AND :fin")
     List<SuiviPV> findByDateVenteBetween(@Param("debut") LocalDate debut, @Param("fin") LocalDate fin);
-    
+
     @Query("SELECT s FROM SuiviPV s WHERE s.client.id = :clientId AND s.dateVente BETWEEN :debut AND :fin")
     List<SuiviPV> findByClientAndDateBetween(@Param("clientId") Long clientId,
-                                             @Param("debut") LocalDate debut,
-                                             @Param("fin") LocalDate fin);
+            @Param("debut") LocalDate debut,
+            @Param("fin") LocalDate fin);
 }

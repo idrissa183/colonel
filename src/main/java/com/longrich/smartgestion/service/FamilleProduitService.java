@@ -37,8 +37,8 @@ public class FamilleProduitService {
     }
 
     public FamilleProduitDTO saveFamille(FamilleProduitDTO familleDTO) {
-        if (familleDTO.getId() == null && 
-            familleProduitRepository.existsByCodeFamille(familleDTO.getCodeFamille())) {
+        if (familleDTO.getId() == null &&
+                familleProduitRepository.existsByCodeFamille(familleDTO.getCodeFamille())) {
             throw new IllegalArgumentException("Une famille avec ce code existe déjà");
         }
 
@@ -52,8 +52,8 @@ public class FamilleProduitService {
         FamilleProduit existingFamille = familleProduitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Famille produit non trouvée"));
 
-        if (!existingFamille.getCodeFamille().equals(familleDTO.getCodeFamille()) && 
-            familleProduitRepository.existsByCodeFamille(familleDTO.getCodeFamille())) {
+        if (!existingFamille.getCodeFamille().equals(familleDTO.getCodeFamille()) &&
+                familleProduitRepository.existsByCodeFamille(familleDTO.getCodeFamille())) {
             throw new IllegalArgumentException("Une famille avec ce code existe déjà");
         }
 
@@ -66,7 +66,7 @@ public class FamilleProduitService {
     public void deleteFamille(Long id) {
         FamilleProduit famille = familleProduitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Famille produit non trouvée"));
-        
+
         famille.setActive(false);
         familleProduitRepository.save(famille);
         log.info("Famille produit désactivée: {}", famille.getCodeFamille());
@@ -84,21 +84,21 @@ public class FamilleProduitService {
     }
 
     private FamilleProduit convertToEntity(FamilleProduitDTO dto) {
-        return FamilleProduit.builder()
-                .id(dto.getId())
-                .codeFamille(dto.getCodeFamille())
-                .libelleFamille(dto.getLibelleFamille())
-                .description(dto.getDescription())
-                .active(dto.getActive() != null ? dto.getActive() : true)
-                .build();
+        FamilleProduit famille = new FamilleProduit();
+        if (dto.getId() != null) {
+            famille.setId(dto.getId());
+        }
+        famille.setCodeFamille(dto.getCodeFamille());
+        famille.setLibelleFamille(dto.getLibelleFamille());
+        famille.setDescription(dto.getDescription());
+        famille.setActive(Boolean.TRUE.equals(dto.getActive()));
+        return famille;
     }
 
     private void updateFamilleFromDTO(FamilleProduit famille, FamilleProduitDTO dto) {
         famille.setCodeFamille(dto.getCodeFamille());
         famille.setLibelleFamille(dto.getLibelleFamille());
         famille.setDescription(dto.getDescription());
-        if (dto.getActive() != null) {
-            famille.setActive(dto.getActive());
-        }
+        famille.setActive(Boolean.TRUE.equals(dto.getActive()));
     }
 }

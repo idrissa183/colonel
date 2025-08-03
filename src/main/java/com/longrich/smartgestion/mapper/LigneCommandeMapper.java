@@ -30,5 +30,9 @@ public interface LigneCommandeMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "commande", ignore = true)
     @Mapping(target = "produit", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "active", ignore = true)
     void updateEntity(LigneCommandeDTO ligneCommandeDTO, @MappingTarget LigneCommande ligneCommande);
 }

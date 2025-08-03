@@ -11,25 +11,25 @@ import java.util.Optional;
 
 @Repository
 public interface ProduitRepository extends JpaRepository<Produit, Long> {
-    
-    Optional<Produit> findByCodeBarre(String codeBarre);
-    
-    boolean existsByCodeBarre(String codeBarre);
-    
-    List<Produit> findByActiveTrue();
-    
-    List<Produit> findByFamilleId(Long familleId);
-    
-    @Query("SELECT p FROM Produit p WHERE p.active = true AND " +
-           "(LOWER(p.libelle) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-           "LOWER(p.codeBarre) LIKE LOWER(CONCAT('%', :search, '%')))")
-    List<Produit> searchActiveProduits(@Param("search") String search);
-    
-    @Query("SELECT p FROM Produit p JOIN p.stocks s WHERE " +
-           "s.quantite - s.quantiteReservee <= p.stockMinimum AND p.active = true")
-    List<Produit> findProduitsStockFaible();
-    
-    @Query("SELECT p FROM Produit p JOIN p.stocks s WHERE " +
-           "s.quantite - s.quantiteReservee > 0 AND p.active = true")
-    List<Produit> findProduitsEnStock();
+
+       Optional<Produit> findByCodeBarre(String codeBarre);
+
+       boolean existsByCodeBarre(String codeBarre);
+
+       List<Produit> findByActiveTrue();
+
+       List<Produit> findByFamilleProduitId(Long familleProduitId);
+
+       @Query("SELECT p FROM Produit p WHERE p.active = true AND " +
+                     "(LOWER(p.libelle) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                     "LOWER(p.codeBarre) LIKE LOWER(CONCAT('%', :search, '%')))")
+       List<Produit> searchActiveProduits(@Param("search") String search);
+
+       @Query("SELECT p FROM Produit p JOIN p.stocks s WHERE " +
+                     "s.quantite - s.quantiteReservee <= p.stockMinimum AND p.active = true")
+       List<Produit> findProduitsStockFaible();
+
+       @Query("SELECT p FROM Produit p JOIN p.stocks s WHERE " +
+                     "s.quantite - s.quantiteReservee > 0 AND p.active = true")
+       List<Produit> findProduitsEnStock();
 }

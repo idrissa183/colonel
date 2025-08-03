@@ -65,9 +65,7 @@ public class CommandeService {
         }
 
         // Marquer toutes les lignes comme livrées
-        commande.getLignes().forEach(ligne -> 
-            ligne.setQuantiteLivree(ligne.getQuantite())
-        );
+        commande.getLignes().forEach(ligne -> ligne.setQuantiteLivree(ligne.getQuantite()));
 
         commande.setStatut(StatutCommande.LIVREE);
         commande.setDateLivraisonEffective(LocalDateTime.now());
@@ -113,8 +111,8 @@ public class CommandeService {
         }
 
         Commande savedCommande = commandeRepository.save(commande);
-        log.info("Livraison partielle pour commande: {} - Ligne: {} - Quantité: {}", 
-                 savedCommande.getNumeroCommande(), ligneId, quantiteLivree);
+        log.info("Livraison partielle pour commande: {} - Ligne: {} - Quantité: {}",
+                savedCommande.getNumeroCommande(), ligneId, quantiteLivree);
         return convertToDTO(savedCommande);
     }
 

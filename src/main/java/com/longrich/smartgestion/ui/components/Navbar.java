@@ -1,5 +1,8 @@
 package com.longrich.smartgestion.ui.components;
 
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.swing.FontIcon;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import javax.swing.*;
@@ -8,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
+@Profile("!headless")
 public class Navbar extends JPanel {
 
     private JLabel titleLabel;
@@ -51,15 +55,14 @@ public class Navbar extends JPanel {
         JTextField searchField = new JTextField(20);
         searchField.setPreferredSize(new Dimension(300, 35));
         searchField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
+                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        
-        JButton searchButton = new JButton("🔍");
+
+        FontIcon searchIcon = FontIcon.of(FontAwesomeSolid.SEARCH, 16, Color.WHITE);
+        JButton searchButton = new JButton(searchIcon);
         searchButton.setPreferredSize(new Dimension(35, 35));
         searchButton.setBackground(new Color(0, 123, 255));
-        searchButton.setForeground(Color.WHITE);
         searchButton.setBorder(BorderFactory.createEmptyBorder());
         searchButton.setFocusPainted(false);
 
@@ -83,7 +86,8 @@ public class Navbar extends JPanel {
         rightPanel.add(new JLabel(" | "));
 
         // Notifications
-        JButton notificationButton = new JButton("🔔");
+        FontIcon notificationIcon = FontIcon.of(FontAwesomeSolid.BELL, 16, new Color(108, 117, 125));
+        JButton notificationButton = new JButton(notificationIcon);
         notificationButton.setPreferredSize(new Dimension(35, 35));
         notificationButton.setBackground(new Color(248, 249, 250));
         notificationButton.setBorder(BorderFactory.createEmptyBorder());
@@ -91,13 +95,15 @@ public class Navbar extends JPanel {
         rightPanel.add(notificationButton);
 
         // Utilisateur
-        userLabel = new JLabel("👤 Admin");
+        FontIcon userIcon = FontIcon.of(FontAwesomeSolid.USER, 14, new Color(33, 37, 41));
+        userLabel = new JLabel("Admin", userIcon, SwingConstants.LEFT);
         userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         userLabel.setForeground(new Color(33, 37, 41));
         rightPanel.add(userLabel);
 
         // Menu utilisateur
-        JButton userMenuButton = new JButton("▼");
+        FontIcon dropdownIcon = FontIcon.of(FontAwesomeSolid.CHEVRON_DOWN, 12, new Color(108, 117, 125));
+        JButton userMenuButton = new JButton(dropdownIcon);
         userMenuButton.setPreferredSize(new Dimension(20, 35));
         userMenuButton.setBackground(new Color(248, 249, 250));
         userMenuButton.setBorder(BorderFactory.createEmptyBorder());
@@ -124,7 +130,9 @@ public class Navbar extends JPanel {
     }
 
     public void setUser(String username) {
-        userLabel.setText("👤 " + username);
+        FontIcon userIcon = FontIcon.of(FontAwesomeSolid.USER, 14, new Color(33, 37, 41));
+        userLabel.setIcon(userIcon);
+        userLabel.setText(username);
     }
 
     @Override

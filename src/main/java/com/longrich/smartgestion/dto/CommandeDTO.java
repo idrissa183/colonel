@@ -16,35 +16,35 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommandeDTO {
-    
+
     private Long id;
     private String numeroCommande;
-    
+
     @NotNull(message = "Le client est obligatoire")
     private Long clientId;
     private String clientNom;
-    
+
     @NotNull(message = "L'utilisateur est obligatoire")
     private Long userId;
     private String userNom;
-    
+
     @NotNull(message = "La date de commande est obligatoire")
     private LocalDateTime dateCommande;
-    
+
     private LocalDateTime dateLivraisonPrevue;
     private LocalDateTime dateLivraisonEffective;
-    
+
     @NotNull(message = "Le statut est obligatoire")
     private StatutCommande statut;
-    
+
     private BigDecimal montantTotal;
     private BigDecimal totalPv;
     private BigDecimal tva;
     private BigDecimal montantHT;
     private String observations;
-    
+
     private List<LigneCommandeDTO> lignes;
-    
+
     // Computed fields
     private Boolean commandeNonLivree;
     private Integer totalQuantiteCommandee;
