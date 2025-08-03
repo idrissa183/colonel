@@ -3,9 +3,9 @@ spring:
     name: SmartGestion Longrich
 
   datasource:
-    url: jdbc:mysql://localhost:3306/smartG?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: smartG
-    password: SmartG@2025
+    url: jdbc:mysql://localhost:3306/longrich_bd?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:

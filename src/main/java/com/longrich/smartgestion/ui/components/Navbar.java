@@ -31,7 +31,7 @@ public class Navbar extends JPanel {
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
 
         createLeftSection();
-        createCenterSection();
+        // createCenterSection();
         createRightSection();
     }
 
@@ -47,30 +47,30 @@ public class Navbar extends JPanel {
         add(leftPanel, BorderLayout.WEST);
     }
 
-    private void createCenterSection() {
-        JPanel centerPanel = new JPanel(new FlowLayout());
-        centerPanel.setBackground(new Color(248, 249, 250));
+    // private void createCenterSection() {
+    //     JPanel centerPanel = new JPanel(new FlowLayout());
+    //     centerPanel.setBackground(new Color(248, 249, 250));
 
-        // Barre de recherche
-        JTextField searchField = new JTextField(20);
-        searchField.setPreferredSize(new Dimension(300, 35));
-        searchField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    //     // Barre de recherche
+    //     JTextField searchField = new JTextField(20);
+    //     searchField.setPreferredSize(new Dimension(300, 35));
+    //     searchField.setBorder(BorderFactory.createCompoundBorder(
+    //             BorderFactory.createLineBorder(Color.LIGHT_GRAY),
+    //             BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+    //     searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        FontIcon searchIcon = FontIcon.of(FontAwesomeSolid.SEARCH, 16, Color.WHITE);
-        JButton searchButton = new JButton(searchIcon);
-        searchButton.setPreferredSize(new Dimension(35, 35));
-        searchButton.setBackground(new Color(0, 123, 255));
-        searchButton.setBorder(BorderFactory.createEmptyBorder());
-        searchButton.setFocusPainted(false);
+    //     FontIcon searchIcon = FontIcon.of(FontAwesomeSolid.SEARCH, 16, Color.WHITE);
+    //     JButton searchButton = new JButton(searchIcon);
+    //     searchButton.setPreferredSize(new Dimension(35, 35));
+    //     searchButton.setBackground(new Color(0, 123, 255));
+    //     searchButton.setBorder(BorderFactory.createEmptyBorder());
+    //     searchButton.setFocusPainted(false);
 
-        centerPanel.add(searchField);
-        centerPanel.add(searchButton);
+    //     centerPanel.add(searchField);
+    //     centerPanel.add(searchButton);
 
-        add(centerPanel, BorderLayout.CENTER);
-    }
+    //     add(centerPanel, BorderLayout.CENTER);
+    // }
 
     private void createRightSection() {
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
