@@ -1,48 +1,52 @@
 package com.longrich.smartgestion.ui.panel;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionListener;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.ListSelectionModel;
-import javax.swing.table.DefaultTableModel;
-
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ProduitService;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
-@Component
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.swing.FontIcon;
+import org.springframework.context.annotation.Profile;
+
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+
+import jakarta.annotation.PostConstruct;
+
+@org.springframework.stereotype.Component
 @RequiredArgsConstructor
 @Profile("!headless")
 public class ProduitPanel extends JPanel {
 
+    // Couleurs modernes
+    private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
+    private static final Color SECONDARY_COLOR = new Color(107, 114, 128);
+    private static final Color SUCCESS_COLOR = new Color(34, 197, 94);
+    private static final Color WARNING_COLOR = new Color(245, 158, 11);
+    private static final Color DANGER_COLOR = new Color(239, 68, 68);
+    private static final Color BACKGROUND_COLOR = new Color(249, 250, 251);
+    private static final Color CARD_COLOR = Color.WHITE;
+    private static final Color BORDER_COLOR = new Color(229, 231, 235);
+    private static final Color TEXT_PRIMARY = new Color(17, 24, 39);
+    private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
+
     private final ProduitService produitService;
 
+    // Composants UI
     private JTextField codeBarreField;
     private JTextField libelleField;
     private JTextArea descriptionArea;
@@ -57,173 +61,339 @@ public class ProduitPanel extends JPanel {
     private JTable produitTable;
     private DefaultTableModel tableModel;
     private JTextField searchField;
+    private JLabel statsLabel;
 
     private ProduitDto currentProduit;
 
     @PostConstruct
     public void initializeUI() {
-        setLayout(new BorderLayout());
-        setBackground(Color.WHITE);
+        setLayout(new BorderLayout(10, 10));
+        setBackground(BACKGROUND_COLOR);
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        createFormPanel();
-        createTablePanel();
-        createButtonPanel();
+        createHeaderPanel();
+        createMainContent();
 
         loadProduits();
+        updateStats();
     }
 
-    private void createFormPanel() {
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(new Color(0, 51, 204));
+    private void createHeaderPanel() {
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(BACKGROUND_COLOR);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        // Titre et statistiques
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        titlePanel.setBackground(BACKGROUND_COLOR);
+
+        JLabel titleLabel = new JLabel("Gestion des Produits");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(TEXT_PRIMARY);
+        titlePanel.add(titleLabel);
+
+        statsLabel = new JLabel();
+        statsLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        statsLabel.setForeground(TEXT_SECONDARY);
+        statsLabel.setBorder(BorderFactory.createEmptyBorder(8, 20, 0, 0));
+        titlePanel.add(statsLabel);
+
+        headerPanel.add(titlePanel, BorderLayout.WEST);
+
+        // Boutons d'action rapide
+        JPanel quickActionsPanel = createQuickActionsPanel();
+        headerPanel.add(quickActionsPanel, BorderLayout.EAST);
+
+        add(headerPanel, BorderLayout.NORTH);
+    }
+
+    private JPanel createQuickActionsPanel() {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panel.setBackground(BACKGROUND_COLOR);
+
+        JButton exportButton = createIconButton(FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR);
+        JButton importButton = createIconButton(FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR);
+        JButton refreshButton = createIconButton(FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR);
+
+        exportButton.addActionListener(e -> exportProduits());
+        importButton.addActionListener(e -> importProduits());
+        refreshButton.addActionListener(e -> refreshData());
+
+        panel.add(exportButton);
+        panel.add(importButton);
+        panel.add(refreshButton);
+
+        return panel;
+    }
+
+    private void createMainContent() {
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setBackground(BACKGROUND_COLOR);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(8);
+        splitPane.setResizeWeight(0.35);
+
+        // Panneau de gauche - Formulaire
+        JPanel formContainer = createFormContainer();
+        splitPane.setLeftComponent(formContainer);
+
+        // Panneau de droite - Table et recherche
+        JPanel tableContainer = createTableContainer();
+        splitPane.setRightComponent(tableContainer);
+
+        add(splitPane, BorderLayout.CENTER);
+    }
+
+    private JPanel createFormContainer() {
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(BACKGROUND_COLOR);
+
+        JPanel formPanel = createModernFormPanel();
+        JScrollPane scrollPane = new JScrollPane(formPanel);
+        scrollPane.setBorder(null);
+        scrollPane.setBackground(BACKGROUND_COLOR);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        container.add(scrollPane, BorderLayout.CENTER);
+        container.add(createButtonPanel(), BorderLayout.SOUTH);
+
+        return container;
+    }
+
+    private JPanel createModernFormPanel() {
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(CARD_COLOR);
         formPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder(
-                        BorderFactory.createLineBorder(Color.WHITE),
-                        "Données des Produits",
-                        0, 0,
-                        new Font("Segoe UI", Font.BOLD, 14),
-                        Color.WHITE),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
-        formPanel.setPreferredSize(new Dimension(350, 0));
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(25, 25, 25, 25)));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.anchor = GridBagConstraints.WEST;
+        // Titre du formulaire
+        JLabel formTitle = new JLabel("Informations Produit");
+        formTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        formTitle.setForeground(TEXT_PRIMARY);
+        formTitle.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        formPanel.add(formTitle);
+        formPanel.add(Box.createVerticalStrut(20));
 
-        int row = 0;
+        // Section Identification
+        formPanel.add(createSectionTitle("Identification"));
+        codeBarreField = createStyledTextField();
+        libelleField = createStyledTextField();
 
-        // Code barre
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Code barre:"), gbc);
-        gbc.gridx = 1;
-        codeBarreField = createTextField();
-        formPanel.add(codeBarreField, gbc);
+        formPanel.add(createFieldPanel("Code barre:", codeBarreField));
+        formPanel.add(createFieldPanel("Libellé:", libelleField));
 
-        // Libellé
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Libellé:"), gbc);
-        gbc.gridx = 1;
-        libelleField = createTextField();
-        formPanel.add(libelleField, gbc);
-
-        // Description
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Description:"), gbc);
-        gbc.gridx = 1;
-        descriptionArea = new JTextArea(3, 20);
-        descriptionArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        // Description avec TextArea stylée
+        descriptionArea = createStyledTextArea();
         JScrollPane descScrollPane = new JScrollPane(descriptionArea);
-        descScrollPane.setPreferredSize(new Dimension(200, 60));
-        formPanel.add(descScrollPane, gbc);
+        descScrollPane.setPreferredSize(new Dimension(0, 80));
+        descScrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        formPanel.add(createFieldPanel("Description:", descScrollPane));
+        formPanel.add(Box.createVerticalStrut(15));
 
-        // Date de péremption
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Date péremption:"), gbc);
-        gbc.gridx = 1;
-        datePeremptionField = createTextField();
-        datePeremptionField.setToolTipText("Format: YYYY-MM-DD");
-        formPanel.add(datePeremptionField, gbc);
-
-        // Prix d'achat
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Prix d'achat:"), gbc);
-        gbc.gridx = 1;
-        prixAchatField = createTextField();
-        formPanel.add(prixAchatField, gbc);
-
-        // Prix de revente
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Prix de revente:"), gbc);
-        gbc.gridx = 1;
-        prixReventeField = createTextField();
-        formPanel.add(prixReventeField, gbc);
-
-        // PV
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Nombre de PV:"), gbc);
-        gbc.gridx = 1;
-        pvField = createTextField();
-        formPanel.add(pvField, gbc);
-
-        // Famille
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Famille:"), gbc);
-        gbc.gridx = 1;
+        // Section Famille
+        formPanel.add(createSectionTitle("Catégorie"));
         familleCombo = new JComboBox<>();
-        familleCombo.setPreferredSize(new Dimension(200, 25));
+        styleComboBox(familleCombo);
         loadFamilles();
-        formPanel.add(familleCombo, gbc);
+        formPanel.add(createFieldPanel("Famille:", familleCombo));
+        formPanel.add(Box.createVerticalStrut(15));
 
-        // Stock minimum
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Stock minimum:"), gbc);
-        gbc.gridx = 1;
-        stockMinimumField = createTextField();
-        formPanel.add(stockMinimumField, gbc);
+        // Section Prix et PV
+        formPanel.add(createSectionTitle("Prix et Points de Vente"));
+        prixAchatField = createStyledTextField();
+        prixReventeField = createStyledTextField();
+        pvField = createStyledTextField();
 
-        // Actif
-        row++;
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        formPanel.add(createLabel("Actif:"), gbc);
-        gbc.gridx = 1;
-        activeCheckBox = new JCheckBox();
+        formPanel.add(createFieldPanel("Prix d'achat (FCFA):", prixAchatField));
+        formPanel.add(createFieldPanel("Prix de revente (FCFA):", prixReventeField));
+        formPanel.add(createFieldPanel("Nombre de PV:", pvField));
+        formPanel.add(Box.createVerticalStrut(15));
+
+        // Section Stock et Dates
+        formPanel.add(createSectionTitle("Stock et Dates"));
+        stockMinimumField = createStyledTextField();
+        datePeremptionField = createStyledTextField();
+        datePeremptionField.setToolTipText("Format: YYYY-MM-DD (ex: 2024-12-31)");
+
+        formPanel.add(createFieldPanel("Stock minimum:", stockMinimumField));
+        formPanel.add(createFieldPanel("Date péremption:", datePeremptionField));
+
+        // Checkbox
+        JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
+        checkboxPanel.setBackground(CARD_COLOR);
+        checkboxPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+
+        activeCheckBox = createStyledCheckBox("Produit actif");
         activeCheckBox.setSelected(true);
-        activeCheckBox.setBackground(new Color(0, 51, 204));
-        formPanel.add(activeCheckBox, gbc);
+        checkboxPanel.add(activeCheckBox);
 
-        add(formPanel, BorderLayout.WEST);
+        formPanel.add(checkboxPanel);
+        formPanel.add(Box.createVerticalGlue());
+
+        return formPanel;
     }
 
-    private JLabel createLabel(String text) {
+    private JLabel createSectionTitle(String text) {
         JLabel label = new JLabel(text);
-        label.setForeground(Color.WHITE);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        label.setForeground(PRIMARY_COLOR);
+        label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         return label;
     }
 
-    private JTextField createTextField() {
+    private JTextField createStyledTextField() {
         JTextField field = new JTextField();
-        field.setPreferredSize(new Dimension(200, 25));
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        field.setBackground(Color.WHITE);
+        field.setForeground(TEXT_PRIMARY);
+        field.setPreferredSize(new Dimension(0, 36));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        
+        // Focus effects
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(PRIMARY_COLOR, 2),
+                        BorderFactory.createEmptyBorder(7, 11, 7, 11)));
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                        BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+            }
+        });
+        
         return field;
     }
 
-    private void createTablePanel() {
+    private JTextArea createStyledTextArea() {
+        JTextArea area = new JTextArea(3, 0);
+        area.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        area.setBackground(Color.WHITE);
+        area.setForeground(TEXT_PRIMARY);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        return area;
+    }
+
+    private void styleComboBox(JComboBox<?> comboBox) {
+        comboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        comboBox.setBackground(Color.WHITE);
+        comboBox.setForeground(TEXT_PRIMARY);
+        comboBox.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        comboBox.setPreferredSize(new Dimension(0, 36));
+        comboBox.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+    }
+
+    private JCheckBox createStyledCheckBox(String text) {
+        JCheckBox checkBox = new JCheckBox(text);
+        checkBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        checkBox.setBackground(CARD_COLOR);
+        checkBox.setForeground(TEXT_PRIMARY);
+        checkBox.setFocusPainted(false);
+        return checkBox;
+    }
+
+    private JPanel createFieldPanel(String labelText, JComponent field) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(CARD_COLOR);
+        panel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, field instanceof JScrollPane ? 120 : 70));
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        label.setForeground(TEXT_SECONDARY);
+        label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+
+        field.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+
+        panel.add(label);
+        panel.add(field);
+        panel.add(Box.createVerticalStrut(10));
+
+        return panel;
+    }
+
+    private JPanel createTableContainer() {
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(BACKGROUND_COLOR);
+
+        // Panneau de recherche moderne
+        JPanel searchContainer = createSearchPanel();
+        container.add(searchContainer, BorderLayout.NORTH);
+
+        // Table moderne
+        JPanel tablePanel = createModernTable();
+        container.add(tablePanel, BorderLayout.CENTER);
+
+        return container;
+    }
+
+    private JPanel createSearchPanel() {
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.setBackground(CARD_COLOR);
+        searchPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
+
+        // Titre et barre de recherche
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(CARD_COLOR);
+
+        JLabel searchTitle = new JLabel("Liste des Produits");
+        searchTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        searchTitle.setForeground(TEXT_PRIMARY);
+        topPanel.add(searchTitle, BorderLayout.WEST);
+
+        // Champ de recherche avec icône
+        JPanel searchInputPanel = new JPanel(new BorderLayout());
+        searchInputPanel.setBackground(CARD_COLOR);
+        searchInputPanel.setMaximumSize(new Dimension(300, 36));
+        searchInputPanel.setPreferredSize(new Dimension(300, 36));
+
+        searchField = createStyledTextField();
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(8, 35, 8, 12)));
+        searchField.addActionListener(e -> searchProduits());
+
+        // Icône de recherche
+        JLabel searchIcon = new JLabel(FontIcon.of(FontAwesomeSolid.SEARCH, 14, TEXT_SECONDARY));
+        searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+
+        searchInputPanel.add(searchIcon, BorderLayout.WEST);
+        searchInputPanel.add(searchField, BorderLayout.CENTER);
+
+        topPanel.add(searchInputPanel, BorderLayout.EAST);
+        searchPanel.add(topPanel, BorderLayout.NORTH);
+
+        return searchPanel;
+    }
+
+    private JPanel createModernTable() {
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBorder(BorderFactory.createTitledBorder("Liste des Produits"));
+        tablePanel.setBackground(CARD_COLOR);
+        tablePanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
-        // Barre de recherche
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        searchField = new JTextField(20);
-        JButton searchButton = new JButton("Rechercher");
-        searchButton.addActionListener(e -> searchProduits());
-
-        searchPanel.add(new JLabel("Rechercher:"));
-        searchPanel.add(searchField);
-        searchPanel.add(searchButton);
-
-        tablePanel.add(searchPanel, BorderLayout.NORTH);
-
-        // Table
-        String[] columns = { "ID", "Code barre", "Libellé", "Description", "Prix d'achat", "Prix de revente", "PV",
-                "Stock" };
+        // Modèle de table
+        String[] columns = {"Code", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -232,43 +402,203 @@ public class ProduitPanel extends JPanel {
         };
 
         produitTable = new JTable(tableModel);
-        produitTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        styleTable(produitTable);
+
+        // Listener pour la sélection
         produitTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 loadSelectedProduit();
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(produitTable);
-        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        // Click handler pour double-click
+        produitTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    loadSelectedProduit();
+                }
+            }
+        });
 
-        add(tablePanel, BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(produitTable);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+        return tablePanel;
     }
 
-    private void createButtonPanel() {
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+    private void styleTable(JTable table) {
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setRowHeight(40);
+        table.setShowGrid(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setBackground(Color.WHITE);
+        table.setSelectionBackground(new Color(37, 99, 235, 20));
+        table.setSelectionForeground(TEXT_PRIMARY);
+        table.setFillsViewportHeight(true);
+        
+        // Header styling
+        JTableHeader header = table.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        header.setBackground(new Color(248, 249, 250));
+        header.setForeground(TEXT_SECONDARY);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
+        header.setReorderingAllowed(false);
+        header.setResizingAllowed(true);
+        
+        // Cell renderer with alternating colors
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+            @Override
+            public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                if (!isSelected) {
+                    setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
+                }
+                
+                setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+                setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                
+                // Status column special formatting
+                if (column == 6 && value != null) {
+                    boolean isActive = Boolean.parseBoolean(value.toString());
+                    setText(isActive ? "Actif" : "Inactif");
+                    setForeground(isActive ? SUCCESS_COLOR : TEXT_SECONDARY);
+                } else {
+                    setForeground(TEXT_PRIMARY);
+                }
+                
+                return this;
+            }
+        };
+        
+        for (int i = 0; i < table.getColumnCount(); i++) {
+            table.getColumnModel().getColumn(i).setCellRenderer(renderer);
+        }
+        
+        // Column widths
+        if (table.getColumnCount() >= 7) {
+            table.getColumnModel().getColumn(0).setPreferredWidth(100); // Code
+            table.getColumnModel().getColumn(1).setPreferredWidth(200); // Libellé
+            table.getColumnModel().getColumn(2).setPreferredWidth(100); // Prix Achat
+            table.getColumnModel().getColumn(3).setPreferredWidth(100); // Prix Revente
+            table.getColumnModel().getColumn(4).setPreferredWidth(80);  // PV
+            table.getColumnModel().getColumn(5).setPreferredWidth(80);  // Stock
+            table.getColumnModel().getColumn(6).setPreferredWidth(80);  // Statut
+        }
+    }
 
-        JButton saveButton = createButton("Sauvegarder", new Color(3, 168, 25), e -> saveProduit());
-        JButton updateButton = createButton("Mettre à jour", new Color(184, 101, 18), e -> updateProduit());
-        JButton clearButton = createButton("Vider", new Color(110, 14, 83), e -> clearFields());
-        JButton deleteButton = createButton("Supprimer", new Color(207, 6, 26), e -> deleteProduit());
+    private JPanel createButtonPanel() {
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
+        buttonPanel.setBackground(CARD_COLOR);
+        buttonPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR),
+                BorderFactory.createEmptyBorder(20, 25, 25, 25)));
+
+        JButton saveButton = createModernButton("Sauvegarder", FontAwesomeSolid.SAVE, SUCCESS_COLOR, e -> saveProduit());
+        JButton updateButton = createModernButton("Modifier", FontAwesomeSolid.EDIT, WARNING_COLOR, e -> updateProduit());
+        JButton deleteButton = createModernButton("Supprimer", FontAwesomeSolid.TRASH, DANGER_COLOR, e -> deleteProduit());
+        JButton clearButton = createIconButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR);
+        clearButton.addActionListener(e -> clearFields());
 
         buttonPanel.add(saveButton);
+        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(updateButton);
-        buttonPanel.add(clearButton);
+        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(deleteButton);
+        buttonPanel.add(Box.createHorizontalGlue());
+        buttonPanel.add(clearButton);
 
-        add(buttonPanel, BorderLayout.SOUTH);
+        return buttonPanel;
     }
 
-    private JButton createButton(String text, Color color, ActionListener action) {
+    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
         JButton button = new JButton(text);
-        button.setBackground(color);
+        button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
+        button.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        button.setBackground(backgroundColor);
         button.setForeground(Color.WHITE);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(action);
+        
+        // Hover effect
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(backgroundColor.darker());
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(backgroundColor);
+            }
+        });
+        
         return button;
+    }
+
+    private JButton createIconButton(FontAwesomeSolid icon, String tooltip, Color color) {
+        JButton button = new JButton();
+        button.setIcon(FontIcon.of(icon, 16, color));
+        button.setToolTipText(tooltip);
+        button.setPreferredSize(new Dimension(40, 40));
+        button.setBackground(Color.WHITE);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Hover effect
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(248, 249, 250));
+                button.setIcon(FontIcon.of(icon, 16, color.darker()));
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(Color.WHITE);
+                button.setIcon(FontIcon.of(icon, 16, color));
+            }
+        });
+        
+        return button;
+    }
+
+    private void updateStats() {
+        try {
+            List<ProduitDto> produits = produitService.getActiveProduits();
+            int totalProduits = produits.size();
+            long produitsActifs = produits.stream().mapToLong(p -> p.getActive() ? 1 : 0).sum();
+            
+            statsLabel.setText(String.format("%d produits • %d actifs", totalProduits, produitsActifs));
+        } catch (Exception e) {
+            statsLabel.setText("Statistiques non disponibles");
+        }
+    }
+
+    private void exportProduits() {
+        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement", 
+                "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void importProduits() {
+        JOptionPane.showMessageDialog(this, "Fonctionnalité d'import en cours de développement", 
+                "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void refreshData() {
+        loadProduits();
+        updateStats();
+        clearFields();
     }
 
     private void loadFamilles() {
@@ -280,21 +610,26 @@ public class ProduitPanel extends JPanel {
     }
 
     private void loadProduits() {
-        List<ProduitDto> produits = produitService.getActiveProduits();
-        tableModel.setRowCount(0);
+        try {
+            List<ProduitDto> produits = produitService.getActiveProduits();
+            tableModel.setRowCount(0);
 
-        for (ProduitDto produit : produits) {
-            Object[] row = {
-                    produit.getId(),
-                    produit.getCodeBarre(),
-                    produit.getLibelle(),
-                    produit.getDescription(),
-                    produit.getPrixAchat(),
-                    produit.getPrixRevente(),
-                    produit.getPv(),
-                    produit.getQuantiteStock() != null ? produit.getQuantiteStock() : 0
-            };
-            tableModel.addRow(row);
+            for (ProduitDto produit : produits) {
+                Object[] row = {
+                        produit.getCodeBarre(),
+                        produit.getLibelle(),
+                        produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
+                        produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
+                        produit.getPv() != null ? produit.getPv().toString() : "-",
+                        produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
+                        produit.getActive() != null ? produit.getActive().toString() : "true"
+                };
+                tableModel.addRow(row);
+            }
+            updateStats();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Erreur lors du chargement des produits: " + e.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -305,32 +640,46 @@ public class ProduitPanel extends JPanel {
             return;
         }
 
-        List<ProduitDto> produits = produitService.searchProduits(searchText);
-        tableModel.setRowCount(0);
+        try {
+            List<ProduitDto> produits = produitService.searchProduits(searchText);
+            tableModel.setRowCount(0);
 
-        for (ProduitDto produit : produits) {
-            Object[] row = {
-                    produit.getId(),
-                    produit.getCodeBarre(),
-                    produit.getLibelle(),
-                    produit.getDescription(),
-                    produit.getPrixAchat(),
-                    produit.getPrixRevente(),
-                    produit.getPv(),
-                    produit.getQuantiteStock() != null ? produit.getQuantiteStock() : 0
-            };
-            tableModel.addRow(row);
+            for (ProduitDto produit : produits) {
+                Object[] row = {
+                        produit.getCodeBarre(),
+                        produit.getLibelle(),
+                        produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
+                        produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
+                        produit.getPv() != null ? produit.getPv().toString() : "-",
+                        produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
+                        produit.getActive() != null ? produit.getActive().toString() : "true"
+                };
+                tableModel.addRow(row);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Erreur lors de la recherche: " + e.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void loadSelectedProduit() {
         int selectedRow = produitTable.getSelectedRow();
         if (selectedRow >= 0) {
-            Long id = (Long) tableModel.getValueAt(selectedRow, 0);
-            produitService.getProduitById(id).ifPresent(produit -> {
-                currentProduit = produit;
-                populateFields(produit);
-            });
+            String codeBarre = (String) tableModel.getValueAt(selectedRow, 0);
+            try {
+                List<ProduitDto> produits = produitService.searchProduits(codeBarre);
+                if (!produits.isEmpty()) {
+                    ProduitDto produit = produits.stream()
+                            .filter(p -> codeBarre.equals(p.getCodeBarre()))
+                            .findFirst()
+                            .orElse(produits.get(0));
+                    currentProduit = produit;
+                    populateFields(produit);
+                }
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Erreur lors du chargement du produit: " + e.getMessage(),
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -348,59 +697,92 @@ public class ProduitPanel extends JPanel {
     }
 
     private void saveProduit() {
+        if (!validateFields()) {
+            return;
+        }
+        
         try {
             ProduitDto produit = createProduitFromFields();
             produitService.saveProduit(produit);
-            JOptionPane.showMessageDialog(this, "Produit sauvegardé avec succès", "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
+            
+            // Animation de succès
+            JOptionPane.showMessageDialog(this, 
+                    "✓ Produit sauvegardé avec succès", 
+                    "Succès", JOptionPane.INFORMATION_MESSAGE);
+            
             clearFields();
             loadProduits();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erreur: " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                    "❌ Erreur lors de la sauvegarde: " + e.getMessage(), 
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void updateProduit() {
         if (currentProduit == null) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit à modifier", "Avertissement",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                    "⚠️ Veuillez sélectionner un produit à modifier", 
+                    "Avertissement", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (!validateFields()) {
             return;
         }
 
         try {
             ProduitDto produit = createProduitFromFields();
             produitService.updateProduit(currentProduit.getId(), produit);
-            JOptionPane.showMessageDialog(this, "Produit mis à jour avec succès", "Succès",
-                    JOptionPane.INFORMATION_MESSAGE);
+            
+            JOptionPane.showMessageDialog(this, 
+                    "✓ Produit mis à jour avec succès", 
+                    "Succès", JOptionPane.INFORMATION_MESSAGE);
+            
             clearFields();
             loadProduits();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erreur: " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                    "❌ Erreur lors de la mise à jour: " + e.getMessage(), 
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteProduit() {
         if (currentProduit == null) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit à supprimer", "Avertissement",
-                    JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, 
+                    "⚠️ Veuillez sélectionner un produit à supprimer", 
+                    "Avertissement", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
+        // Dialog de confirmation moderne
         int option = JOptionPane.showConfirmDialog(
                 this,
-                "Êtes-vous sûr de vouloir supprimer ce produit ?",
-                "Confirmation",
-                JOptionPane.YES_NO_OPTION);
+                String.format("🗑️ Êtes-vous sûr de vouloir supprimer ce produit ?\n\n" +
+                             "Produit: %s\n" +
+                             "Code: %s\n\n" +
+                             "Cette action est irréversible.",
+                             currentProduit.getLibelle(),
+                             currentProduit.getCodeBarre()),
+                "Confirmation de suppression",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
                 produitService.deleteProduit(currentProduit.getId());
-                JOptionPane.showMessageDialog(this, "Produit supprimé avec succès", "Succès",
-                        JOptionPane.INFORMATION_MESSAGE);
+                
+                JOptionPane.showMessageDialog(this, 
+                        "✓ Produit supprimé avec succès", 
+                        "Succès", JOptionPane.INFORMATION_MESSAGE);
+                
                 clearFields();
                 loadProduits();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Erreur: " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, 
+                        "❌ Erreur lors de la suppression: " + e.getMessage(), 
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -463,6 +845,66 @@ public class ProduitPanel extends JPanel {
         }
 
         return builder.build();
+    }
+
+    private boolean validateFields() {
+        StringBuilder errors = new StringBuilder();
+        
+        if (codeBarreField.getText().trim().isEmpty()) {
+            errors.append("• Le code barre est requis\n");
+        }
+        
+        if (libelleField.getText().trim().isEmpty()) {
+            errors.append("• Le libellé est requis\n");
+        }
+        
+        // Validation des prix
+        String prixAchatStr = prixAchatField.getText().trim();
+        String prixReventeStr = prixReventeField.getText().trim();
+        
+        if (!prixAchatStr.isEmpty()) {
+            try {
+                BigDecimal prixAchat = new BigDecimal(prixAchatStr);
+                if (prixAchat.compareTo(BigDecimal.ZERO) < 0) {
+                    errors.append("• Le prix d'achat ne peut pas être négatif\n");
+                }
+            } catch (NumberFormatException e) {
+                errors.append("• Format du prix d'achat invalide\n");
+            }
+        }
+        
+        if (!prixReventeStr.isEmpty()) {
+            try {
+                BigDecimal prixRevente = new BigDecimal(prixReventeStr);
+                if (prixRevente.compareTo(BigDecimal.ZERO) < 0) {
+                    errors.append("• Le prix de revente ne peut pas être négatif\n");
+                }
+            } catch (NumberFormatException e) {
+                errors.append("• Format du prix de revente invalide\n");
+            }
+        }
+        
+        // Validation du stock minimum
+        String stockMinStr = stockMinimumField.getText().trim();
+        if (!stockMinStr.isEmpty()) {
+            try {
+                int stockMin = Integer.parseInt(stockMinStr);
+                if (stockMin < 0) {
+                    errors.append("• Le stock minimum ne peut pas être négatif\n");
+                }
+            } catch (NumberFormatException e) {
+                errors.append("• Format du stock minimum invalide\n");
+            }
+        }
+        
+        if (errors.length() > 0) {
+            JOptionPane.showMessageDialog(this, 
+                    "❌ Veuillez corriger les erreurs suivantes:\n\n" + errors.toString(),
+                    "Erreurs de validation", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        
+        return true;
     }
 
     private void clearFields() {
