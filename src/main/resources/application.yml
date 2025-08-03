@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: SmartGestion Longrich
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/smartG?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: smartG
+    password: SmartG@2025
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+
+logging:
+  level:
+    com.longrich.smartgestion: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/smartgestion.log
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Configuration spécifique à l'application
+app:
+  name: SmartGestion Longrich
+  version: 1.0.0
+  description: Système de gestion pour boutique Longrich

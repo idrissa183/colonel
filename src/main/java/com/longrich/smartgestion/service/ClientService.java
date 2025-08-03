@@ -1,0 +1,131 @@
+package com.longrich.smartgestion.service;
+
+import com.longrich.smartgestion.dto.ClientDTO;
+import com.longrich.smartgestion.entity.Client;
+import com.longrich.smartgestion.enums.TypeClient;
+import com.longrich.smartgestion.mapper.ClientMapper;
+import com.longrich.smartgestion.repository.ClientRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class ClientService {
+
+    private final ClientRepository clientRepository;
+    private final ClientMapper clientMapper;
+
+    public List<ClientDTO> getAllClients() {
+        return clientMapper.toDTOList(clientRepository.findAll());
+    }
+
+    public List<ClientDTO> getActiveClients() {
+        return clientMapper.toDTOList(clientRepository.findByActiveTrue());
+    }
+
+    public Optional<ClientDTO> getClientById(Long id) {
+        return clientRepository.findById(id)
+                .map(clientMapper::toDTO);
+    }
+
+    public Optional<ClientDTO> getClientByCode(String code) {
+        return clientRepository.findByCode(code)
+                .map(clientMapper::toDTO);
+    }
+
+    public List<ClientDTO> searchClients(String search) {
+        return clientMapper.toDTOList(clientRepository.searchActiveClients(search));
+    }
+
+    public List<ClientDTO> getClientsByType(TypeClient typeClient) {
+        return clientMapper.toDTOList(clientRepository.findByTypeClient(typeClient));
+    }
+
+    public List<String> getAllProvinces() {
+        return clientRepository.findAllProvinces();
+    }
+
+    public ClientDTO saveClient(ClientDTO clientDTO) {
+        if (clientDTO.getId() == null && clientRepository.existsByCode(clientDTO.getCode())) {
+            throw new IllegalArgumentException("Un client avec ce code existe déjà");
+        }
+
+        Client client = clientMapper.toEntity(clientDTO);
+        Client savedClient = clientRepository.save(client);
+        log.info("Client sauvegardé: {}", savedClient.getCode());
+        return clientMapper.toDTO(savedClient);
+    }
+
+    public ClientDTO updateClient(Long id, ClientDTO clientDTO) {
+        Client existingClient = clientRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
+
+        // Vérifier si le code est modifié et s'il existe déjà
+        if (!existingClient.getCode().equals(clientDTO.getCode()) && 
+            clientRepository.existsByCode(clientDTO.getCode())) {
+            throw new IllegalArgumentException("Un client avec ce code existe déjà");
+        }
+
+        clientMapper.updateEntity(clientDTO, existingClient);
+        Client updatedClient = clientRepository.save(existingClient);
+        log.info("Client mis à jour: {}", updatedClient.getCode());
+        return clientMapper.toDTO(updatedClient);
+    }
+
+    public void deleteClient(Long id) {
+        Client client = clientRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
+        
+        // Soft delete
+        client.setActive(false);
+        clientRepository.save(client);
+        log.info("Client désactivé: {}", client.getCode());
+    }
+
+    public boolean existsByCode(String code) {
+        return clientRepository.existsByCode(code);
+    }
+
+    public List<ClientDTO> getClientsEnAttentePartenaire() {
+        return clientMapper.toDTOList(clientRepository.findByTypeClient(TypeClient.EN_ATTENTE_PARTENAIRE));
+    }
+
+    public List<ClientDTO> getClientsPouvantDevenirPartenaire() {
+        return clientRepository.findByTypeClient(TypeClient.EN_ATTENTE_PARTENAIRE)
+                .stream()
+                .filter(Client::peutDeveniPartenaire)
+                .map(clientMapper::toDTO)
+                .toList();
+    }
+
+    public ClientDTO promouvoirVersPartenaire(Long clientId) {
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
+        
+        if (!client.peutDeveniPartenaire()) {
+            throw new IllegalArgumentException("Le client ne peut pas devenir partenaire (PV insuffisants)");
+        }
+
+        client.setTypeClient(TypeClient.PARTENAIRE);
+        client.setCodeDefinitif(true);
+        Client updatedClient = clientRepository.save(client);
+        log.info("Client promu vers partenaire: {}", updatedClient.getCode());
+        return clientMapper.toDTO(updatedClient);
+    }
+
+    public void ajouterPV(Long clientId, Integer pv) {
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
+        
+        client.setTotalPv(client.getTotalPv() + pv);
+        clientRepository.save(client);
+        log.info("PV ajoutés au client {}: +{} (Total: {})", client.getCode(), pv, client.getTotalPv());
+    }
+}
