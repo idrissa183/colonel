@@ -2,22 +2,25 @@ package com.longrich.smartgestion.ui.components;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -28,387 +31,379 @@ import javax.swing.ToolTipManager;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Setter;
 
-@Component
+@org.springframework.stereotype.Component
 @Profile("!headless")
 public class Sidebar extends JPanel {
 
-    private static final int EXPANDED_WIDTH = 280;
-    private static final int COLLAPSED_WIDTH = 70;
-    private static final Color PRIMARY_COLOR = new Color(45, 55, 72);
-    private static final Color SECONDARY_COLOR = new Color(54, 66, 87);
-    private static final Color ACCENT_COLOR = new Color(66, 153, 225);
-    private static final Color HOVER_COLOR = new Color(74, 85, 104);
+    // --- Constantes de style ---
+    private static final int EXPANDED_WIDTH = 290;
+    private static final int COLLAPSED_WIDTH = 90; // Légèrement plus large pour un meilleur visuel
+    private static final Color PRIMARY_BG = new Color(30, 41, 59); // Dark Slate
+    private static final Color SECONDARY_BG = new Color(15, 23, 42); // Darker Slate
+    private static final Color ACCENT_COLOR = new Color(59, 130, 246); // Blue
+    private static final Color HOVER_COLOR = new Color(51, 65, 85); // Lighter Slate
     private static final Color TEXT_COLOR = new Color(226, 232, 240);
     private static final Color MUTED_TEXT_COLOR = new Color(160, 174, 192);
 
+    // --- État du composant ---
     private boolean isExpanded = true;
-    private JPanel menuPanel;
-    private JLabel titleLabel;
-    private JLabel subtitleLabel;
-    private JButton selectedButton;
+    private final List<ModernMenuButton> menuButtons = new ArrayList<>();
+    private ModernMenuButton selectedButton;
 
+    // --- Dépendances et Handlers ---
     @Setter
     private Consumer<String> navigationHandler;
 
+    // --- Composants UI ---
+    private JPanel menuPanel;
+    private JLabel titleLabel;
+    private JLabel subtitleLabel;
+    private JButton toggleButton;
+
     public Sidebar() {
-        ToolTipManager.sharedInstance().setInitialDelay(300);
-        ToolTipManager.sharedInstance().setDismissDelay(8000);
+        // Constructeur vide pour Spring
+    }
+
+    @PostConstruct
+    public void init() {
+        ToolTipManager.sharedInstance().setInitialDelay(200);
         initializeUI();
     }
 
     private void initializeUI() {
         setPreferredSize(new Dimension(EXPANDED_WIDTH, 0));
-        setBackground(PRIMARY_COLOR);
+        setBackground(PRIMARY_BG);
         setLayout(new BorderLayout());
 
-        createHeaderPanel();
-        createMenuPanel();
-        createFooterPanel();
+        add(createHeaderPanel(), BorderLayout.NORTH);
+        add(createMenuScrollPane(), BorderLayout.CENTER);
+        add(createFooterPanel(), BorderLayout.SOUTH);
+
+        createMenuItems();
     }
 
-    private void createHeaderPanel() {
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(SECONDARY_COLOR);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 15));
+    private JPanel createHeaderPanel() {
+        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
+        headerPanel.setBackground(SECONDARY_BG);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 15));
 
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setBackground(SECONDARY_COLOR);
-
-        // Titre principal
         titleLabel = new JLabel("SmartGestion");
         titleLabel.setForeground(TEXT_COLOR);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titlePanel.add(titleLabel, BorderLayout.NORTH);
 
-        // Sous-titre
         subtitleLabel = new JLabel("Longrich Store");
         subtitleLabel.setForeground(MUTED_TEXT_COLOR);
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        titlePanel.add(subtitleLabel, BorderLayout.CENTER);
 
-        headerPanel.add(titlePanel, BorderLayout.CENTER);
+        JPanel titleContainer = new JPanel();
+        titleContainer.setOpaque(false);
+        titleContainer.setLayout(new BoxLayout(titleContainer, BoxLayout.Y_AXIS));
+        titleContainer.add(titleLabel);
+        titleContainer.add(subtitleLabel);
 
-        // Bouton toggle moderne
-        JButton toggleButton = createToggleButton();
-        headerPanel.add(toggleButton, BorderLayout.EAST);
-
-        add(headerPanel, BorderLayout.NORTH);
-    }
-
-    private JButton createToggleButton() {
-        FontIcon toggleIcon = FontIcon.of(FontAwesomeSolid.BARS, 18, TEXT_COLOR);
-        JButton toggleButton = new JButton(toggleIcon);
-        toggleButton.setPreferredSize(new Dimension(40, 40));
-        toggleButton.setBackground(SECONDARY_COLOR);
-        toggleButton.setBorder(BorderFactory.createEmptyBorder());
-        toggleButton.setFocusPainted(false);
-        toggleButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        toggleButton.setToolTipText("Réduire/Agrandir le menu");
-
-        // Animation hover
-        toggleButton.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                toggleButton.setBackground(HOVER_COLOR);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                toggleButton.setBackground(SECONDARY_COLOR);
-            }
-        });
-
+        toggleButton = createIconButton(FontAwesomeSolid.BARS, "Réduire/Agrandir le menu");
         toggleButton.addActionListener(e -> toggleSidebar());
-        return toggleButton;
+
+        headerPanel.add(titleContainer, BorderLayout.CENTER);
+        headerPanel.add(toggleButton, BorderLayout.EAST);
+        return headerPanel;
     }
 
-    private void createMenuPanel() {
+    private JScrollPane createMenuScrollPane() {
         menuPanel = new JPanel();
         menuPanel.setLayout(new BoxLayout(menuPanel, BoxLayout.Y_AXIS));
-        menuPanel.setBackground(PRIMARY_COLOR);
+        menuPanel.setBackground(PRIMARY_BG);
         menuPanel.setBorder(BorderFactory.createEmptyBorder(15, 10, 15, 10));
-
-        createMenuItems();
 
         JScrollPane scrollPane = new JScrollPane(menuPanel);
         scrollPane.setBorder(null);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.getVerticalScrollBar().setUI(new CustomScrollBarUI());
-        add(scrollPane, BorderLayout.CENTER);
+        return scrollPane;
     }
 
     private void createMenuItems() {
+        menuButtons.clear();
         menuPanel.removeAll();
 
-        if (isExpanded) {
-            // Mode étendu avec groupes
-            addMenuGroup("PRINCIPAL");
-            Object[][] mainItems = {
-                    { FontAwesomeSolid.CHART_BAR, "Tableau de bord", "dashboard" },
-                    { FontAwesomeSolid.TACHOMETER_ALT, "Analytics", "analytics" }
-            };
-            addMenuItems(mainItems);
+        addMenuGroup("PRINCIPAL");
+        addMenuItem(FontAwesomeSolid.CHART_BAR, "Tableau de bord", "dashboard");
+        addMenuItem(FontAwesomeSolid.TACHOMETER_ALT, "Analytics", "analytics");
 
-            addMenuSeparator();
-            addMenuGroup("GESTION");
-            Object[][] managementItems = {
-                    { FontAwesomeSolid.USERS, "Clients", "clients" },
-                    { FontAwesomeSolid.BOX, "Produits", "produits" },
-                    { FontAwesomeSolid.WAREHOUSE, "Stock", "stock" },
-                    { FontAwesomeSolid.INDUSTRY, "Fournisseurs", "fournisseurs" }
-            };
-            addMenuItems(managementItems);
+        addMenuSeparator();
+        addMenuGroup("GESTION");
+        addMenuItem(FontAwesomeSolid.USERS, "Clients", "clients");
+        addMenuItem(FontAwesomeSolid.BOX, "Produits", "produits");
+        addMenuItem(FontAwesomeSolid.WAREHOUSE, "Stock", "stock");
+        addMenuItem(FontAwesomeSolid.INDUSTRY, "Fournisseurs", "fournisseurs");
 
-            addMenuSeparator();
-            addMenuGroup("COMMERCIAL");
-            Object[][] commercialItems = {
-                    { FontAwesomeSolid.SHOPPING_CART, "Commandes", "commandes" },
-                    { FontAwesomeSolid.FILE_INVOICE_DOLLAR, "Factures", "factures" },
-                    { FontAwesomeSolid.CHART_LINE, "Ventes", "ventes" },
-                    { FontAwesomeSolid.COINS, "PV & Commissions", "pv" }
-            };
-            addMenuItems(commercialItems);
+        addMenuSeparator();
+        addMenuGroup("COMMERCIAL");
+        addMenuItem(FontAwesomeSolid.SHOPPING_CART, "Commandes", "commandes");
+        addMenuItem(FontAwesomeSolid.FILE_INVOICE_DOLLAR, "Factures", "factures");
+        addMenuItem(FontAwesomeSolid.CHART_LINE, "Ventes", "ventes");
+        addMenuItem(FontAwesomeSolid.COINS, "PV & Commissions", "pv");
 
-            addMenuSeparator();
-            addMenuGroup("SYSTÈME");
-            Object[][] systemItems = {
-                    { FontAwesomeSolid.COG, "Paramètres", "settings" },
-                    { FontAwesomeSolid.USER_SHIELD, "Utilisateurs", "users" },
-                    { FontAwesomeSolid.DATABASE, "Sauvegarde", "backup" }
-            };
-            addMenuItems(systemItems);
-        } else {
-            // Mode réduit - icônes seulement
-            Object[][] allItems = {
-                    { FontAwesomeSolid.CHART_BAR, "Tableau de bord", "dashboard" },
-                    { FontAwesomeSolid.USERS, "Clients", "clients" },
-                    { FontAwesomeSolid.BOX, "Produits", "produits" },
-                    { FontAwesomeSolid.WAREHOUSE, "Stock", "stock" },
-                    { FontAwesomeSolid.SHOPPING_CART, "Commandes", "commandes" },
-                    { FontAwesomeSolid.FILE_INVOICE_DOLLAR, "Factures", "factures" },
-                    { FontAwesomeSolid.INDUSTRY, "Fournisseurs", "fournisseurs" },
-                    { FontAwesomeSolid.CHART_LINE, "Ventes", "ventes" },
-                    { FontAwesomeSolid.COG, "Paramètres", "settings" }
-            };
+        addMenuSeparator();
+        addMenuGroup("SYSTÈME");
+        addMenuItem(FontAwesomeSolid.COG, "Paramètres", "settings");
+        addMenuItem(FontAwesomeSolid.USER_SHIELD, "Utilisateurs", "users");
+        addMenuItem(FontAwesomeSolid.DATABASE, "Sauvegarde", "backup");
 
-            for (Object[] item : allItems) {
-                JButton button = createCompactMenuButton(
-                        (FontAwesomeSolid) item[0],
-                        (String) item[1],
-                        (String) item[2]);
-                menuPanel.add(button);
-                menuPanel.add(Box.createVerticalStrut(5));
-            }
-        }
+        menuPanel.add(Box.createVerticalGlue()); // Pousse tout vers le haut
+        updateMenuLayout(); // Applique l'état initial
     }
 
     private void addMenuGroup(String groupName) {
+        JPanel groupPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        groupPanel.setOpaque(false);
+        groupPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 8, 0));
         JLabel groupLabel = new JLabel(groupName);
         groupLabel.setForeground(MUTED_TEXT_COLOR);
         groupLabel.setFont(new Font("Segoe UI", Font.BOLD, 10));
-        groupLabel.setBorder(BorderFactory.createEmptyBorder(15, 15, 8, 0));
-        menuPanel.add(groupLabel);
+        groupPanel.add(groupLabel);
+        menuPanel.add(groupPanel);
+    }
+
+    private void addMenuItem(FontAwesomeSolid icon, String text, String action) {
+        ModernMenuButton button = new ModernMenuButton(icon, text, action);
+        button.addActionListener(e -> {
+            setSelectedButton(button);
+            if (navigationHandler != null) {
+                navigationHandler.accept(action);
+            }
+        });
+        menuButtons.add(button);
+        menuPanel.add(button);
+        menuPanel.add(Box.createVerticalStrut(2));
     }
 
     private void addMenuSeparator() {
-        menuPanel.add(Box.createVerticalStrut(10));
+        JPanel separatorPanel = new JPanel();
+        separatorPanel.setOpaque(false);
+        separatorPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
+        menuPanel.add(separatorPanel);
     }
 
-    private void addMenuItems(Object[][] items) {
-        for (Object[] item : items) {
-            JButton menuButton = createModernMenuButton(
-                    (FontAwesomeSolid) item[0],
-                    (String) item[1],
-                    (String) item[2]);
-            menuPanel.add(menuButton);
-            menuPanel.add(Box.createVerticalStrut(2));
-        }
-    }
-
-    private JButton createModernMenuButton(FontAwesomeSolid icon, String text, String action) {
-        JButton button = new JButton() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                if (this == selectedButton) {
-                    g2.setColor(ACCENT_COLOR);
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                } else if (getModel().isRollover()) {
-                    g2.setColor(HOVER_COLOR);
-                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-                }
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-
-        button.setLayout(new BorderLayout());
-        button.setBackground(PRIMARY_COLOR);
-        button.setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
-        button.setFocusPainted(false);
-        button.setContentAreaFilled(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Icône
-        FontIcon fontIcon = FontIcon.of(icon, 20, TEXT_COLOR);
-        JLabel iconLabel = new JLabel(fontIcon);
-        iconLabel.setPreferredSize(new Dimension(30, 24));
-        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        button.add(iconLabel, BorderLayout.WEST);
-
-        // Texte
-        JLabel textLabel = new JLabel(text);
-        textLabel.setForeground(TEXT_COLOR);
-        textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        textLabel.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
-        button.add(textLabel, BorderLayout.CENTER);
-
-        // Tooltip pour mode réduit
-        button.setToolTipText(text);
-
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.repaint();
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.repaint();
-            }
-        });
-
-        button.addActionListener(e -> {
-            setSelectedButton(button);
-            if (navigationHandler != null) {
-                navigationHandler.accept(action);
-            }
-        });
-
-        return button;
-    }
-
-    private JButton createCompactMenuButton(FontAwesomeSolid icon, String text, String action) {
-        JButton button = new JButton() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-                if (this == selectedButton) {
-                    g2.setColor(ACCENT_COLOR);
-                    g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
-                } else if (getModel().isRollover()) {
-                    g2.setColor(HOVER_COLOR);
-                    g2.fillRoundRect(2, 2, getWidth() - 4, getHeight() - 4, 8, 8);
-                }
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-
-        FontIcon fontIcon = FontIcon.of(icon, 22, TEXT_COLOR);
-        button.setIcon(fontIcon);
-        button.setPreferredSize(new Dimension(50, 45));
-        button.setBackground(PRIMARY_COLOR);
-        button.setBorder(BorderFactory.createEmptyBorder());
-        button.setFocusPainted(false);
-        button.setContentAreaFilled(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setToolTipText(text);
-
-        button.addActionListener(e -> {
-            setSelectedButton(button);
-            if (navigationHandler != null) {
-                navigationHandler.accept(action);
-            }
-        });
-
-        return button;
-    }
-
-    private void setSelectedButton(JButton button) {
+    private void setSelectedButton(ModernMenuButton button) {
         if (selectedButton != null) {
-            selectedButton.repaint();
+            selectedButton.setSelected(false);
         }
         selectedButton = button;
-        button.repaint();
+        selectedButton.setSelected(true);
     }
 
-    private void createFooterPanel() {
-        JPanel footerPanel = new JPanel(new BorderLayout());
-        footerPanel.setBackground(SECONDARY_COLOR);
-        footerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
-
-        JPanel versionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        versionPanel.setBackground(SECONDARY_COLOR);
+    private JPanel createFooterPanel() {
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        footerPanel.setBackground(SECONDARY_BG);
+        footerPanel.setBorder(BorderFactory.createEmptyBorder(15, 25, 15, 20));
 
         FontIcon versionIcon = FontIcon.of(FontAwesomeSolid.INFO_CIRCLE, 12, MUTED_TEXT_COLOR);
-        JLabel versionIconLabel = new JLabel(versionIcon);
-        versionPanel.add(versionIconLabel);
-
-        JLabel versionLabel = new JLabel(" v1.0.0 - Beta");
+        JLabel versionLabel = new JLabel("v1.0.0", versionIcon, SwingConstants.LEFT);
         versionLabel.setForeground(MUTED_TEXT_COLOR);
         versionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        versionPanel.add(versionLabel);
-
-        footerPanel.add(versionPanel, BorderLayout.WEST);
-
-        add(footerPanel, BorderLayout.SOUTH);
+        footerPanel.add(versionLabel);
+        return footerPanel;
     }
 
     private void toggleSidebar() {
         isExpanded = !isExpanded;
-
-        Timer animationTimer = new Timer(10, null);
         int targetWidth = isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH;
-        int currentWidth = getPreferredSize().width;
-        int step = (targetWidth - currentWidth) / 10;
 
-        animationTimer.addActionListener(e -> {
-            int newWidth = getPreferredSize().width + step;
-            if ((step > 0 && newWidth >= targetWidth) || (step < 0 && newWidth <= targetWidth)) {
-                newWidth = targetWidth;
-                animationTimer.stop();
-                updateVisibility();
+        // Animateur simple pour la largeur
+        Timer timer = new Timer(8, null);
+        timer.addActionListener(e -> {
+            int currentWidth = getPreferredSize().width;
+            int newWidth;
+            if (isExpanded) {
+                newWidth = Math.min(targetWidth, currentWidth + 20);
+            } else {
+                newWidth = Math.max(targetWidth, currentWidth - 20);
             }
             setPreferredSize(new Dimension(newWidth, getHeight()));
-            revalidate();
-            repaint();
-
-            Container parent = getParent();
-            if (parent != null) {
-                parent.revalidate();
-                parent.repaint();
+            revalidateParent();
+            if (newWidth == targetWidth) {
+                timer.stop();
+                updateMenuLayout(); // Mettre à jour après la fin de l'animation
             }
         });
 
-        animationTimer.start();
-    }
-
-    private void updateVisibility() {
+        // Mettre à jour le titre pendant l'animation
         titleLabel.setVisible(isExpanded);
         subtitleLabel.setVisible(isExpanded);
-        createMenuItems();
+        timer.start();
+    }
+
+    private void updateMenuLayout() {
+        for (ModernMenuButton button : menuButtons) {
+            button.setExpanded(isExpanded);
+        }
+        for (java.awt.Component comp : menuPanel.getComponents()) {
+            if (comp instanceof JPanel) { // Groupes et séparateurs
+                comp.setVisible(isExpanded);
+            }
+        }
         menuPanel.revalidate();
         menuPanel.repaint();
     }
 
-    // Classe interne pour personnaliser la scrollbar
-    private static class CustomScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
-        @Override
-        protected void configureScrollBarColors() {
-            this.thumbColor = new Color(74, 85, 104);
-            this.trackColor = new Color(45, 55, 72);
+    private void revalidateParent() {
+        if (getParent() != null) {
+            getParent().revalidate();
+            getParent().repaint();
+        }
+    }
+
+    private JButton createIconButton(FontAwesomeSolid icon, String tooltip) {
+        JButton button = new JButton(FontIcon.of(icon, 18, TEXT_COLOR));
+        button.setToolTipText(tooltip);
+        button.setPreferredSize(new Dimension(32, 32));
+        button.setBackground(SECONDARY_BG);
+        button.setBorder(BorderFactory.createEmptyBorder());
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setOpaque(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(HOVER_COLOR);
+                button.setOpaque(true);
+            }
+
+            public void mouseExited(MouseEvent e) {
+                button.setOpaque(false);
+            }
+        });
+        return button;
+    }
+
+    // --- Classe interne pour un bouton de menu moderne ---
+    private static class ModernMenuButton extends JButton {
+        private final JLabel textLabel;
+        private final JLabel iconLabel;
+        private final FontIcon icon;
+        private final String text;
+        private final String tooltip;
+        private boolean isExpanded;
+
+        public ModernMenuButton(FontAwesomeSolid iconCode, String text, String actionCommand) {
+            super();
+            this.icon = FontIcon.of(iconCode, 20, TEXT_COLOR);
+            this.text = text;
+            this.tooltip = text;
+            this.isExpanded = true;
+
+            setLayout(new BorderLayout());
+            setBackground(PRIMARY_BG);
+            setBorder(BorderFactory.createEmptyBorder(12, 15, 12, 15));
+            setFocusPainted(false);
+            setContentAreaFilled(false);
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setActionCommand(actionCommand);
+
+            iconLabel = new JLabel(icon);
+            iconLabel.setPreferredSize(new Dimension(30, 24));
+            iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            add(iconLabel, BorderLayout.WEST);
+
+            textLabel = new JLabel(text);
+            textLabel.setForeground(TEXT_COLOR);
+            textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            textLabel.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
+            add(textLabel, BorderLayout.CENTER);
+
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    repaint();
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    repaint();
+                }
+            });
         }
 
+        public void setExpanded(boolean expanded) {
+            this.isExpanded = expanded;
+            textLabel.setVisible(expanded);
+            setToolTipText(expanded ? null : tooltip); // Active/désactive le tooltip
+            if (expanded) {
+                iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                iconLabel.setPreferredSize(new Dimension(30, 24));
+            } else {
+                iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                iconLabel.setPreferredSize(new Dimension(50, 24));
+            }
+        }
+
+        @Override
+        public void setSelected(boolean b) {
+            super.setSelected(b);
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (isSelected()) {
+                g2.setColor(ACCENT_COLOR);
+            } else if (getModel().isRollover()) {
+                g2.setColor(HOVER_COLOR);
+            } else {
+                g2.setColor(getBackground());
+            }
+
+            if (isExpanded) {
+                g2.fillRoundRect(5, 0, getWidth() - 10, getHeight(), 12, 12);
+            } else {
+                g2.fillRoundRect(5, 2, getWidth() - 10, getHeight() - 4, 12, 12);
+            }
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    private static class CustomScrollBarUI extends javax.swing.plaf.basic.BasicScrollBarUI {
+        private final Dimension zeroDim = new Dimension(0, 0);
+
+        @Override
+        protected void configureScrollBarColors() {
+            // Couleur de la barre de défilement (le "pouce")
+            thumbColor = HOVER_COLOR; 
+            // Couleur de fond de la piste
+            trackColor = PRIMARY_BG;
+        }
+
+        @Override
+        protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+            if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
+                return;
+            }
+
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(thumbColor);
+            // Dessiner un pouce arrondi
+            g2.fillRoundRect(thumbBounds.x + 2, thumbBounds.y + 2, thumbBounds.width - 4, thumbBounds.height - 4, 10, 10);
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+            g.setColor(trackColor);
+            g.fillRect(trackBounds.x, trackBounds.y, trackBounds.width, trackBounds.height);
+        }
+
+        // Masquer les boutons fléchés en haut et en bas
         @Override
         protected JButton createDecreaseButton(int orientation) {
             return createZeroButton();
@@ -421,9 +416,9 @@ public class Sidebar extends JPanel {
 
         private JButton createZeroButton() {
             JButton button = new JButton();
-            button.setPreferredSize(new Dimension(0, 0));
-            button.setMinimumSize(new Dimension(0, 0));
-            button.setMaximumSize(new Dimension(0, 0));
+            button.setPreferredSize(zeroDim);
+            button.setMinimumSize(zeroDim);
+            button.setMaximumSize(zeroDim);
             return button;
         }
     }

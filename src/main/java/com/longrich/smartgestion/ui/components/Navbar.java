@@ -1,16 +1,32 @@
 package com.longrich.smartgestion.ui.components;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import jakarta.annotation.PostConstruct;
 
 @Component
 @Profile("!headless")
@@ -20,7 +36,7 @@ public class Navbar extends JPanel {
     private static final Color BORDER_COLOR = new Color(229, 231, 235);
     private static final Color TEXT_PRIMARY = new Color(31, 41, 55);
     private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
-    private static final Color ACCENT_COLOR = new Color(59, 130, 246);
+    // private static final Color ACCENT_COLOR = new Color(59, 130, 246);
     private static final Color BUTTON_HOVER = new Color(243, 244, 246);
 
     private JLabel titleLabel;
@@ -29,6 +45,11 @@ public class Navbar extends JPanel {
     private Timer timer;
 
     public Navbar() {
+        // Constructeur vide pour Spring
+    }
+
+    @PostConstruct
+    public void init() {
         initializeUI();
         startClock();
     }
@@ -39,93 +60,7 @@ public class Navbar extends JPanel {
         setBackground(NAVBAR_BG);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
 
-        createLeftSection();
-        createCenterSection();
         createRightSection();
-    }
-
-    private void createLeftSection() {
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
-        leftPanel.setBackground(NAVBAR_BG);
-        leftPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-
-        // Breadcrumb ou titre de la page
-        titleLabel = new JLabel("Tableau de bord");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        titleLabel.setForeground(TEXT_PRIMARY);
-        leftPanel.add(titleLabel);
-
-        add(leftPanel, BorderLayout.WEST);
-    }
-
-    private void createCenterSection() {
-        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        centerPanel.setBackground(NAVBAR_BG);
-
-        // Barre de recherche moderne
-        JPanel searchPanel = createSearchPanel();
-        centerPanel.add(searchPanel);
-
-        add(centerPanel, BorderLayout.CENTER);
-    }
-
-    private JPanel createSearchPanel() {
-        JPanel searchContainer = new JPanel(new BorderLayout());
-        searchContainer.setBackground(NAVBAR_BG);
-        searchContainer.setPreferredSize(new Dimension(400, 40));
-        searchContainer.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
-                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
-
-        // Animation de focus
-        RoundedTextField searchField = new RoundedTextField();
-        searchField.setPreferredSize(new Dimension(350, 38));
-        searchField.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 10));
-        searchField.setBackground(Color.WHITE);
-        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        searchField.setForeground(TEXT_PRIMARY);
-
-        // Placeholder
-        JLabel placeholderLabel = new JLabel("Rechercher clients, produits, commandes...");
-        placeholderLabel.setForeground(TEXT_SECONDARY);
-        placeholderLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        placeholderLabel.setBounds(15, 12, 300, 16);
-
-        // Layer pour le placeholder
-        JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(350, 38));
-        layeredPane.add(searchField, JLayeredPane.DEFAULT_LAYER);
-        layeredPane.add(placeholderLabel, JLayeredPane.PALETTE_LAYER);
-
-        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override
-            public void focusGained(java.awt.event.FocusEvent e) {
-                placeholderLabel.setVisible(searchField.getText().isEmpty());
-                searchContainer.setBorder(BorderFactory.createLineBorder(ACCENT_COLOR, 2));
-            }
-
-            @Override
-            public void focusLost(java.awt.event.FocusEvent e) {
-                placeholderLabel.setVisible(searchField.getText().isEmpty());
-                searchContainer.setBorder(BorderFactory.createLineBorder(new Color(209, 213, 219), 1));
-            }
-        });
-
-        searchField.addKeyListener(new java.awt.event.KeyAdapter() {
-            @Override
-            public void keyReleased(java.awt.event.KeyEvent e) {
-                placeholderLabel.setVisible(searchField.getText().isEmpty());
-            }
-        });
-
-        searchContainer.add(layeredPane, BorderLayout.CENTER);
-
-        // Bouton de recherche
-        JButton searchButton = createIconButton(FontAwesomeSolid.SEARCH, "Rechercher");
-        searchButton.setPreferredSize(new Dimension(40, 38));
-        searchContainer.add(searchButton, BorderLayout.EAST);
-
-        return searchContainer;
     }
 
     private void createRightSection() {
@@ -304,8 +239,8 @@ public class Navbar extends JPanel {
 
     private void updateDateTime() {
         LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm");
-        dateTimeLabel.setText(now.format(formatter));
+        String formattedDateTime = now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+        dateTimeLabel.setText(formattedDateTime);
     }
 
     public void setTitle(String title) {
@@ -324,21 +259,4 @@ public class Navbar extends JPanel {
         }
     }
 
-    // Classe pour un champ de texte avec coins arrondis
-    private static class RoundedTextField extends JTextField {
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
-            super.paintComponent(g);
-            g2.dispose();
-        }
-
-        @Override
-        protected void paintBorder(Graphics g) {
-            // Ne pas peindre la bordure par défaut
-        }
-    }
 }

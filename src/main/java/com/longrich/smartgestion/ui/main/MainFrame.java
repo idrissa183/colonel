@@ -17,8 +17,10 @@ import org.springframework.stereotype.Component;
 import com.longrich.smartgestion.ui.components.Navbar;
 import com.longrich.smartgestion.ui.components.Sidebar;
 import com.longrich.smartgestion.ui.panel.ClientPanel;
+import com.longrich.smartgestion.ui.panel.CommandePanel;
 import com.longrich.smartgestion.ui.panel.DashboardPanel;
 import com.longrich.smartgestion.ui.panel.ProduitPanel;
+import com.longrich.smartgestion.ui.panel.StockPanel;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,8 @@ public class MainFrame extends JFrame {
     private final DashboardPanel dashboardPanel;
     private final ClientPanel clientPanel;
     private final ProduitPanel produitPanel;
+    private final StockPanel stockPanel;
+    private final CommandePanel commandePanel;
 
     private JPanel contentPanel;
     private CardLayout cardLayout;
@@ -68,6 +72,8 @@ public class MainFrame extends JFrame {
         contentPanel.add(dashboardPanel, "dashboard");
         contentPanel.add(clientPanel, "clients");
         contentPanel.add(produitPanel, "produits");
+        contentPanel.add(stockPanel, "stock");
+        contentPanel.add(commandePanel, "commandes");
 
         // Configurer la sidebar pour la navigation
         sidebar.setNavigationHandler(this::showPanel);

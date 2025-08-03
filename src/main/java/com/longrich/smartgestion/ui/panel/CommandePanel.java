@@ -1,6 +1,6 @@
 package com.longrich.smartgestion.ui.panel;
 
-import com.longrich.smartgestion.dto.ClientDto;
+import com.longrich.smartgestion.dto.ClientDTO;
 import com.longrich.smartgestion.dto.CommandeDTO;
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ClientService;
@@ -73,7 +73,7 @@ public class CommandePanel extends JPanel {
     private JTextField prixUnitaireField;
     private JLabel totalCommandeLabel;
 
-    private List<ClientDto> clientsList;
+    private List<ClientDTO> clientsList;
     private List<ProduitDto> produitsList;
     private List<LigneCommandeTemp> lignesCommande;
     private CommandeDTO currentCommande;
@@ -144,7 +144,7 @@ public class CommandePanel extends JPanel {
 
     private void createMainContent() {
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Segoe UI", Font.MEDIUM, 13));
+        tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabbedPane.setBackground(BACKGROUND_COLOR);
 
         // Onglet liste des commandes
@@ -276,7 +276,7 @@ public class CommandePanel extends JPanel {
         JLabel titleLabel = new JLabel("Informations de la Commande");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(TEXT_PRIMARY);
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(20));
 
@@ -348,7 +348,7 @@ public class CommandePanel extends JPanel {
         JLabel titleLabel = new JLabel("Ajouter un Produit");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titleLabel.setForeground(TEXT_PRIMARY);
-        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(15));
 
@@ -478,15 +478,15 @@ public class CommandePanel extends JPanel {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(CARD_COLOR);
-        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         label.setForeground(TEXT_SECONDARY);
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
 
-        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+        field.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         panel.add(label);
         panel.add(field);
@@ -515,7 +515,7 @@ public class CommandePanel extends JPanel {
         // Default renderer
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
+            public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 
@@ -554,7 +554,7 @@ public class CommandePanel extends JPanel {
     private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
         JButton button = new JButton(text);
         button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
-        button.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         button.setBackground(backgroundColor);
         button.setForeground(Color.WHITE);
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
@@ -567,7 +567,7 @@ public class CommandePanel extends JPanel {
     // Classes pour les renderers des boutons dans les tables
     private class ActionButtonRenderer extends DefaultTableCellRenderer {
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
+        public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
             JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
@@ -595,7 +595,7 @@ public class CommandePanel extends JPanel {
         }
         
         @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
+        public java.awt.Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
             return new ActionButtonRenderer().getTableCellRendererComponent(table, value, isSelected, false, row, column);
         }
@@ -603,7 +603,7 @@ public class CommandePanel extends JPanel {
 
     private class DeleteButtonRenderer extends DefaultTableCellRenderer {
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
+        public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
             JButton button = new JButton(FontIcon.of(FontAwesomeSolid.TRASH, 14, DANGER_COLOR));
             button.setBackground(isSelected ? table.getSelectionBackground() : Color.WHITE);
@@ -621,7 +621,7 @@ public class CommandePanel extends JPanel {
         }
         
         @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
+        public java.awt.Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
             JButton button = new JButton(FontIcon.of(FontAwesomeSolid.TRASH, 14, DANGER_COLOR));
             button.addActionListener(e -> removeLigneCommande(row));
@@ -672,7 +672,7 @@ public class CommandePanel extends JPanel {
         try {
             clientsList = clientService.getAllClients();
             clientCombo.removeAllItems();
-            for (ClientDto client : clientsList) {
+            for (ClientDTO client : clientsList) {
                 clientCombo.addItem(client.getNom() + " " + client.getPrenom());
             }
         } catch (Exception e) {

@@ -1,8 +1,6 @@
 package com.longrich.smartgestion.ui.panel;
 
-import com.longrich.smartgestion.dto.MouvementStockDTO;
 import com.longrich.smartgestion.dto.ProduitDto;
-import com.longrich.smartgestion.dto.StockDTO;
 import com.longrich.smartgestion.service.ProduitService;
 
 import lombok.RequiredArgsConstructor;
@@ -262,7 +260,7 @@ public class StockPanel extends JPanel {
         JLabel formTitle = new JLabel("Mouvement de Stock");
         formTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
         formTitle.setForeground(TEXT_PRIMARY);
-        formTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formTitle.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         formPanel.add(formTitle);
         formPanel.add(Box.createVerticalStrut(20));
 
@@ -288,7 +286,7 @@ public class StockPanel extends JPanel {
 
         // Boutons
         JPanel buttonPanel = createMouvementButtonPanel();
-        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        buttonPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         formPanel.add(buttonPanel);
 
         return formPanel;
@@ -367,16 +365,16 @@ public class StockPanel extends JPanel {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBackground(CARD_COLOR);
-        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
         JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         label.setForeground(TEXT_SECONDARY);
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
 
-        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+        field.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         panel.add(label);
         panel.add(field);
@@ -406,7 +404,7 @@ public class StockPanel extends JPanel {
         // Renderer spécial pour les statuts
         DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
+            public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 
@@ -463,7 +461,7 @@ public class StockPanel extends JPanel {
     private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
         JButton button = new JButton(text);
         button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
-        button.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         button.setBackground(backgroundColor);
         button.setForeground(Color.WHITE);
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));

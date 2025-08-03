@@ -315,7 +315,7 @@ public class ProduitPanel extends JPanel {
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, field instanceof JScrollPane ? 120 : 70));
 
         JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         label.setForeground(TEXT_SECONDARY);
         label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
@@ -519,7 +519,7 @@ public class ProduitPanel extends JPanel {
     private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
         JButton button = new JButton(text);
         button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
-        button.setFont(new Font("Segoe UI", Font.MEDIUM, 12));
+        button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         button.setBackground(backgroundColor);
         button.setForeground(Color.WHITE);
         button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));

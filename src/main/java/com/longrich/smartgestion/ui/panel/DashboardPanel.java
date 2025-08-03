@@ -31,7 +31,7 @@ import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import com.longrich.smartgestion.dto.ClientDto;
+import com.longrich.smartgestion.dto.ClientDTO;
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ClientService;
 import com.longrich.smartgestion.service.ProduitService;
@@ -164,7 +164,7 @@ public class DashboardPanel extends JPanel {
         headerPanel.add(iconLabel, BorderLayout.WEST);
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Segoe UI", Font.MEDIUM, 14));
+        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         titleLabel.setForeground(TEXT_SECONDARY);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0));
         headerPanel.add(titleLabel, BorderLayout.CENTER);
@@ -373,7 +373,7 @@ public class DashboardPanel extends JPanel {
     private void loadDashboardData() {
         try {
             // Charger les statistiques réelles
-            List<ClientDto> clients = clientService.getAllClients();
+            List<ClientDTO> clients = clientService.getAllClients();
             List<ProduitDto> produits = produitService.getActiveProduits();
 
             if (clientsCountLabel != null) {
@@ -398,7 +398,7 @@ public class DashboardPanel extends JPanel {
             // CA fictif (à implémenter avec les vraies données de vente)
             if (caLabel != null) {
                 caLabel.setText("Bientôt disponible");
-                caLabel.setFont(new Font("Segoe UI", Font.MEDIUM, 16));
+                caLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
             }
 
             loadRecentActivities();
@@ -418,7 +418,7 @@ public class DashboardPanel extends JPanel {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
             
             try {
-                List<ClientDto> recentClients = clientService.getAllClients();
+                List<ClientDTO> recentClients = clientService.getAllClients();
                 List<ProduitDto> recentProduits = produitService.getActiveProduits();
 
                 if (!recentClients.isEmpty()) {
