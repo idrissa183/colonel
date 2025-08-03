@@ -7,12 +7,21 @@ import org.springframework.stereotype.Component;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
 @Profile("!headless")
 public class Navbar extends JPanel {
+
+    private static final Color NAVBAR_BG = new Color(255, 255, 255);
+    private static final Color BORDER_COLOR = new Color(229, 231, 235);
+    private static final Color TEXT_PRIMARY = new Color(31, 41, 55);
+    private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
+    private static final Color ACCENT_COLOR = new Color(59, 130, 246);
+    private static final Color BUTTON_HOVER = new Color(243, 244, 246);
 
     private JLabel titleLabel;
     private JLabel dateTimeLabel;
@@ -26,112 +35,284 @@ public class Navbar extends JPanel {
 
     private void initializeUI() {
         setLayout(new BorderLayout());
-        setPreferredSize(new Dimension(0, 60));
-        setBackground(new Color(248, 249, 250));
-        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY));
+        setPreferredSize(new Dimension(0, 70));
+        setBackground(NAVBAR_BG);
+        setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
 
         createLeftSection();
-        // createCenterSection();
+        createCenterSection();
         createRightSection();
     }
 
     private void createLeftSection() {
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        leftPanel.setBackground(new Color(248, 249, 250));
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        leftPanel.setBackground(NAVBAR_BG);
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 
+        // Breadcrumb ou titre de la page
         titleLabel = new JLabel("Tableau de bord");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(new Color(33, 37, 41));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(TEXT_PRIMARY);
         leftPanel.add(titleLabel);
 
         add(leftPanel, BorderLayout.WEST);
     }
 
-    // private void createCenterSection() {
-    //     JPanel centerPanel = new JPanel(new FlowLayout());
-    //     centerPanel.setBackground(new Color(248, 249, 250));
+    private void createCenterSection() {
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        centerPanel.setBackground(NAVBAR_BG);
 
-    //     // Barre de recherche
-    //     JTextField searchField = new JTextField(20);
-    //     searchField.setPreferredSize(new Dimension(300, 35));
-    //     searchField.setBorder(BorderFactory.createCompoundBorder(
-    //             BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-    //             BorderFactory.createEmptyBorder(5, 10, 5, 10)));
-    //     searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // Barre de recherche moderne
+        JPanel searchPanel = createSearchPanel();
+        centerPanel.add(searchPanel);
 
-    //     FontIcon searchIcon = FontIcon.of(FontAwesomeSolid.SEARCH, 16, Color.WHITE);
-    //     JButton searchButton = new JButton(searchIcon);
-    //     searchButton.setPreferredSize(new Dimension(35, 35));
-    //     searchButton.setBackground(new Color(0, 123, 255));
-    //     searchButton.setBorder(BorderFactory.createEmptyBorder());
-    //     searchButton.setFocusPainted(false);
+        add(centerPanel, BorderLayout.CENTER);
+    }
 
-    //     centerPanel.add(searchField);
-    //     centerPanel.add(searchButton);
+    private JPanel createSearchPanel() {
+        JPanel searchContainer = new JPanel(new BorderLayout());
+        searchContainer.setBackground(NAVBAR_BG);
+        searchContainer.setPreferredSize(new Dimension(400, 40));
+        searchContainer.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(209, 213, 219), 1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
-    //     add(centerPanel, BorderLayout.CENTER);
-    // }
+        // Animation de focus
+        RoundedTextField searchField = new RoundedTextField();
+        searchField.setPreferredSize(new Dimension(350, 38));
+        searchField.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 10));
+        searchField.setBackground(Color.WHITE);
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchField.setForeground(TEXT_PRIMARY);
+
+        // Placeholder
+        JLabel placeholderLabel = new JLabel("Rechercher clients, produits, commandes...");
+        placeholderLabel.setForeground(TEXT_SECONDARY);
+        placeholderLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        placeholderLabel.setBounds(15, 12, 300, 16);
+
+        // Layer pour le placeholder
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setPreferredSize(new Dimension(350, 38));
+        layeredPane.add(searchField, JLayeredPane.DEFAULT_LAYER);
+        layeredPane.add(placeholderLabel, JLayeredPane.PALETTE_LAYER);
+
+        searchField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                placeholderLabel.setVisible(searchField.getText().isEmpty());
+                searchContainer.setBorder(BorderFactory.createLineBorder(ACCENT_COLOR, 2));
+            }
+
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                placeholderLabel.setVisible(searchField.getText().isEmpty());
+                searchContainer.setBorder(BorderFactory.createLineBorder(new Color(209, 213, 219), 1));
+            }
+        });
+
+        searchField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                placeholderLabel.setVisible(searchField.getText().isEmpty());
+            }
+        });
+
+        searchContainer.add(layeredPane, BorderLayout.CENTER);
+
+        // Bouton de recherche
+        JButton searchButton = createIconButton(FontAwesomeSolid.SEARCH, "Rechercher");
+        searchButton.setPreferredSize(new Dimension(40, 38));
+        searchContainer.add(searchButton, BorderLayout.EAST);
+
+        return searchContainer;
+    }
 
     private void createRightSection() {
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        rightPanel.setBackground(new Color(248, 249, 250));
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        rightPanel.setBackground(NAVBAR_BG);
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 20));
 
         // Date et heure
         dateTimeLabel = new JLabel();
-        dateTimeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        dateTimeLabel.setForeground(new Color(108, 117, 125));
+        dateTimeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        dateTimeLabel.setForeground(TEXT_SECONDARY);
         rightPanel.add(dateTimeLabel);
 
         // Séparateur
-        rightPanel.add(new JLabel(" | "));
+        JLabel separator = new JLabel("•");
+        separator.setForeground(new Color(209, 213, 219));
+        separator.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        rightPanel.add(separator);
 
         // Notifications
-        FontIcon notificationIcon = FontIcon.of(FontAwesomeSolid.BELL, 16, new Color(108, 117, 125));
-        JButton notificationButton = new JButton(notificationIcon);
-        notificationButton.setPreferredSize(new Dimension(35, 35));
-        notificationButton.setBackground(new Color(248, 249, 250));
-        notificationButton.setBorder(BorderFactory.createEmptyBorder());
-        notificationButton.setFocusPainted(false);
+        JButton notificationButton = createIconButton(FontAwesomeSolid.BELL, "Notifications");
+        addNotificationBadge(notificationButton, 3);
         rightPanel.add(notificationButton);
 
-        // Utilisateur
-        FontIcon userIcon = FontIcon.of(FontAwesomeSolid.USER, 14, new Color(33, 37, 41));
-        userLabel = new JLabel("Admin", userIcon, SwingConstants.LEFT);
-        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        userLabel.setForeground(new Color(33, 37, 41));
-        rightPanel.add(userLabel);
+        // Messages
+        JButton messageButton = createIconButton(FontAwesomeSolid.ENVELOPE, "Messages");
+        addNotificationBadge(messageButton, 1);
+        rightPanel.add(messageButton);
 
-        // Menu utilisateur
-        FontIcon dropdownIcon = FontIcon.of(FontAwesomeSolid.CHEVRON_DOWN, 12, new Color(108, 117, 125));
-        JButton userMenuButton = new JButton(dropdownIcon);
-        userMenuButton.setPreferredSize(new Dimension(20, 35));
-        userMenuButton.setBackground(new Color(248, 249, 250));
-        userMenuButton.setBorder(BorderFactory.createEmptyBorder());
-        userMenuButton.setFocusPainted(false);
-        rightPanel.add(userMenuButton);
+        // Profil utilisateur
+        JPanel userPanel = createUserPanel();
+        rightPanel.add(userPanel);
 
         add(rightPanel, BorderLayout.EAST);
+    }
+
+    private JButton createIconButton(FontAwesomeSolid icon, String tooltip) {
+        FontIcon fontIcon = FontIcon.of(icon, 18, TEXT_SECONDARY);
+        JButton button = new JButton(fontIcon);
+        button.setPreferredSize(new Dimension(40, 40));
+        button.setBackground(NAVBAR_BG);
+        button.setBorder(BorderFactory.createEmptyBorder());
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setToolTipText(tooltip);
+
+        // Effet hover
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(BUTTON_HOVER);
+                FontIcon hoverIcon = FontIcon.of(icon, 18, TEXT_PRIMARY);
+                button.setIcon(hoverIcon);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(NAVBAR_BG);
+                FontIcon normalIcon = FontIcon.of(icon, 18, TEXT_SECONDARY);
+                button.setIcon(normalIcon);
+            }
+        });
+
+        return button;
+    }
+
+    private void addNotificationBadge(JButton button, int count) {
+        if (count > 0) {
+            button.addPropertyChangeListener("icon", evt -> {
+                // Ajouter un badge de notification
+                SwingUtilities.invokeLater(() -> {
+                    Graphics g = button.getGraphics();
+                    if (g != null) {
+                        g.setColor(new Color(239, 68, 68));
+                        g.fillOval(28, 8, 12, 12);
+                        g.setColor(Color.WHITE);
+                        g.setFont(new Font("Segoe UI", Font.BOLD, 8));
+                        g.drawString(String.valueOf(count), 32, 16);
+                    }
+                });
+            });
+        }
+    }
+
+    private JPanel createUserPanel() {
+        JPanel userPanel = new JPanel(new BorderLayout());
+        userPanel.setBackground(NAVBAR_BG);
+        userPanel.setPreferredSize(new Dimension(180, 40));
+        userPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        userPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Avatar
+        JLabel avatarLabel = new JLabel();
+        FontIcon userIcon = FontIcon.of(FontAwesomeSolid.USER_CIRCLE, 32, new Color(156, 163, 175));
+        avatarLabel.setIcon(userIcon);
+        userPanel.add(avatarLabel, BorderLayout.WEST);
+
+        // Informations utilisateur
+        JPanel userInfoPanel = new JPanel(new BorderLayout());
+        userInfoPanel.setBackground(NAVBAR_BG);
+        userInfoPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+
+        userLabel = new JLabel("John Doe");
+        userLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        userLabel.setForeground(TEXT_PRIMARY);
+        userInfoPanel.add(userLabel, BorderLayout.NORTH);
+
+        JLabel roleLabel = new JLabel("Administrateur");
+        roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        roleLabel.setForeground(TEXT_SECONDARY);
+        userInfoPanel.add(roleLabel, BorderLayout.SOUTH);
+
+        userPanel.add(userInfoPanel, BorderLayout.CENTER);
+
+        // Flèche dropdown
+        FontIcon dropdownIcon = FontIcon.of(FontAwesomeSolid.CHEVRON_DOWN, 12, TEXT_SECONDARY);
+        JLabel dropdownLabel = new JLabel(dropdownIcon);
+        userPanel.add(dropdownLabel, BorderLayout.EAST);
+
+        // Effet hover
+        userPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                userPanel.setBackground(BUTTON_HOVER);
+                userInfoPanel.setBackground(BUTTON_HOVER);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                userPanel.setBackground(NAVBAR_BG);
+                userInfoPanel.setBackground(NAVBAR_BG);
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                showUserMenu(e);
+            }
+        });
+
+        return userPanel;
+    }
+
+    private void showUserMenu(MouseEvent e) {
+        JPopupMenu userMenu = new JPopupMenu();
+        userMenu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                BorderFactory.createEmptyBorder(5, 0, 5, 0)));
+
+        JMenuItem profileItem = createMenuItem("Mon profil", FontAwesomeSolid.USER);
+        JMenuItem settingsItem = createMenuItem("Paramètres", FontAwesomeSolid.COG);
+        JMenuItem helpItem = createMenuItem("Aide", FontAwesomeSolid.QUESTION_CIRCLE);
+        userMenu.addSeparator();
+        JMenuItem logoutItem = createMenuItem("Déconnexion", FontAwesomeSolid.SIGN_OUT_ALT);
+
+        userMenu.add(profileItem);
+        userMenu.add(settingsItem);
+        userMenu.add(helpItem);
+        userMenu.add(logoutItem);
+
+        userMenu.show(e.getComponent(), e.getX(), e.getY() + 10);
+    }
+
+    private JMenuItem createMenuItem(String text, FontAwesomeSolid icon) {
+        JMenuItem item = new JMenuItem(text);
+        item.setIcon(FontIcon.of(icon, 14, TEXT_SECONDARY));
+        item.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        item.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        return item;
     }
 
     private void startClock() {
         timer = new Timer(1000, e -> updateDateTime());
         timer.start();
-        updateDateTime(); // Mise à jour initiale
+        updateDateTime();
     }
 
     private void updateDateTime() {
         LocalDateTime now = LocalDateTime.now();
-        String formattedDateTime = now.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
-        dateTimeLabel.setText(formattedDateTime);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy, HH:mm");
+        dateTimeLabel.setText(now.format(formatter));
     }
 
     public void setTitle(String title) {
         titleLabel.setText(title);
     }
 
-    public void setUser(String username) {
-        FontIcon userIcon = FontIcon.of(FontAwesomeSolid.USER, 14, new Color(33, 37, 41));
-        userLabel.setIcon(userIcon);
+    public void setUser(String username, String role) {
         userLabel.setText(username);
     }
 
@@ -140,6 +321,24 @@ public class Navbar extends JPanel {
         super.removeNotify();
         if (timer != null) {
             timer.stop();
+        }
+    }
+
+    // Classe pour un champ de texte avec coins arrondis
+    private static class RoundedTextField extends JTextField {
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+            super.paintComponent(g);
+            g2.dispose();
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            // Ne pas peindre la bordure par défaut
         }
     }
 }
