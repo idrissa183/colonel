@@ -72,20 +72,20 @@ public class StockPanel extends JPanel {
     private JTable stockTable;
     private DefaultTableModel tableModel;
     private JLabel statsLabel;
-    
+
     // Composants formulaire mouvement
     private JTextField quantiteField;
     private JTextField motifField;
     private JComboBox<String> mouvementTypeCombo;
     private JComboBox<String> produitCombo;
     private List<ProduitDto> produitsList;
-    
+
     // Composants historique
     private JTable historyTable;
     private DefaultTableModel historyTableModel;
     private JTextField historySearchField;
     private JComboBox<String> historyFilterCombo;
-    
+
     // Validation des erreurs
     private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
 
@@ -213,23 +213,23 @@ public class StockPanel extends JPanel {
         searchField.setPreferredSize(new Dimension(200, 38));
         searchField.setMinimumSize(new Dimension(150, 38));
         searchField.addActionListener(e -> searchStock());
-        
+
         JButton searchButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR, e -> searchStock());
+                FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR, e -> searchStock());
         searchButton.setPreferredSize(new Dimension(40, 38));
-        
+
         JPanel searchInputPanel = new JPanel(new BorderLayout(5, 0));
         searchInputPanel.setBackground(CARD_COLOR);
         searchInputPanel.add(searchField, BorderLayout.CENTER);
         searchInputPanel.add(searchButton, BorderLayout.EAST);
-        
+
         searchGroup.add(searchInputPanel);
         firstRowFilters.add(searchGroup);
 
         // Filtre par statut
         JPanel statusGroup = createFieldGroup("Statut du stock");
-        filterCombo = new JComboBox<>(new String[] { 
-            "Tous les statuts", "Stock normal", "Stock faible", "Rupture de stock" 
+        filterCombo = new JComboBox<>(new String[] {
+                "Tous les statuts", "Stock normal", "Stock faible", "Rupture de stock"
         });
         styleComboBox(filterCombo);
         filterCombo.setPreferredSize(new Dimension(160, 38));
@@ -240,8 +240,8 @@ public class StockPanel extends JPanel {
 
         // Filtre par catégorie
         JPanel categoryGroup = createFieldGroup("Catégorie");
-        categoryFilterCombo = new JComboBox<>(new String[] { 
-            "Toutes catégories", "Nutrition", "Soins", "Cosmétiques", "Hygiène" 
+        categoryFilterCombo = new JComboBox<>(new String[] {
+                "Toutes catégories", "Nutrition", "Soins", "Cosmétiques", "Hygiène"
         });
         styleComboBox(categoryFilterCombo);
         categoryFilterCombo.setPreferredSize(new Dimension(130, 38));
@@ -258,16 +258,16 @@ public class StockPanel extends JPanel {
         actionButtons.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         JButton clearFiltersButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.TIMES, "Effacer filtres", SECONDARY_COLOR, e -> clearFilters());
+                FontAwesomeSolid.TIMES, "Effacer filtres", SECONDARY_COLOR, e -> clearFilters());
         JButton lowStockButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Stocks faibles", WARNING_COLOR, e -> showLowStock());
+                FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Stocks faibles", WARNING_COLOR, e -> showLowStock());
         JButton outOfStockButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.TIMES_CIRCLE, "Ruptures", DANGER_COLOR, e -> showOutOfStock());
+                FontAwesomeSolid.TIMES_CIRCLE, "Ruptures", DANGER_COLOR, e -> showOutOfStock());
 
         actionButtons.add(clearFiltersButton);
         actionButtons.add(lowStockButton);
         actionButtons.add(outOfStockButton);
-        
+
         filtersContainer.add(actionButtons);
         searchPanel.add(filtersContainer, BorderLayout.CENTER);
 
@@ -278,13 +278,13 @@ public class StockPanel extends JPanel {
         JPanel group = new JPanel();
         group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
         group.setBackground(CARD_COLOR);
-        
+
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         label.setForeground(TEXT_SECONDARY);
         label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-        
+
         group.add(label);
         return group;
     }
@@ -366,10 +366,10 @@ public class StockPanel extends JPanel {
 
         // Section détails du mouvement
         formPanel.add(createSectionTitle("Détails du Mouvement"));
-        
+
         // Type de mouvement
-        mouvementTypeCombo = new JComboBox<>(new String[] { 
-            "Entrée de stock", "Sortie de stock", "Ajustement d'inventaire", "Transfert", "Retour" 
+        mouvementTypeCombo = new JComboBox<>(new String[] {
+                "Entrée de stock", "Sortie de stock", "Ajustement d'inventaire", "Transfert", "Retour"
         });
         styleComboBox(mouvementTypeCombo);
         formPanel.add(createFieldPanelWithValidation("Type de mouvement :", mouvementTypeCombo));
@@ -383,7 +383,7 @@ public class StockPanel extends JPanel {
         motifField = createStyledTextField();
         motifField.setToolTipText("Indiquez le motif du mouvement (optionnel)");
         formPanel.add(createFieldPanelWithValidation("Motif :", motifField));
-        
+
         formPanel.add(Box.createVerticalStrut(20));
 
         // Boutons
@@ -408,9 +408,9 @@ public class StockPanel extends JPanel {
         buttonPanel.setBackground(CARD_COLOR);
 
         JButton saveButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.SAVE, "Enregistrer", SUCCESS_COLOR, e -> saveMouvement());
+                FontAwesomeSolid.SAVE, "Enregistrer", SUCCESS_COLOR, e -> saveMouvement());
         JButton clearButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR, e -> clearMouvementFields());
+                FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR, e -> clearMouvementFields());
 
         buttonPanel.add(saveButton);
         buttonPanel.add(Box.createHorizontalStrut(10));
@@ -446,7 +446,7 @@ public class StockPanel extends JPanel {
         historySearchField.addActionListener(e -> filterHistory());
 
         historyFilterCombo = new JComboBox<>(new String[] {
-            "Tous", "Entrées", "Sorties", "Ajustements", "Aujourd'hui", "Cette semaine"
+                "Tous", "Entrées", "Sorties", "Ajustements", "Aujourd'hui", "Cette semaine"
         });
         styleComboBox(historyFilterCombo);
         historyFilterCombo.setPreferredSize(new Dimension(120, 32));
@@ -471,7 +471,7 @@ public class StockPanel extends JPanel {
 
     private void createHistoryTable() {
         String[] columns = {
-            "Date/Heure", "Type", "Produit", "Quantité", "Motif", "Utilisateur"
+                "Date/Heure", "Type", "Produit", "Quantité", "Motif", "Utilisateur"
         };
 
         historyTableModel = new DefaultTableModel(columns, 0) {
@@ -502,8 +502,8 @@ public class StockPanel extends JPanel {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
-                java.awt.Component c = super.getTableCellRendererComponent(table, value, 
-                    isSelected, hasFocus, row, column);
+                java.awt.Component c = super.getTableCellRendererComponent(table, value,
+                        isSelected, hasFocus, row, column);
 
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(249, 250, 251));
@@ -549,7 +549,7 @@ public class StockPanel extends JPanel {
         field.setBackground(Color.WHITE);
         field.setForeground(TEXT_PRIMARY);
         field.setPreferredSize(new Dimension(0, 38));
-        
+
         // Effet focus
         field.addFocusListener(new FocusAdapter() {
             @Override
@@ -566,7 +566,7 @@ public class StockPanel extends JPanel {
                         BorderFactory.createEmptyBorder(8, 12, 8, 12)));
             }
         });
-        
+
         return field;
     }
 
@@ -579,7 +579,7 @@ public class StockPanel extends JPanel {
                 BorderFactory.createEmptyBorder(8, 12, 8, 12)));
         comboBox.setPreferredSize(new Dimension(0, 38));
         comboBox.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         // Effet focus
         comboBox.addFocusListener(new FocusAdapter() {
             @Override
@@ -710,7 +710,6 @@ public class StockPanel extends JPanel {
         }
     }
 
-
     // Méthodes d'action
     private void loadStock() {
         try {
@@ -816,18 +815,19 @@ public class StockPanel extends JPanel {
             String statusFilter = (String) filterCombo.getSelectedItem();
             String categoryFilter = (String) categoryFilterCombo.getSelectedItem();
             String searchText = searchField.getText().toLowerCase().trim();
-            
+
             tableModel.setRowCount(0);
-            
+
             for (ProduitDto produit : allProduits) {
                 // Filtre par recherche
                 if (!searchText.isEmpty()) {
                     boolean matchesSearch = produit.getLibelle().toLowerCase().contains(searchText) ||
-                                          (produit.getCodeBarre() != null && 
-                                           produit.getCodeBarre().toLowerCase().contains(searchText));
-                    if (!matchesSearch) continue;
+                            (produit.getCodeBarre() != null &&
+                                    produit.getCodeBarre().toLowerCase().contains(searchText));
+                    if (!matchesSearch)
+                        continue;
                 }
-                
+
                 // Filtre par statut
                 String status = getStockStatus(produit);
                 if (!"Tous les statuts".equals(statusFilter)) {
@@ -836,21 +836,22 @@ public class StockPanel extends JPanel {
                         continue;
                     }
                 }
-                
-                // TODO: Implémenter le filtre par catégorie quand les catégories seront disponibles
-                
+
+                // TODO: Implémenter le filtre par catégorie quand les catégories seront
+                // disponibles
+
                 String lastUpdate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                 Object[] row = {
-                    produit.getLibelle(),
-                    produit.getCodeBarre(),
-                    produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
-                    produit.getStockMinimum() != null ? produit.getStockMinimum().toString() : "0",
-                    status,
-                    lastUpdate
+                        produit.getLibelle(),
+                        produit.getCodeBarre(),
+                        produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
+                        produit.getStockMinimum() != null ? produit.getStockMinimum().toString() : "0",
+                        status,
+                        lastUpdate
                 };
                 tableModel.addRow(row);
             }
-            
+
         } catch (Exception e) {
             showErrorMessage("Erreur lors du filtrage: " + e.getMessage());
         }
@@ -860,33 +861,33 @@ public class StockPanel extends JPanel {
         if (!validateMouvementFields()) {
             return;
         }
-        
+
         try {
             // Récupération des valeurs
             int produitIndex = produitCombo.getSelectedIndex();
             String mouvementType = (String) mouvementTypeCombo.getSelectedItem();
             int quantite = Integer.parseInt(quantiteField.getText().trim());
             String motif = motifField.getText().trim();
-            
+
             // Ajout à l'historique
             String dateTime = LocalDateTime.now().format(
-                DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+                    DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             String produitName = produitsList.get(produitIndex).getLibelle();
-            
+
             Object[] historyRow = {
-                dateTime,
-                mouvementType,
-                produitName,
-                (mouvementType.contains("Sortie") ? "-" : "+") + quantite,
-                motif.isEmpty() ? "-" : motif,
-                "Admin" // TODO: Récupérer l'utilisateur connecté
+                    dateTime,
+                    mouvementType,
+                    produitName,
+                    (mouvementType.contains("Sortie") ? "-" : "+") + quantite,
+                    motif.isEmpty() ? "-" : motif,
+                    "Admin" // TODO: Récupérer l'utilisateur connecté
             };
             historyTableModel.insertRow(0, historyRow);
-            
+
             showSuccessMessage("✓ Mouvement de stock enregistré avec succès");
             clearMouvementFields();
             loadStock();
-            
+
         } catch (Exception e) {
             showErrorMessage("Erreur lors de l'enregistrement: " + e.getMessage());
         }
@@ -897,6 +898,8 @@ public class StockPanel extends JPanel {
         mouvementTypeCombo.setSelectedIndex(0);
         quantiteField.setText("");
         motifField.setText("");
+        clearErrors();
+
     }
 
     private void showStockDetails() {
@@ -949,7 +952,7 @@ public class StockPanel extends JPanel {
         loadHistoryData();
         showSuccessMessage("Données actualisées");
     }
-    
+
     // Nouvelles méthodes pour les fonctionnaliés améliorées
     private void clearFilters() {
         searchField.setText("");
@@ -957,54 +960,56 @@ public class StockPanel extends JPanel {
         categoryFilterCombo.setSelectedIndex(0);
         loadStock();
     }
-    
+
     private void showLowStock() {
         filterCombo.setSelectedItem("Stock faible");
         filterStock();
     }
-    
+
     private void showOutOfStock() {
         filterCombo.setSelectedItem("Rupture de stock");
         filterStock();
     }
-    
+
     private void filterHistory() {
         // TODO: Implémenter le filtrage de l'historique
         String searchText = historySearchField.getText().toLowerCase().trim();
         String filter = (String) historyFilterCombo.getSelectedItem();
-        
+
         // Pour l'instant, on recharge les données
         loadHistoryData();
     }
-    
+
     private void loadHistoryData() {
         historyTableModel.setRowCount(0);
-        
+
         // Données d'exemple améliorées
         Object[][] sampleData = {
-            {"04/08/2025 14:30", "Entrée de stock", "Longrich Nutriv", "+50", "Approvisionnement", "Admin"},
-            {"04/08/2025 11:15", "Sortie de stock", "Longrich White Tea", "-25", "Vente client", "Vendeur1"},
-            {"04/08/2025 09:45", "Ajustement d'inventaire", "Longrich Pi Cup", "+10", "Correction inventaire", "Manager"},
-            {"03/08/2025 16:20", "Entrée de stock", "Longrich Bambou", "+100", "Livraison fournisseur", "Admin"},
-            {"03/08/2025 13:10", "Sortie de stock", "Longrich Superbklenz", "-15", "Commande en ligne", "Vendeur2"},
-            {"02/08/2025 10:30", "Transfert", "Longrich Cordyceps", "-30", "Vers magasin B", "Manager"}
+                { "04/08/2025 14:30", "Entrée de stock", "Longrich Nutriv", "+50", "Approvisionnement", "Admin" },
+                { "04/08/2025 11:15", "Sortie de stock", "Longrich White Tea", "-25", "Vente client", "Vendeur1" },
+                { "04/08/2025 09:45", "Ajustement d'inventaire", "Longrich Pi Cup", "+10", "Correction inventaire",
+                        "Manager" },
+                { "03/08/2025 16:20", "Entrée de stock", "Longrich Bambou", "+100", "Livraison fournisseur", "Admin" },
+                { "03/08/2025 13:10", "Sortie de stock", "Longrich Superbklenz", "-15", "Commande en ligne",
+                        "Vendeur2" },
+                { "02/08/2025 10:30", "Transfert", "Longrich Cordyceps", "-30", "Vers magasin B", "Manager" }
         };
-        
+
         for (Object[] row : sampleData) {
             historyTableModel.addRow(row);
         }
     }
-    
+
     // Méthodes de validation
     private boolean validateMouvementFields() {
         clearErrors();
         boolean valid = true;
-        
+
         if (produitCombo.getSelectedIndex() == -1) {
             setFieldError(produitCombo, "Veuillez sélectionner un produit");
             valid = false;
         }
-        
+
         if (quantiteField.getText().trim().isEmpty()) {
             setFieldError(quantiteField, "La quantité est requise");
             valid = false;
@@ -1020,10 +1025,10 @@ public class StockPanel extends JPanel {
                 valid = false;
             }
         }
-        
+
         return valid;
     }
-    
+
     private void clearErrors() {
         errorLabels.forEach((field, label) -> {
             label.setVisible(false);
@@ -1039,7 +1044,7 @@ public class StockPanel extends JPanel {
             }
         });
     }
-    
+
     private void setFieldError(JComponent field, String message) {
         JLabel label = errorLabels.get(field);
         if (label != null) {
@@ -1056,12 +1061,12 @@ public class StockPanel extends JPanel {
                     BorderFactory.createEmptyBorder(7, 11, 7, 11)));
         }
     }
-    
+
     // Méthodes utilitaires pour les messages
     private void showSuccessMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Succès", JOptionPane.INFORMATION_MESSAGE);
     }
-    
+
     private void showErrorMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Erreur", JOptionPane.ERROR_MESSAGE);
     }

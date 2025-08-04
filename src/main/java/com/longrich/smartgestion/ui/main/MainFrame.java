@@ -16,12 +16,19 @@ import org.springframework.stereotype.Component;
 
 import com.longrich.smartgestion.ui.components.Navbar;
 import com.longrich.smartgestion.ui.components.Sidebar;
+import com.longrich.smartgestion.ui.panel.AnalyticsPanel;
+import com.longrich.smartgestion.ui.panel.BackupPanel;
 import com.longrich.smartgestion.ui.panel.ClientPanel;
 import com.longrich.smartgestion.ui.panel.CommandePanel;
 import com.longrich.smartgestion.ui.panel.DashboardPanel;
+import com.longrich.smartgestion.ui.panel.FacturePanel;
 import com.longrich.smartgestion.ui.panel.FournisseurPanel;
 import com.longrich.smartgestion.ui.panel.ProduitPanel;
+import com.longrich.smartgestion.ui.panel.PvPanel;
+import com.longrich.smartgestion.ui.panel.SettingsPanel;
 import com.longrich.smartgestion.ui.panel.StockPanel;
+import com.longrich.smartgestion.ui.panel.UserPanel;
+import com.longrich.smartgestion.ui.panel.VentePanel;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +46,13 @@ public class MainFrame extends JFrame {
     private final StockPanel stockPanel;
     private final CommandePanel commandePanel;
     private final FournisseurPanel fournisseurPanel;
+    private final AnalyticsPanel analyticsPanel;
+    private final FacturePanel facturePanel;
+    private final VentePanel ventePanel;
+    private final PvPanel pvPanel;
+    private final SettingsPanel settingsPanel;
+    private final UserPanel userPanel;
+    private final BackupPanel backupPanel;
 
     private JPanel contentPanel;
     private CardLayout cardLayout;
@@ -77,6 +91,13 @@ public class MainFrame extends JFrame {
         contentPanel.add(stockPanel, "stock");
         contentPanel.add(commandePanel, "commandes");
         contentPanel.add(fournisseurPanel, "fournisseurs");
+        contentPanel.add(analyticsPanel, "analytics");
+        contentPanel.add(facturePanel, "factures");
+        contentPanel.add(ventePanel, "ventes");
+        contentPanel.add(pvPanel, "pv");
+        contentPanel.add(settingsPanel, "settings");
+        contentPanel.add(userPanel, "users");
+        contentPanel.add(backupPanel, "backup");
 
         // Configurer la sidebar pour la navigation
         sidebar.setNavigationHandler(this::showPanel);
@@ -124,9 +145,14 @@ public class MainFrame extends JFrame {
             case "produits" -> "Gestion des produits";
             case "stock" -> "Gestion du stock";
             case "commandes" -> "Gestion des commandes";
-            case "factures" -> "Gestion des factures";
             case "fournisseurs" -> "Gestion des fournisseurs";
+            case "factures" -> "Gestion des factures";
             case "ventes" -> "Gestion des ventes";
+            case "analytics" -> "Analytics";
+            case "pv" -> "Gestion des PV";
+            case "settings" -> "Paramètres";
+            case "users" -> "Gestion des utilisateurs";
+            case "backup" -> "Sauvegardes";
             default -> "SmartGestion";
         };
 
