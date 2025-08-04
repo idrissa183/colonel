@@ -19,6 +19,7 @@ import com.longrich.smartgestion.ui.components.Sidebar;
 import com.longrich.smartgestion.ui.panel.ClientPanel;
 import com.longrich.smartgestion.ui.panel.CommandePanel;
 import com.longrich.smartgestion.ui.panel.DashboardPanel;
+import com.longrich.smartgestion.ui.panel.FournisseurPanel;
 import com.longrich.smartgestion.ui.panel.ProduitPanel;
 import com.longrich.smartgestion.ui.panel.StockPanel;
 
@@ -37,6 +38,7 @@ public class MainFrame extends JFrame {
     private final ProduitPanel produitPanel;
     private final StockPanel stockPanel;
     private final CommandePanel commandePanel;
+    private final FournisseurPanel fournisseurPanel;
 
     private JPanel contentPanel;
     private CardLayout cardLayout;
@@ -74,6 +76,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(produitPanel, "produits");
         contentPanel.add(stockPanel, "stock");
         contentPanel.add(commandePanel, "commandes");
+        contentPanel.add(fournisseurPanel, "fournisseurs");
 
         // Configurer la sidebar pour la navigation
         sidebar.setNavigationHandler(this::showPanel);
