@@ -343,12 +343,12 @@ public class ProduitPanel extends JPanel {
         JPanel container = new JPanel(new BorderLayout());
         container.setBackground(BACKGROUND_COLOR);
 
-        // Panneau de recherche moderne
-        JPanel searchContainer = createSearchPanel();
-        container.add(searchContainer, BorderLayout.NORTH);
+        // Panneau de recherche
+        JPanel searchPanel = createSearchPanel();
+        container.add(searchPanel, BorderLayout.NORTH);
 
-        // Table moderne
-        JPanel tablePanel = createModernTable();
+        // Table
+        JPanel tablePanel = createTablePanel();
         container.add(tablePanel, BorderLayout.CENTER);
 
         return container;
@@ -361,7 +361,7 @@ public class ProduitPanel extends JPanel {
                 BorderFactory.createLineBorder(BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)));
 
-        JLabel searchLabel = new JLabel("Rechercher un fournisseur");
+        JLabel searchLabel = new JLabel("Rechercher un produit");
         searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         searchLabel.setForeground(TEXT_PRIMARY);
         panel.add(searchLabel, BorderLayout.NORTH);
@@ -386,9 +386,9 @@ public class ProduitPanel extends JPanel {
     }
 
     private JPanel createTablePanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(CARD_COLOR);
-        panel.setBorder(BorderFactory.createCompoundBorder(
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(CARD_COLOR);
+        tablePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
@@ -397,30 +397,12 @@ public class ProduitPanel extends JPanel {
         tableHeaderPanel.setBackground(CARD_COLOR);
         tableHeaderPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
 
-        JLabel tableTitle = new JLabel("Liste des Fournisseurs");
+        JLabel tableTitle = new JLabel("Liste des Produits");
         tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         tableTitle.setForeground(TEXT_PRIMARY);
         tableHeaderPanel.add(tableTitle, BorderLayout.WEST);
 
-        panel.add(tableHeaderPanel, BorderLayout.NORTH);
-
-        // Table
-        createTable();
-        JScrollPane scrollPane = new JScrollPane(produitTable);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        scrollPane.getViewport().setBackground(Color.WHITE);
-
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
-    private JPanel createModernTable() {
-        JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBackground(CARD_COLOR);
-        tablePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        tablePanel.add(tableHeaderPanel, BorderLayout.NORTH);
 
         // Modèle de table
         String[] columns = { "Code", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut" };
