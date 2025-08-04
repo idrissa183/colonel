@@ -134,14 +134,14 @@ public class CommandePanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton newCommandeButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.PLUS, "Nouvelle commande", SUCCESS_COLOR, e -> showNewCommandeDialog());
+        // JButton newCommandeButton = ButtonFactory.createActionButton(
+        //         FontAwesomeSolid.PLUS, "Nouvelle commande", SUCCESS_COLOR, e -> showNewCommandeDialog());
         JButton exportButton = ButtonFactory.createActionButton(
                 FontAwesomeSolid.FILE_EXPORT, "Exporter", INFO_COLOR, e -> exportCommandes());
         JButton refreshButton = ButtonFactory.createActionButton(
                 FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
-        panel.add(newCommandeButton);
+        // panel.add(newCommandeButton);
         panel.add(exportButton);
         panel.add(refreshButton);
 
@@ -862,12 +862,12 @@ public class CommandePanel extends JPanel {
     private void saveCommande() {
         // Validation complète avec gestion d'erreurs moderne
         if (!validateCommandeFields()) {
-            showWarningMessage("Veuillez corriger les erreurs dans les informations de la commande");
+            // showWarningMessage("Veuillez corriger les erreurs dans les informations de la commande");
             return;
         }
 
         if (lignesCommande.isEmpty()) {
-            showWarningMessage("Veuillez ajouter au moins un produit à la commande");
+            // showWarningMessage("Veuillez ajouter au moins un produit à la commande");
             return;
         }
 
@@ -950,7 +950,7 @@ public class CommandePanel extends JPanel {
         updateTotalCommande();
         clearAllErrors();
         
-        showInfoMessage("Formulaire vidé");
+        // showInfoMessage("Formulaire vidé");
     }
 
     private void searchCommandes() {
