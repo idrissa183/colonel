@@ -5,8 +5,7 @@ import lombok.Getter;
 @Getter
 public enum UserRole {
     ADMIN("ADMIN", "Administrateur"),
-    USER("USER", "Utilisateur"),
-    MANAGER("MANAGER", "Gestionnaire");
+    USER("USER", "Utilisateur");
 
     private final String code;
     private final String libelle;

@@ -81,6 +81,13 @@
 			<version>3.6.1</version>
 		</dependency>
 
+		<!-- SwingX for auto-complete support -->
+		<dependency>
+			<groupId>org.swinglabs</groupId>
+			<artifactId>swingx</artifactId>
+			<version>1.6.1</version>
+		</dependency>
+
 		<!-- Icons -->
 		<dependency>
 			<groupId>org.kordamp.ikonli</groupId>

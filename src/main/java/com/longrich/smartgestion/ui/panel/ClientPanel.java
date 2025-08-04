@@ -29,6 +29,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
@@ -224,6 +225,8 @@ public class ClientPanel extends JPanel {
         provinceCombo = new JComboBox<>();
         styleComboBox(provinceCombo);
         loadProvinces();
+        provinceCombo.setEditable(true);
+        AutoCompleteDecorator.decorate(provinceCombo);
         telephoneField = createStyledTextField();
         emailField = createStyledTextField();
         adresseField = createStyledTextField();
