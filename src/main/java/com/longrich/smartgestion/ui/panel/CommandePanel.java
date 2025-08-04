@@ -6,6 +6,8 @@ import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ClientService;
 import com.longrich.smartgestion.service.ProduitService;
 import com.longrich.smartgestion.ui.components.ButtonFactory;
+import com.longrich.smartgestion.ui.components.ComponentFactory;
+import com.longrich.smartgestion.ui.components.ModernDatePicker;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,13 +22,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
-// import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-// import java.awt.event.MouseAdapter;
-// import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+// import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,17 +59,24 @@ public class CommandePanel extends JPanel {
     private DefaultTableModel commandesTableModel;
     private JLabel statsLabel;
 
-    // Composants pour nouvelle commande
+    // Composants pour nouvelle commande avec validation
+    private ComponentFactory.FieldPanel clientFieldPanel;
     private JComboBox<String> clientCombo;
-    private JTextField dateCommandeField;
+    private ComponentFactory.FieldPanel dateFieldPanel;
+    private ModernDatePicker dateCommandePicker;
+    private ComponentFactory.FieldPanel statutFieldPanel;
     private JComboBox<String> statutCombo;
+    private ComponentFactory.FieldPanel observationsFieldPanel;
     private JTextArea observationsArea;
 
-    // Table des lignes de commande
+    // Table des lignes de commande avec validation
     private JTable lignesTable;
     private DefaultTableModel lignesTableModel;
+    private ComponentFactory.FieldPanel produitFieldPanel;
     private JComboBox<String> produitCombo;
+    private ComponentFactory.FieldPanel quantiteFieldPanel;
     private JTextField quantiteField;
+    private ComponentFactory.FieldPanel prixFieldPanel;
     private JTextField prixUnitaireField;
     private JLabel totalCommandeLabel;
 
@@ -174,40 +180,52 @@ public class CommandePanel extends JPanel {
     }
 
     private JPanel createSearchPanel() {
-        JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setBackground(CARD_COLOR);
-        searchPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
+        JPanel searchPanel = ComponentFactory.createCardPanel();
+        searchPanel.setLayout(new BorderLayout());
 
         // Titre
-        JLabel searchTitle = new JLabel("Liste des Commandes");
-        searchTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        searchTitle.setForeground(TEXT_PRIMARY);
+        JLabel searchTitle = ComponentFactory.createSectionTitle("Liste des Commandes");
 
-        // Panneau de recherche et filtres
-        JPanel filtersPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        filtersPanel.setBackground(CARD_COLOR);
+        // Panneau de filtres moderne
+        JPanel filtersPanel = new JPanel(new GridBagLayout());
+        filtersPanel.setBackground(ComponentFactory.getCardColor());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 15, 0, 0);
+        gbc.anchor = GridBagConstraints.WEST;
 
-        // Champ de recherche
-        searchField = createStyledTextField();
-        searchField.setPreferredSize(new Dimension(200, 36));
+        // Champ de recherche avec icône
+        searchField = ComponentFactory.createStyledTextField("Rechercher par numéro, client...");
+        searchField.setPreferredSize(new Dimension(250, 38));
         searchField.addActionListener(e -> searchCommandes());
+        JPanel searchPanel_inner = ComponentFactory.createSearchField(searchField);
+        searchPanel_inner.setPreferredSize(new Dimension(250, 38));
 
-        // Filtre par statut
-        statusFilterCombo = new JComboBox<>(
-                new String[] { "Tous", "En attente", "Confirmée", "En cours", "Livrée", "Annulée" });
-        styleComboBox(statusFilterCombo);
+        // Filtre par statut stylisé
+        String[] statutOptions = { "Tous les statuts", "En attente", "Confirmée", "En cours", "Livrée", "Annulée" };
+        statusFilterCombo = ComponentFactory.createStyledComboBox(statutOptions);
+        statusFilterCombo.setPreferredSize(new Dimension(150, 38));
         statusFilterCombo.addActionListener(e -> filterCommandes());
 
-        filtersPanel.add(new JLabel("Rechercher:"));
-        filtersPanel.add(searchField);
-        filtersPanel.add(new JLabel("Statut:"));
-        filtersPanel.add(statusFilterCombo);
+        // Bouton de recherche
+        JButton searchButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.SEARCH, "Rechercher", ComponentFactory.getPrimaryColor(), e -> searchCommandes());
+        searchButton.setPreferredSize(new Dimension(120, 38));
 
-        // Layout
+        // Layout des filtres
+        gbc.gridx = 0;
+        filtersPanel.add(ComponentFactory.createLabel("Recherche:"), gbc);
+        gbc.gridx = 1;
+        filtersPanel.add(searchPanel_inner, gbc);
+        gbc.gridx = 2;
+        filtersPanel.add(ComponentFactory.createLabel("Statut:"), gbc);
+        gbc.gridx = 3;
+        filtersPanel.add(statusFilterCombo, gbc);
+        gbc.gridx = 4;
+        filtersPanel.add(searchButton, gbc);
+
+        // Layout principal
         JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(CARD_COLOR);
+        topPanel.setBackground(ComponentFactory.getCardColor());
         topPanel.add(searchTitle, BorderLayout.WEST);
         topPanel.add(filtersPanel, BorderLayout.EAST);
 
@@ -266,50 +284,51 @@ public class CommandePanel extends JPanel {
     }
 
     private JPanel createCommandeHeaderPanel() {
-        JPanel panel = new JPanel();
+        JPanel panel = ComponentFactory.createCardPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(CARD_COLOR);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
 
         // Titre
-        JLabel titleLabel = new JLabel("Informations de la Commande");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        titleLabel.setForeground(TEXT_PRIMARY);
+        JLabel titleLabel = ComponentFactory.createSectionTitle("Informations de la Commande");
         titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
-        panel.add(Box.createVerticalStrut(20));
+        panel.add(Box.createVerticalStrut(10));
 
-        // Première ligne - Client et Date
+        // Première ligne - Client et Date avec validation
         JPanel firstRow = new JPanel(new GridLayout(1, 2, 20, 0));
-        firstRow.setBackground(CARD_COLOR);
+        firstRow.setBackground(ComponentFactory.getCardColor());
+        firstRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         firstRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
-        clientCombo = new JComboBox<>();
-        styleComboBox(clientCombo);
-        firstRow.add(createFieldPanel("Client:", clientCombo));
+        // Client avec validation
+        clientCombo = ComponentFactory.createStyledComboBox();
+        clientFieldPanel = ComponentFactory.createFieldPanel("Client", clientCombo, true);
+        firstRow.add(clientFieldPanel);
 
-        dateCommandeField = createStyledTextField();
-        dateCommandeField.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        firstRow.add(createFieldPanel("Date:", dateCommandeField));
+        // Date avec DatePicker moderne
+        dateCommandePicker = new ModernDatePicker(LocalDate.now());
+        dateFieldPanel = ComponentFactory.createFieldPanel("Date de commande", dateCommandePicker, true);
+        firstRow.add(dateFieldPanel);
 
         panel.add(firstRow);
+        panel.add(Box.createVerticalStrut(10));
 
         // Deuxième ligne - Statut et Observations
         JPanel secondRow = new JPanel(new GridLayout(1, 2, 20, 0));
-        secondRow.setBackground(CARD_COLOR);
+        secondRow.setBackground(ComponentFactory.getCardColor());
+        secondRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         secondRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        statutCombo = new JComboBox<>(new String[] { "En attente", "Confirmée", "En cours", "Livrée", "Annulée" });
-        styleComboBox(statutCombo);
-        secondRow.add(createFieldPanel("Statut:", statutCombo));
+        // Statut avec validation
+        String[] statutOptions = { "En attente", "Confirmée", "En cours", "Livrée", "Annulée" };
+        statutCombo = ComponentFactory.createStyledComboBox(statutOptions);
+        statutFieldPanel = ComponentFactory.createFieldPanel("Statut", statutCombo, true);
+        secondRow.add(statutFieldPanel);
 
-        observationsArea = createStyledTextArea();
-        JScrollPane obsScrollPane = new JScrollPane(observationsArea);
-        obsScrollPane.setPreferredSize(new Dimension(0, 80));
-        obsScrollPane.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
-        secondRow.add(createFieldPanel("Observations:", obsScrollPane));
+        // Observations
+        observationsArea = ComponentFactory.createStyledTextArea(3);
+        JScrollPane obsScrollPane = ComponentFactory.createStyledScrollPane(observationsArea);
+        observationsFieldPanel = ComponentFactory.createFieldPanel("Observations", obsScrollPane);
+        secondRow.add(observationsFieldPanel);
 
         panel.add(secondRow);
 
@@ -338,43 +357,60 @@ public class CommandePanel extends JPanel {
     }
 
     private JPanel createAddLignePanel() {
-        JPanel panel = new JPanel();
+        JPanel panel = ComponentFactory.createCardPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(CARD_COLOR);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
 
-        // Titre
-        JLabel titleLabel = new JLabel("Ajouter un Produit");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        titleLabel.setForeground(TEXT_PRIMARY);
+        // Titre avec style moderne
+        JLabel titleLabel = ComponentFactory.createSectionTitle("Ajouter un Produit à la Commande");
         titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
-        panel.add(Box.createVerticalStrut(15));
+        panel.add(Box.createVerticalStrut(10));
 
-        // Ligne de saisie
-        JPanel inputRow = new JPanel(new GridLayout(1, 4, 15, 0));
-        inputRow.setBackground(CARD_COLOR);
-        inputRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        // Ligne de saisie parfaitement alignée
+        JPanel inputRow = new JPanel(new GridBagLayout());
+        inputRow.setBackground(ComponentFactory.getCardColor());
+        inputRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        inputRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        produitCombo = new JComboBox<>();
-        styleComboBox(produitCombo);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.insets = new Insets(0, 0, 0, 15);
+        gbc.weighty = 1.0;
+
+        // Produit avec validation
+        produitCombo = ComponentFactory.createStyledComboBox();
         produitCombo.addActionListener(e -> updatePrixUnitaire());
-        inputRow.add(createFieldPanel("Produit:", produitCombo));
+        produitFieldPanel = ComponentFactory.createFieldPanel("Produit", produitCombo, true);
+        gbc.gridx = 0;
+        gbc.weightx = 0.4;
+        inputRow.add(produitFieldPanel, gbc);
 
-        quantiteField = createStyledTextField();
-        inputRow.add(createFieldPanel("Quantité:", quantiteField));
+        // Quantité avec validation
+        quantiteField = ComponentFactory.createStyledTextField("Ex: 5");
+        quantiteFieldPanel = ComponentFactory.createFieldPanel("Quantité", quantiteField, true);
+        gbc.gridx = 1;
+        gbc.weightx = 0.2;
+        inputRow.add(quantiteFieldPanel, gbc);
 
-        prixUnitaireField = createStyledTextField();
-        inputRow.add(createFieldPanel("Prix unitaire:", prixUnitaireField));
+        // Prix unitaire avec validation
+        prixUnitaireField = ComponentFactory.createStyledTextField("Prix auto-rempli");
+        prixFieldPanel = ComponentFactory.createFieldPanel("Prix unitaire (FCFA)", prixUnitaireField, true);
+        gbc.gridx = 2;
+        gbc.weightx = 0.25;
+        inputRow.add(prixFieldPanel, gbc);
 
-        JButton addButton = createModernButton("Ajouter", FontAwesomeSolid.PLUS, SUCCESS_COLOR,
-                e -> addLigneCommande());
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        buttonPanel.setBackground(CARD_COLOR);
+        // Bouton d'ajout parfaitement centré
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 20));
+        buttonPanel.setBackground(ComponentFactory.getCardColor());
+        JButton addButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.PLUS, "Ajouter", ComponentFactory.getSuccessColor(), e -> addLigneCommande());
+        addButton.setPreferredSize(new Dimension(100, 38));
         buttonPanel.add(addButton);
-        inputRow.add(buttonPanel);
+        
+        gbc.gridx = 3;
+        gbc.weightx = 0.15;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        inputRow.add(buttonPanel, gbc);
 
         panel.add(inputRow);
 
@@ -444,58 +480,98 @@ public class CommandePanel extends JPanel {
         return panel;
     }
 
-    // Méthodes utilitaires pour le styling (réutilisation du code précédent)
-    private JTextField createStyledTextField() {
-        JTextField field = new JTextField();
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        field.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        field.setBackground(Color.WHITE);
-        field.setForeground(TEXT_PRIMARY);
-        field.setPreferredSize(new Dimension(0, 36));
-        return field;
+    // Validation des champs avec affichage d'erreurs
+    private boolean validateCommandeFields() {
+        boolean isValid = true;
+
+        // Validation client
+        if (clientCombo.getSelectedIndex() == -1) {
+            clientFieldPanel.setError("Veuillez sélectionner un client");
+            isValid = false;
+        } else {
+            clientFieldPanel.clearError();
+        }
+
+        // Validation date
+        if (dateCommandePicker.getSelectedDate() == null) {
+            dateFieldPanel.setError("Veuillez sélectionner une date");
+            isValid = false;
+        } else {
+            dateFieldPanel.clearError();
+        }
+
+        // Validation statut
+        if (statutCombo.getSelectedIndex() == -1) {
+            statutFieldPanel.setError("Veuillez sélectionner un statut");
+            isValid = false;
+        } else {
+            statutFieldPanel.clearError();
+        }
+
+        return isValid;
     }
 
-    private JTextArea createStyledTextArea() {
-        JTextArea area = new JTextArea(3, 0);
-        area.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        area.setBackground(Color.WHITE);
-        area.setForeground(TEXT_PRIMARY);
-        area.setLineWrap(true);
-        area.setWrapStyleWord(true);
-        area.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
-        return area;
+    private boolean validateLigneFields() {
+        boolean isValid = true;
+
+        // Validation produit
+        if (produitCombo.getSelectedIndex() == -1) {
+            produitFieldPanel.setError("Sélectionnez un produit");
+            isValid = false;
+        } else {
+            produitFieldPanel.clearError();
+        }
+
+        // Validation quantité
+        String quantiteText = quantiteField.getText().trim();
+        if (quantiteText.isEmpty()) {
+            quantiteFieldPanel.setError("Saisissez la quantité");
+            isValid = false;
+        } else {
+            try {
+                int quantite = Integer.parseInt(quantiteText);
+                if (quantite <= 0) {
+                    quantiteFieldPanel.setError("La quantité doit être positive");
+                    isValid = false;
+                } else {
+                    quantiteFieldPanel.clearError();
+                }
+            } catch (NumberFormatException e) {
+                quantiteFieldPanel.setError("Quantité invalide");
+                isValid = false;
+            }
+        }
+
+        // Validation prix
+        String prixText = prixUnitaireField.getText().trim();
+        if (prixText.isEmpty()) {
+            prixFieldPanel.setError("Le prix est requis");
+            isValid = false;
+        } else {
+            try {
+                BigDecimal prix = new BigDecimal(prixText);
+                if (prix.compareTo(BigDecimal.ZERO) <= 0) {
+                    prixFieldPanel.setError("Le prix doit être positif");
+                    isValid = false;
+                } else {
+                    prixFieldPanel.clearError();
+                }
+            } catch (NumberFormatException e) {
+                prixFieldPanel.setError("Prix invalide");
+                isValid = false;
+            }
+        }
+
+        return isValid;
     }
 
-    private void styleComboBox(JComboBox<?> comboBox) {
-        comboBox.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        comboBox.setBackground(Color.WHITE);
-        comboBox.setForeground(TEXT_PRIMARY);
-        comboBox.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        comboBox.setPreferredSize(new Dimension(0, 36));
-    }
-
-    private JPanel createFieldPanel(String labelText, JComponent field) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(CARD_COLOR);
-        panel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-
-        JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        label.setForeground(TEXT_SECONDARY);
-        label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
-
-        field.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-
-        panel.add(label);
-        panel.add(field);
-
-        return panel;
+    private void clearAllErrors() {
+        clientFieldPanel.clearError();
+        dateFieldPanel.clearError();
+        statutFieldPanel.clearError();
+        produitFieldPanel.clearError();
+        quantiteFieldPanel.clearError();
+        prixFieldPanel.clearError();
     }
 
     private void styleTable(JTable table) {
@@ -724,14 +800,12 @@ public class CommandePanel extends JPanel {
     }
 
     private void addLigneCommande() {
-        try {
-            if (produitCombo.getSelectedIndex() == -1 || quantiteField.getText().trim().isEmpty() ||
-                    prixUnitaireField.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs",
-                        "Validation", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
+        // Validation avec affichage d'erreurs contextuelles
+        if (!validateLigneFields()) {
+            return;
+        }
 
+        try {
             String produitNom = (String) produitCombo.getSelectedItem();
             int quantite = Integer.parseInt(quantiteField.getText().trim());
             BigDecimal prix = new BigDecimal(prixUnitaireField.getText().trim());
@@ -739,27 +813,35 @@ public class CommandePanel extends JPanel {
             LigneCommandeTemp ligne = new LigneCommandeTemp(produitNom, quantite, prix);
             lignesCommande.add(ligne);
 
-            // Ajouter à la table
+            // Ajouter à la table avec formatage moderne
             Object[] row = {
                     ligne.getProduitNom(),
-                    ligne.getQuantite(),
-                    ligne.getPrixUnitaire() + " FCFA",
-                    ligne.getTotal() + " FCFA",
+                    String.format("%d", ligne.getQuantite()),
+                    String.format("%,.0f FCFA", ligne.getPrixUnitaire()),
+                    String.format("%,.0f FCFA", ligne.getTotal()),
                     ""
             };
             lignesTableModel.addRow(row);
 
-            // Calculer le total
+            // Calculer le total avec animation
             updateTotalCommande();
 
-            // Vider les champs
-            quantiteField.setText("");
-            prixUnitaireField.setText("");
+            // Vider les champs avec réinitialisation propre
+            clearLigneFields();
+            
+            // Animation de succès subtile
+            showSuccessMessage("✓ Produit ajouté à la commande");
 
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Veuillez saisir des valeurs numériques valides",
-                    "Erreur", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            showErrorMessage("Erreur lors de l'ajout du produit: " + e.getMessage());
         }
+    }
+
+    private void clearLigneFields() {
+        produitCombo.setSelectedIndex(-1);
+        quantiteField.setText("");
+        prixUnitaireField.setText("");
+        clearAllErrors();
     }
 
     private void removeLigneCommande(int index) {
@@ -778,38 +860,97 @@ public class CommandePanel extends JPanel {
     }
 
     private void saveCommande() {
-        if (clientCombo.getSelectedIndex() == -1) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client",
-                    "Validation", JOptionPane.WARNING_MESSAGE);
+        // Validation complète avec gestion d'erreurs moderne
+        if (!validateCommandeFields()) {
+            showWarningMessage("Veuillez corriger les erreurs dans les informations de la commande");
             return;
         }
 
         if (lignesCommande.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Veuillez ajouter au moins un produit",
-                    "Validation", JOptionPane.WARNING_MESSAGE);
+            showWarningMessage("Veuillez ajouter au moins un produit à la commande");
             return;
         }
 
-        // Simulation de sauvegarde
-        JOptionPane.showMessageDialog(this, "✓ Commande sauvegardée avec succès",
-                "Succès", JOptionPane.INFORMATION_MESSAGE);
+        // Confirmation avec détails
+        BigDecimal total = lignesCommande.stream()
+                .map(LigneCommandeTemp::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                String.format("Confirmer la sauvegarde de la commande ?\n\n" +
+                             "Client: %s\n" +
+                             "Date: %s\n" +
+                             "Produits: %d\n" +
+                             "Total: %,.0f FCFA",
+                             clientCombo.getSelectedItem(),
+                             dateCommandePicker.getDateText(),
+                             lignesCommande.size(),
+                             total),
+                "Confirmation de sauvegarde",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
 
-        clearCommande();
-        loadCommandes();
+        if (option == JOptionPane.YES_OPTION) {
+            try {
+                // Simulation de sauvegarde avec progress
+                showInfoMessage("Sauvegarde en cours...");
+                // TODO: Implémenter la sauvegarde réelle
+                
+                showSuccessMessage("✓ Commande sauvegardée avec succès (N° CMD-" + 
+                                  String.format("%04d", System.currentTimeMillis() % 10000) + ")");
+                
+                clearCommande();
+                loadCommandes();
+                
+                // Basculer vers l'onglet liste
+                switchToListTab();
+                
+            } catch (Exception e) {
+                showErrorMessage("Erreur lors de la sauvegarde: " + e.getMessage());
+            }
+        }
+    }
+
+    private void switchToListTab() {
+        Container parent = getParent();
+        while (parent != null && !(parent instanceof JTabbedPane)) {
+            parent = parent.getParent();
+        }
+        if (parent instanceof JTabbedPane) {
+            ((JTabbedPane) parent).setSelectedIndex(0);
+        }
     }
 
     private void clearCommande() {
+        // Confirmation avant vidage si des données existent
+        if (!lignesCommande.isEmpty() || clientCombo.getSelectedIndex() != -1) {
+            int option = JOptionPane.showConfirmDialog(
+                    this,
+                    "Êtes-vous sûr de vouloir vider tous les champs ?\n" +
+                    "Toutes les données non sauvegardées seront perdues.",
+                    "Confirmation",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            
+            if (option != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+
+        // Réinitialisation complète avec gestion d'erreurs
         clientCombo.setSelectedIndex(-1);
-        dateCommandeField.setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        dateCommandePicker.setSelectedDate(LocalDate.now());
         statutCombo.setSelectedIndex(0);
         observationsArea.setText("");
-        produitCombo.setSelectedIndex(-1);
-        quantiteField.setText("");
-        prixUnitaireField.setText("");
+        clearLigneFields();
 
         lignesCommande.clear();
         lignesTableModel.setRowCount(0);
         updateTotalCommande();
+        clearAllErrors();
+        
+        showInfoMessage("Formulaire vidé");
     }
 
     private void searchCommandes() {
@@ -835,13 +976,34 @@ public class CommandePanel extends JPanel {
     }
 
     private void exportCommandes() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement",
-                "Information", JOptionPane.INFORMATION_MESSAGE);
+        showInfoMessage("Fonctionnalité d'export en cours de développement");
     }
 
     private void refreshData() {
-        loadCommandes();
-        loadClients();
-        loadProduits();
+        try {
+            loadCommandes();
+            loadClients();
+            loadProduits();
+            showSuccessMessage("Données actualisées");
+        } catch (Exception e) {
+            showErrorMessage("Erreur lors de l'actualisation: " + e.getMessage());
+        }
+    }
+
+    // Méthodes utilitaires pour les messages avec style moderne
+    private void showSuccessMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Succès", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Erreur", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void showWarningMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Avertissement", JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void showInfoMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 }
