@@ -9,7 +9,9 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -35,7 +37,6 @@ import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 
 import com.longrich.smartgestion.dto.ClientDTO;
-import com.longrich.smartgestion.entity.Province;
 import com.longrich.smartgestion.enums.TypeClient;
 import com.longrich.smartgestion.service.ClientService;
 import com.longrich.smartgestion.service.ProvinceService;
@@ -79,6 +80,7 @@ public class ClientPanel extends JPanel {
     private JTextField codePlacementField;
     private JTextField totalPvField;
     private JCheckBox codeDefinitifCheckBox;
+    private JPanel formPanel;
 
     private JTable clientTable;
     private DefaultTableModel tableModel;
@@ -86,6 +88,7 @@ public class ClientPanel extends JPanel {
     private JLabel statsLabel;
 
     private ClientDTO currentClient;
+    private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
 
     @PostConstruct
     public void initializeUI() {
@@ -170,7 +173,7 @@ public class ClientPanel extends JPanel {
         JPanel container = new JPanel(new BorderLayout());
         container.setBackground(BACKGROUND_COLOR);
 
-        JPanel formPanel = createModernFormPanel();
+        formPanel = createModernFormPanel();
         JScrollPane scrollPane = new JScrollPane(formPanel);
         scrollPane.setBorder(null);
         scrollPane.setBackground(BACKGROUND_COLOR);
@@ -183,7 +186,7 @@ public class ClientPanel extends JPanel {
     }
 
     private JPanel createModernFormPanel() {
-        JPanel formPanel = new JPanel();
+        formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
         formPanel.setBackground(CARD_COLOR);
         formPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -291,9 +294,21 @@ public class ClientPanel extends JPanel {
         label.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         label.setForeground(TEXT_SECONDARY);
 
+        JLabel errorLabel = new JLabel();
+        errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        errorLabel.setForeground(DANGER_COLOR);
+        errorLabel.setVisible(false);
+
+        JPanel fieldWrapper = new JPanel(new BorderLayout());
+        fieldWrapper.setBackground(CARD_COLOR);
+        fieldWrapper.add(field, BorderLayout.CENTER);
+        fieldWrapper.add(errorLabel, BorderLayout.SOUTH);
+
         panel.add(label, BorderLayout.NORTH);
-        panel.add(field, BorderLayout.CENTER);
+        panel.add(fieldWrapper, BorderLayout.CENTER);
         panel.add(Box.createVerticalStrut(10), BorderLayout.SOUTH);
+
+        errorLabels.put(field, errorLabel);
 
         return panel;
     }
@@ -652,7 +667,85 @@ public class ClientPanel extends JPanel {
         codeDefinitifCheckBox.setSelected(client.getCodeDefinitif() != null ? client.getCodeDefinitif() : false);
     }
 
+    private void clearErrors() {
+        errorLabels.forEach((field, label) -> {
+            label.setVisible(false);
+            label.setText("");
+            if (field instanceof JComboBox) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                        BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+            } else {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                        BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+            }
+        });
+    }
+
+    private void setFieldError(JComponent field, String message) {
+        JLabel label = errorLabels.get(field);
+        if (label != null) {
+            label.setText(message);
+            label.setVisible(true);
+        }
+        if (field instanceof JComboBox) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(DANGER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        } else {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(DANGER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        }
+    }
+
+    private boolean validateFields() {
+        clearErrors();
+        boolean valid = true;
+
+        if (codeField.getText().trim().isEmpty()) {
+            setFieldError(codeField, "Code requis");
+            valid = false;
+        }
+        if (nomField.getText().trim().isEmpty()) {
+            setFieldError(nomField, "Nom requis");
+            valid = false;
+        }
+        if (prenomField.getText().trim().isEmpty()) {
+            setFieldError(prenomField, "Prénom requis");
+            valid = false;
+        }
+        if (telephoneField.getText().trim().isEmpty()) {
+            setFieldError(telephoneField, "Téléphone requis");
+            valid = false;
+        }
+        String email = emailField.getText().trim();
+        if (!email.isEmpty() && !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
+            setFieldError(emailField, "Email invalide");
+            valid = false;
+        }
+
+        TypeClient type = (TypeClient) typeClientCombo.getSelectedItem();
+        if (type != TypeClient.NON_PARTENAIRE) {
+            if (codeParrainField.getText().trim().isEmpty()) {
+                setFieldError(codeParrainField, "Code parrain est requis");
+            }
+            if (codePlacementField.getText().trim().isEmpty()) {
+                setFieldError(codePlacementField, "Code placement est requis");
+            }
+            if (totalPvField.getText().trim().isEmpty()) {
+                setFieldError(totalPvField, "Total PV est requis");
+            }
+        }
+
+        return valid;
+    }
+
     private void saveClient() {
+        if (!validateFields()) {
+            return;
+        }
         try {
             ClientDTO client = createClientFromFields();
             clientService.saveClient(client);
@@ -660,6 +753,8 @@ public class ClientPanel extends JPanel {
             clearFields();
             loadClients();
             updateStats();
+        } catch (IllegalArgumentException e) {
+            setFieldError(codeField, e.getMessage());
         } catch (Exception e) {
             showErrorMessage("Erreur: " + e.getMessage());
         }
@@ -671,6 +766,10 @@ public class ClientPanel extends JPanel {
             return;
         }
 
+        if (!validateFields()) {
+            return;
+        }
+
         try {
             ClientDTO client = createClientFromFields();
             clientService.updateClient(currentClient.getId(), client);
@@ -678,6 +777,8 @@ public class ClientPanel extends JPanel {
             clearFields();
             loadClients();
             updateStats();
+        } catch (IllegalArgumentException e) {
+            setFieldError(codeField, e.getMessage());
         } catch (Exception e) {
             showErrorMessage("Erreur: " + e.getMessage());
         }
@@ -729,6 +830,7 @@ public class ClientPanel extends JPanel {
     }
 
     private void clearFields() {
+        clearErrors();
         currentClient = null;
         codeField.setText("");
         nomField.setText("");
@@ -749,7 +851,28 @@ public class ClientPanel extends JPanel {
     }
 
     private void onTypeClientChange(ActionEvent e) {
-        // Logique spécifique selon le type de client
+        TypeClient selectedType = (TypeClient) typeClientCombo.getSelectedItem();
+        boolean isNonPartenaire = selectedType == TypeClient.NON_PARTENAIRE;
+
+        // Hide or disable fields for NON_PARTENAIRE
+        if (codeParrainField.getParent() != null) {
+            codeParrainField.getParent().setVisible(!isNonPartenaire);
+        }
+        if (codePlacementField.getParent() != null) {
+            codePlacementField.getParent().setVisible(!isNonPartenaire);
+        }
+        if (totalPvField.getParent() != null) {
+            totalPvField.getParent().setVisible(!isNonPartenaire);
+        }
+
+        codeParrainField.setEnabled(!isNonPartenaire);
+        codePlacementField.setEnabled(!isNonPartenaire);
+        totalPvField.setEnabled(!isNonPartenaire);
+        codeDefinitifCheckBox.setVisible(!isNonPartenaire);
+        codeDefinitifCheckBox.setEnabled(!isNonPartenaire);
+
+        formPanel.revalidate();
+        formPanel.repaint();
     }
 
     private void exportClients() {
