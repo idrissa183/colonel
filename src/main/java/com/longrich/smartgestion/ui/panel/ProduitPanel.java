@@ -2,6 +2,7 @@ package com.longrich.smartgestion.ui.panel;
 
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.ui.components.ButtonFactory;
 
 import lombok.RequiredArgsConstructor;
 
@@ -116,13 +117,12 @@ public class ProduitPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton exportButton = createIconButton(FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR);
-        JButton importButton = createIconButton(FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR);
-        JButton refreshButton = createIconButton(FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR);
-
-        exportButton.addActionListener(e -> exportProduits());
-        importButton.addActionListener(e -> importProduits());
-        refreshButton.addActionListener(e -> refreshData());
+        JButton exportButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportProduits());
+        JButton importButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR, e -> importProduits());
+        JButton refreshButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
         panel.add(exportButton);
         panel.add(importButton);
@@ -504,28 +504,21 @@ public class ProduitPanel extends JPanel {
     }
 
     private JPanel createButtonPanel() {
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
-        buttonPanel.setBackground(CARD_COLOR);
-        buttonPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR),
-                BorderFactory.createEmptyBorder(20, 25, 25, 25)));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
+        buttonPanel.setBackground(BACKGROUND_COLOR);
 
-        JButton saveButton = createModernButton("Sauvegarder", FontAwesomeSolid.SAVE, SUCCESS_COLOR,
+        JButton saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
                 e -> saveProduit());
-        JButton updateButton = createModernButton("Modifier", FontAwesomeSolid.EDIT, WARNING_COLOR,
+        JButton updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
                 e -> updateProduit());
-        JButton deleteButton = createModernButton("Supprimer", FontAwesomeSolid.TRASH, DANGER_COLOR,
+        JButton deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
                 e -> deleteProduit());
-        JButton clearButton = createIconButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR);
-        clearButton.addActionListener(e -> clearFields());
+        JButton clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
+                e -> clearFields());
 
         buttonPanel.add(saveButton);
-        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(updateButton);
-        buttonPanel.add(Box.createHorizontalStrut(10));
         buttonPanel.add(deleteButton);
-        buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(clearButton);
 
         return buttonPanel;

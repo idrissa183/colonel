@@ -38,6 +38,7 @@ import org.springframework.context.annotation.Profile;
 import com.longrich.smartgestion.dto.FournisseurDTO;
 import com.longrich.smartgestion.enums.TypeStockiste;
 import com.longrich.smartgestion.service.FournisseurService;
+import com.longrich.smartgestion.ui.components.ButtonFactory;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -126,13 +127,12 @@ public class FournisseurPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton exportButton = createIconButton(FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR);
-        JButton importButton = createIconButton(FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR);
-        JButton refreshButton = createIconButton(FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR);
-
-        exportButton.addActionListener(e -> exportFournisseurs());
-        importButton.addActionListener(e -> importFournisseurs());
-        refreshButton.addActionListener(e -> refreshData());
+        JButton exportButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportFournisseurs());
+        JButton importButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR, e -> importFournisseurs());
+        JButton refreshButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
         panel.add(exportButton);
         panel.add(importButton);
@@ -313,7 +313,7 @@ public class FournisseurPanel extends JPanel {
         comboBox.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)));
-        
+
         // Custom renderer pour afficher le libellé
         comboBox.setRenderer(new javax.swing.DefaultListCellRenderer() {
             @Override
@@ -368,15 +368,14 @@ public class FournisseurPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
         buttonPanel.setBackground(BACKGROUND_COLOR);
 
-        JButton saveButton = createIconButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR);
-        JButton updateButton = createIconButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR);
-        JButton deleteButton = createIconButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR);
-        JButton clearButton = createIconButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR);
-
-        saveButton.addActionListener(e -> saveFournisseur());
-        updateButton.addActionListener(e -> updateFournisseur());
-        deleteButton.addActionListener(e -> deleteFournisseur());
-        clearButton.addActionListener(e -> clearFields());
+        JButton saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
+                e -> saveFournisseur());
+        JButton updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
+                e -> updateFournisseur());
+        JButton deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
+                e -> deleteFournisseur());
+        JButton clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
+                e -> clearFields());
 
         buttonPanel.add(saveButton);
         buttonPanel.add(updateButton);
@@ -504,7 +503,7 @@ public class FournisseurPanel extends JPanel {
                 }
 
                 setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-                
+
                 // Coloration spéciale pour le statut
                 if (column == 7 && value != null) { // Colonne Statut
                     if ("Actif".equals(value.toString())) {
@@ -515,7 +514,7 @@ public class FournisseurPanel extends JPanel {
                 } else {
                     setForeground(TEXT_PRIMARY);
                 }
-                
+
                 return c;
             }
         };
@@ -621,7 +620,7 @@ public class FournisseurPanel extends JPanel {
         telephoneField.setText(fournisseur.getTelephone() != null ? fournisseur.getTelephone() : "");
         emailField.setText(fournisseur.getEmail() != null ? fournisseur.getEmail() : "");
         activeCheckBox.setSelected(fournisseur.getActive());
-        
+
         // Actualiser la visibilité du champ prénom
         updatePrenomFieldVisibility();
     }
@@ -671,13 +670,13 @@ public class FournisseurPanel extends JPanel {
             setFieldError(nomField, "Nom requis");
             valid = false;
         }
-        
+
         TypeStockiste type = (TypeStockiste) typeStockisteCombo.getSelectedItem();
         if (type == TypeStockiste.PERSONNE_PHYSIQUE && prenomField.getText().trim().isEmpty()) {
             setFieldError(prenomField, "Prénom requis pour une personne physique");
             valid = false;
         }
-        
+
         String email = emailField.getText().trim();
         if (!email.isEmpty() && !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
             setFieldError(emailField, "Email invalide");
@@ -786,11 +785,11 @@ public class FournisseurPanel extends JPanel {
     private void onTypeStockisteChange(ActionEvent e) {
         updatePrenomFieldVisibility();
     }
-    
+
     private void updatePrenomFieldVisibility() {
         TypeStockiste selectedType = (TypeStockiste) typeStockisteCombo.getSelectedItem();
         boolean isPersonnePhysique = selectedType == TypeStockiste.PERSONNE_PHYSIQUE;
-        
+
         // Rendre le champ prénom obligatoire visuellement pour personne physique
         JPanel prenomFieldPanel = (JPanel) prenomField.getParent().getParent();
         JLabel prenomLabel = null;
@@ -800,7 +799,7 @@ public class FournisseurPanel extends JPanel {
                 break;
             }
         }
-        
+
         if (prenomLabel != null) {
             if (isPersonnePhysique) {
                 prenomLabel.setText("Prénom(s): *");
@@ -810,7 +809,7 @@ public class FournisseurPanel extends JPanel {
                 prenomLabel.setForeground(TEXT_SECONDARY);
             }
         }
-        
+
         formPanel.revalidate();
         formPanel.repaint();
     }

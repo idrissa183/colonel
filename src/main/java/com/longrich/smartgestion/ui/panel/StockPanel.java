@@ -2,6 +2,7 @@ package com.longrich.smartgestion.ui.panel;
 
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.ui.components.ButtonFactory;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,14 +17,14 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
+// import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.math.BigDecimal;
+// import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+// import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.annotation.PostConstruct;
@@ -106,13 +107,12 @@ public class StockPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton exportButton = createIconButton(FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR);
-        JButton alertsButton = createIconButton(FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Alertes", WARNING_COLOR);
-        JButton refreshButton = createIconButton(FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR);
-
-        exportButton.addActionListener(e -> exportStock());
-        alertsButton.addActionListener(e -> showStockAlerts());
-        refreshButton.addActionListener(e -> refreshData());
+        JButton exportButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportStock());
+        JButton alertsButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Alertes", WARNING_COLOR, e -> showStockAlerts());
+        JButton refreshButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
         panel.add(alertsButton);
         panel.add(exportButton);
@@ -175,7 +175,7 @@ public class StockPanel extends JPanel {
         searchField.addActionListener(e -> searchStock());
 
         // Filtre par statut
-        filterCombo = new JComboBox<>(new String[]{"Tous", "Stock faible", "Rupture", "Normal"});
+        filterCombo = new JComboBox<>(new String[] { "Tous", "Stock faible", "Rupture", "Normal" });
         styleComboBox(filterCombo);
         filterCombo.addActionListener(e -> filterStock());
 
@@ -204,7 +204,7 @@ public class StockPanel extends JPanel {
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
         // Modèle de table
-        String[] columns = {"Produit", "Code", "Quantité", "Stock Min", "Statut", "Dernière MAJ"};
+        String[] columns = { "Produit", "Code", "Quantité", "Stock Min", "Statut", "Dernière MAJ" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -228,7 +228,7 @@ public class StockPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(stockTable);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
-        
+
         tablePanel.add(scrollPane, BorderLayout.CENTER);
         return tablePanel;
     }
@@ -270,7 +270,7 @@ public class StockPanel extends JPanel {
         formPanel.add(createFieldPanel("Produit:", produitCombo));
 
         // Type de mouvement
-        mouvementTypeCombo = new JComboBox<>(new String[]{"Entrée", "Sortie", "Ajustement"});
+        mouvementTypeCombo = new JComboBox<>(new String[] { "Entrée", "Sortie", "Ajustement" });
         styleComboBox(mouvementTypeCombo);
         formPanel.add(createFieldPanel("Type:", mouvementTypeCombo));
 
@@ -296,9 +296,9 @@ public class StockPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         buttonPanel.setBackground(CARD_COLOR);
 
-        JButton saveButton = createModernButton("Enregistrer", FontAwesomeSolid.SAVE, SUCCESS_COLOR, 
+        JButton saveButton = createModernButton("Enregistrer", FontAwesomeSolid.SAVE, SUCCESS_COLOR,
                 e -> saveMouvement());
-        JButton clearButton = createModernButton("Vider", FontAwesomeSolid.ERASER, SECONDARY_COLOR, 
+        JButton clearButton = createModernButton("Vider", FontAwesomeSolid.ERASER, SECONDARY_COLOR,
                 e -> clearMouvementFields());
 
         buttonPanel.add(saveButton);
@@ -392,7 +392,7 @@ public class StockPanel extends JPanel {
         table.setSelectionBackground(new Color(37, 99, 235, 20));
         table.setSelectionForeground(TEXT_PRIMARY);
         table.setFillsViewportHeight(true);
-        
+
         // Header styling
         JTableHeader header = table.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -400,21 +400,21 @@ public class StockPanel extends JPanel {
         header.setForeground(TEXT_SECONDARY);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
         header.setReorderingAllowed(false);
-        
+
         // Renderer spécial pour les statuts
         DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
+
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
                 }
-                
+
                 setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
                 setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                
+
                 // Coloration selon le statut (colonne 4)
                 if (column == 4 && value != null) {
                     String status = value.toString();
@@ -434,11 +434,11 @@ public class StockPanel extends JPanel {
                 } else {
                     setForeground(TEXT_PRIMARY);
                 }
-                
+
                 return this;
             }
         };
-        
+
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(statusRenderer);
         }
@@ -458,7 +458,8 @@ public class StockPanel extends JPanel {
         return button;
     }
 
-    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
+    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor,
+            ActionListener action) {
         JButton button = new JButton(text);
         button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
         button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -480,7 +481,7 @@ public class StockPanel extends JPanel {
             for (ProduitDto produit : produits) {
                 String status = getStockStatus(produit);
                 String lastUpdate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                
+
                 Object[] row = {
                         produit.getLibelle(),
                         produit.getCodeBarre(),
@@ -524,13 +525,14 @@ public class StockPanel extends JPanel {
         try {
             List<ProduitDto> produits = produitService.getActiveProduits();
             int totalProduits = produits.size();
-            long ruptures = produits.stream().filter(p -> p.getQuantiteStock() == null || p.getQuantiteStock() == 0).count();
+            long ruptures = produits.stream().filter(p -> p.getQuantiteStock() == null || p.getQuantiteStock() == 0)
+                    .count();
             long alertes = produits.stream()
                     .filter(p -> p.getQuantiteStock() != null && p.getStockMinimum() != null)
                     .filter(p -> p.getQuantiteStock() <= p.getStockMinimum())
                     .count();
-            
-            statsLabel.setText(String.format("%d produits • %d ruptures • %d alertes", 
+
+            statsLabel.setText(String.format("%d produits • %d ruptures • %d alertes",
                     totalProduits, ruptures, alertes));
         } catch (Exception e) {
             statsLabel.setText("Statistiques non disponibles");
@@ -544,7 +546,7 @@ public class StockPanel extends JPanel {
             loadStock();
             return;
         }
-        
+
         // Filtrer les lignes existantes
         tableModel.setRowCount(0);
         try {
@@ -552,7 +554,7 @@ public class StockPanel extends JPanel {
             for (ProduitDto produit : produits) {
                 String status = getStockStatus(produit);
                 String lastUpdate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                
+
                 Object[] row = {
                         produit.getLibelle(),
                         produit.getCodeBarre(),
@@ -577,24 +579,24 @@ public class StockPanel extends JPanel {
     private void saveMouvement() {
         try {
             if (produitCombo.getSelectedIndex() == -1) {
-                JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit", 
+                JOptionPane.showMessageDialog(this, "Veuillez sélectionner un produit",
                         "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            
+
             if (quantiteField.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Veuillez saisir une quantité", 
+                JOptionPane.showMessageDialog(this, "Veuillez saisir une quantité",
                         "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            
+
             // Simulation de l'enregistrement
-            JOptionPane.showMessageDialog(this, "✓ Mouvement de stock enregistré avec succès", 
+            JOptionPane.showMessageDialog(this, "✓ Mouvement de stock enregistré avec succès",
                     "Succès", JOptionPane.INFORMATION_MESSAGE);
-            
+
             clearMouvementFields();
             loadStock();
-            
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Erreur lors de l'enregistrement: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
@@ -614,9 +616,9 @@ public class StockPanel extends JPanel {
             String produitName = (String) tableModel.getValueAt(selectedRow, 0);
             String quantite = (String) tableModel.getValueAt(selectedRow, 2);
             String status = (String) tableModel.getValueAt(selectedRow, 4);
-            
-            JOptionPane.showMessageDialog(this, 
-                    String.format("Détails du stock:\n\nProduit: %s\nQuantité: %s\nStatut: %s", 
+
+            JOptionPane.showMessageDialog(this,
+                    String.format("Détails du stock:\n\nProduit: %s\nQuantité: %s\nStatut: %s",
                             produitName, quantite, status),
                     "Détails", JOptionPane.INFORMATION_MESSAGE);
         }
@@ -625,29 +627,30 @@ public class StockPanel extends JPanel {
     private void showStockAlerts() {
         StringBuilder alerts = new StringBuilder("Alertes de stock:\n\n");
         boolean hasAlerts = false;
-        
+
         try {
             List<ProduitDto> produits = produitService.getActiveProduits();
             for (ProduitDto produit : produits) {
                 if ("Rupture".equals(getStockStatus(produit)) || "Stock faible".equals(getStockStatus(produit))) {
-                    alerts.append("⚠️ ").append(produit.getLibelle()).append(" - ").append(getStockStatus(produit)).append("\n");
+                    alerts.append("⚠️ ").append(produit.getLibelle()).append(" - ").append(getStockStatus(produit))
+                            .append("\n");
                     hasAlerts = true;
                 }
             }
-            
+
             if (!hasAlerts) {
                 alerts.append("✅ Aucune alerte de stock");
             }
-            
+
         } catch (Exception e) {
             alerts.append("❌ Erreur lors de la vérification des stocks");
         }
-        
+
         JOptionPane.showMessageDialog(this, alerts.toString(), "Alertes de Stock", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void exportStock() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 

@@ -5,6 +5,7 @@ import com.longrich.smartgestion.dto.CommandeDTO;
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.service.ClientService;
 import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.ui.components.ButtonFactory;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,10 +20,10 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
+// import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+// import java.awt.event.MouseAdapter;
+// import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -64,7 +65,7 @@ public class CommandePanel extends JPanel {
     private JTextField dateCommandeField;
     private JComboBox<String> statutCombo;
     private JTextArea observationsArea;
-    
+
     // Table des lignes de commande
     private JTable lignesTable;
     private DefaultTableModel lignesTableModel;
@@ -127,13 +128,12 @@ public class CommandePanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton newCommandeButton = createIconButton(FontAwesomeSolid.PLUS, "Nouvelle commande", SUCCESS_COLOR);
-        JButton exportButton = createIconButton(FontAwesomeSolid.FILE_EXPORT, "Exporter", INFO_COLOR);
-        JButton refreshButton = createIconButton(FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR);
-
-        newCommandeButton.addActionListener(e -> showNewCommandeDialog());
-        exportButton.addActionListener(e -> exportCommandes());
-        refreshButton.addActionListener(e -> refreshData());
+        JButton newCommandeButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.PLUS, "Nouvelle commande", SUCCESS_COLOR, e -> showNewCommandeDialog());
+        JButton exportButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", INFO_COLOR, e -> exportCommandes());
+        JButton refreshButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
         panel.add(newCommandeButton);
         panel.add(exportButton);
@@ -195,7 +195,8 @@ public class CommandePanel extends JPanel {
         searchField.addActionListener(e -> searchCommandes());
 
         // Filtre par statut
-        statusFilterCombo = new JComboBox<>(new String[]{"Tous", "En attente", "Confirmée", "En cours", "Livrée", "Annulée"});
+        statusFilterCombo = new JComboBox<>(
+                new String[] { "Tous", "En attente", "Confirmée", "En cours", "Livrée", "Annulée" });
         styleComboBox(statusFilterCombo);
         statusFilterCombo.addActionListener(e -> filterCommandes());
 
@@ -222,7 +223,7 @@ public class CommandePanel extends JPanel {
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
         // Modèle de table
-        String[] columns = {"N° Commande", "Client", "Date", "Statut", "Total", "Actions"};
+        String[] columns = { "N° Commande", "Client", "Date", "Statut", "Total", "Actions" };
         commandesTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -240,7 +241,7 @@ public class CommandePanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(commandesTable);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
-        
+
         tablePanel.add(scrollPane, BorderLayout.CENTER);
         return tablePanel;
     }
@@ -300,7 +301,7 @@ public class CommandePanel extends JPanel {
         secondRow.setBackground(CARD_COLOR);
         secondRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        statutCombo = new JComboBox<>(new String[]{"En attente", "Confirmée", "En cours", "Livrée", "Annulée"});
+        statutCombo = new JComboBox<>(new String[] { "En attente", "Confirmée", "En cours", "Livrée", "Annulée" });
         styleComboBox(statutCombo);
         secondRow.add(createFieldPanel("Statut:", statutCombo));
 
@@ -368,7 +369,8 @@ public class CommandePanel extends JPanel {
         prixUnitaireField = createStyledTextField();
         inputRow.add(createFieldPanel("Prix unitaire:", prixUnitaireField));
 
-        JButton addButton = createModernButton("Ajouter", FontAwesomeSolid.PLUS, SUCCESS_COLOR, e -> addLigneCommande());
+        JButton addButton = createModernButton("Ajouter", FontAwesomeSolid.PLUS, SUCCESS_COLOR,
+                e -> addLigneCommande());
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         buttonPanel.setBackground(CARD_COLOR);
         buttonPanel.add(addButton);
@@ -403,7 +405,7 @@ public class CommandePanel extends JPanel {
         panel.add(headerPanel, BorderLayout.NORTH);
 
         // Table des lignes
-        String[] columns = {"Produit", "Quantité", "Prix Unit.", "Total", "Action"};
+        String[] columns = { "Produit", "Quantité", "Prix Unit.", "Total", "Action" };
         lignesTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -421,7 +423,7 @@ public class CommandePanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(lignesTable);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
-        
+
         panel.add(scrollPane, BorderLayout.CENTER);
 
         return panel;
@@ -431,8 +433,10 @@ public class CommandePanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 20));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton saveButton = createModernButton("Enregistrer", FontAwesomeSolid.SAVE, SUCCESS_COLOR, e -> saveCommande());
-        JButton clearButton = createModernButton("Vider", FontAwesomeSolid.ERASER, SECONDARY_COLOR, e -> clearCommande());
+        JButton saveButton = createModernButton("Enregistrer", FontAwesomeSolid.SAVE, SUCCESS_COLOR,
+                e -> saveCommande());
+        JButton clearButton = createModernButton("Vider", FontAwesomeSolid.ERASER, SECONDARY_COLOR,
+                e -> clearCommande());
 
         panel.add(clearButton);
         panel.add(saveButton);
@@ -503,7 +507,7 @@ public class CommandePanel extends JPanel {
         table.setSelectionBackground(new Color(37, 99, 235, 20));
         table.setSelectionForeground(TEXT_PRIMARY);
         table.setFillsViewportHeight(true);
-        
+
         // Header styling
         JTableHeader header = table.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -511,26 +515,26 @@ public class CommandePanel extends JPanel {
         header.setForeground(TEXT_SECONDARY);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
         header.setReorderingAllowed(false);
-        
+
         // Default renderer
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
+
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
                 }
-                
+
                 setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
                 setFont(new Font("Segoe UI", Font.PLAIN, 12));
                 setForeground(TEXT_PRIMARY);
-                
+
                 return this;
             }
         };
-        
+
         // Appliquer le renderer à toutes les colonnes sauf Actions
         for (int i = 0; i < table.getColumnCount() - 1; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(renderer);
@@ -551,7 +555,8 @@ public class CommandePanel extends JPanel {
         return button;
     }
 
-    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
+    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor,
+            ActionListener action) {
         JButton button = new JButton(text);
         button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
         button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -571,12 +576,12 @@ public class CommandePanel extends JPanel {
                 boolean isSelected, boolean hasFocus, int row, int column) {
             JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-            
+
             JButton viewButton = new JButton(FontIcon.of(FontAwesomeSolid.EYE, 12, INFO_COLOR));
             JButton editButton = new JButton(FontIcon.of(FontAwesomeSolid.EDIT, 12, WARNING_COLOR));
             JButton deleteButton = new JButton(FontIcon.of(FontAwesomeSolid.TRASH, 12, DANGER_COLOR));
-            
-            for (JButton btn : new JButton[]{viewButton, editButton, deleteButton}) {
+
+            for (JButton btn : new JButton[] { viewButton, editButton, deleteButton }) {
                 btn.setPreferredSize(new Dimension(25, 25));
                 btn.setBorderPainted(false);
                 btn.setContentAreaFilled(false);
@@ -584,7 +589,7 @@ public class CommandePanel extends JPanel {
                 btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
                 panel.add(btn);
             }
-            
+
             return panel;
         }
     }
@@ -593,11 +598,12 @@ public class CommandePanel extends JPanel {
         public ActionButtonEditor() {
             super(new JCheckBox());
         }
-        
+
         @Override
         public java.awt.Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
-            return new ActionButtonRenderer().getTableCellRendererComponent(table, value, isSelected, false, row, column);
+            return new ActionButtonRenderer().getTableCellRendererComponent(table, value, isSelected, false, row,
+                    column);
         }
     }
 
@@ -619,7 +625,7 @@ public class CommandePanel extends JPanel {
         public DeleteButtonEditor() {
             super(new JCheckBox());
         }
-        
+
         @Override
         public java.awt.Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
@@ -644,27 +650,38 @@ public class CommandePanel extends JPanel {
         }
 
         // Getters
-        public String getProduitNom() { return produitNom; }
-        public int getQuantite() { return quantite; }
-        public BigDecimal getPrixUnitaire() { return prixUnitaire; }
-        public BigDecimal getTotal() { return total; }
+        public String getProduitNom() {
+            return produitNom;
+        }
+
+        public int getQuantite() {
+            return quantite;
+        }
+
+        public BigDecimal getPrixUnitaire() {
+            return prixUnitaire;
+        }
+
+        public BigDecimal getTotal() {
+            return total;
+        }
     }
 
     // Méthodes d'action
     private void loadCommandes() {
         commandesTableModel.setRowCount(0);
-        
+
         // Données factices
         Object[][] sampleData = {
-            {"CMD-001", "Client Test 1", "15/01/2024", "En cours", "150,000 FCFA", ""},
-            {"CMD-002", "Client Test 2", "16/01/2024", "Livrée", "75,500 FCFA", ""},
-            {"CMD-003", "Client Test 3", "17/01/2024", "En attente", "200,000 FCFA", ""}
+                { "CMD-001", "Client Test 1", "15/01/2024", "En cours", "150,000 FCFA", "" },
+                { "CMD-002", "Client Test 2", "16/01/2024", "Livrée", "75,500 FCFA", "" },
+                { "CMD-003", "Client Test 3", "17/01/2024", "En attente", "200,000 FCFA", "" }
         };
-        
+
         for (Object[] row : sampleData) {
             commandesTableModel.addRow(row);
         }
-        
+
         updateStats();
     }
 
@@ -708,9 +725,9 @@ public class CommandePanel extends JPanel {
 
     private void addLigneCommande() {
         try {
-            if (produitCombo.getSelectedIndex() == -1 || quantiteField.getText().trim().isEmpty() || 
-                prixUnitaireField.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs", 
+            if (produitCombo.getSelectedIndex() == -1 || quantiteField.getText().trim().isEmpty() ||
+                    prixUnitaireField.getText().trim().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Veuillez remplir tous les champs",
                         "Validation", JOptionPane.WARNING_MESSAGE);
                 return;
             }
@@ -724,11 +741,11 @@ public class CommandePanel extends JPanel {
 
             // Ajouter à la table
             Object[] row = {
-                ligne.getProduitNom(),
-                ligne.getQuantite(),
-                ligne.getPrixUnitaire() + " FCFA",
-                ligne.getTotal() + " FCFA",
-                ""
+                    ligne.getProduitNom(),
+                    ligne.getQuantite(),
+                    ligne.getPrixUnitaire() + " FCFA",
+                    ligne.getTotal() + " FCFA",
+                    ""
             };
             lignesTableModel.addRow(row);
 
@@ -740,7 +757,7 @@ public class CommandePanel extends JPanel {
             prixUnitaireField.setText("");
 
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Veuillez saisir des valeurs numériques valides", 
+            JOptionPane.showMessageDialog(this, "Veuillez saisir des valeurs numériques valides",
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -762,19 +779,19 @@ public class CommandePanel extends JPanel {
 
     private void saveCommande() {
         if (clientCombo.getSelectedIndex() == -1) {
-            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client", 
+            JOptionPane.showMessageDialog(this, "Veuillez sélectionner un client",
                     "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         if (lignesCommande.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Veuillez ajouter au moins un produit", 
+            JOptionPane.showMessageDialog(this, "Veuillez ajouter au moins un produit",
                     "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         // Simulation de sauvegarde
-        JOptionPane.showMessageDialog(this, "✓ Commande sauvegardée avec succès", 
+        JOptionPane.showMessageDialog(this, "✓ Commande sauvegardée avec succès",
                 "Succès", JOptionPane.INFORMATION_MESSAGE);
 
         clearCommande();
@@ -789,7 +806,7 @@ public class CommandePanel extends JPanel {
         produitCombo.setSelectedIndex(-1);
         quantiteField.setText("");
         prixUnitaireField.setText("");
-        
+
         lignesCommande.clear();
         lignesTableModel.setRowCount(0);
         updateTotalCommande();
@@ -797,7 +814,7 @@ public class CommandePanel extends JPanel {
 
     private void searchCommandes() {
         // Implémentation de la recherche
-        JOptionPane.showMessageDialog(this, "Fonctionnalité de recherche en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Fonctionnalité de recherche en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -818,7 +835,7 @@ public class CommandePanel extends JPanel {
     }
 
     private void exportCommandes() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 

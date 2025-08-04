@@ -40,6 +40,7 @@ import com.longrich.smartgestion.dto.ClientDTO;
 import com.longrich.smartgestion.enums.TypeClient;
 import com.longrich.smartgestion.service.ClientService;
 import com.longrich.smartgestion.service.ProvinceService;
+import com.longrich.smartgestion.ui.components.ButtonFactory;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -134,13 +135,12 @@ public class ClientPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panel.setBackground(BACKGROUND_COLOR);
 
-        JButton exportButton = createIconButton(FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR);
-        JButton importButton = createIconButton(FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR);
-        JButton refreshButton = createIconButton(FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR);
-
-        exportButton.addActionListener(e -> exportClients());
-        importButton.addActionListener(e -> importClients());
-        refreshButton.addActionListener(e -> refreshData());
+        JButton exportButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportClients());
+        JButton importButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.FILE_IMPORT, "Importer", PRIMARY_COLOR, e -> importClients());
+        JButton refreshButton = ButtonFactory.createActionButton(
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
         panel.add(exportButton);
         panel.add(importButton);
@@ -383,15 +383,14 @@ public class ClientPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
         buttonPanel.setBackground(BACKGROUND_COLOR);
 
-        JButton saveButton = createIconButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR);
-        JButton updateButton = createIconButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR);
-        JButton deleteButton = createIconButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR);
-        JButton clearButton = createIconButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR);
-
-        saveButton.addActionListener(e -> saveClient());
-        updateButton.addActionListener(e -> updateClient());
-        deleteButton.addActionListener(e -> deleteClient());
-        clearButton.addActionListener(e -> clearFields());
+        JButton saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
+                e -> saveClient());
+        JButton updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
+                e -> updateClient());
+        JButton deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
+                e -> deleteClient());
+        JButton clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
+                e -> clearFields());
 
         buttonPanel.add(saveButton);
         buttonPanel.add(updateButton);
@@ -710,8 +709,8 @@ public class ClientPanel extends JPanel {
             valid = false;
         }
         // if (telephoneField.getText().trim().isEmpty()) {
-        //     setFieldError(telephoneField, "Téléphone requis");
-        //     valid = false;
+        // setFieldError(telephoneField, "Téléphone requis");
+        // valid = false;
         // }
         String email = emailField.getText().trim();
         if (!email.isEmpty() && !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
@@ -854,7 +853,7 @@ public class ClientPanel extends JPanel {
         if (codePartenaireField.getParent() != null) {
             codePartenaireField.getParent().setVisible(isPartenaire);
         }
-        
+
         // Show/hide total PV field for partenaires and en attente partenaire
         boolean showPv = isPartenaire || selectedType == TypeClient.EN_ATTENTE_PARTENAIRE;
         if (totalPvField.getParent() != null) {
