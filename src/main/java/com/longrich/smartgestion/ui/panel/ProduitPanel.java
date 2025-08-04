@@ -10,20 +10,23 @@ import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
+// import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
+// import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+// import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.annotation.PostConstruct;
 
@@ -64,6 +67,8 @@ public class ProduitPanel extends JPanel {
     private JLabel statsLabel;
 
     private ProduitDto currentProduit;
+
+    private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
 
     @PostConstruct
     public void initializeUI() {
@@ -255,7 +260,7 @@ public class ProduitPanel extends JPanel {
         field.setForeground(TEXT_PRIMARY);
         field.setPreferredSize(new Dimension(0, 36));
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        
+
         // Focus effects
         field.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override
@@ -272,7 +277,7 @@ public class ProduitPanel extends JPanel {
                         BorderFactory.createEmptyBorder(8, 12, 8, 12)));
             }
         });
-        
+
         return field;
     }
 
@@ -308,8 +313,8 @@ public class ProduitPanel extends JPanel {
     }
 
     private JPanel createFieldPanel(String labelText, JComponent field) {
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        JPanel panel = new JPanel(new BorderLayout(0, 5));
+
         panel.setBackground(CARD_COLOR);
         panel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, field instanceof JScrollPane ? 120 : 70));
@@ -317,14 +322,21 @@ public class ProduitPanel extends JPanel {
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         label.setForeground(TEXT_SECONDARY);
-        label.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
+        JLabel errorLabel = new JLabel();
+        errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        errorLabel.setForeground(DANGER_COLOR);
+        errorLabel.setVisible(false);
 
-        field.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        JPanel fieldWrapper = new JPanel(new BorderLayout());
+        fieldWrapper.setBackground(CARD_COLOR);
+        fieldWrapper.add(field, BorderLayout.CENTER);
+        fieldWrapper.add(errorLabel, BorderLayout.SOUTH);
 
-        panel.add(label);
-        panel.add(field);
-        panel.add(Box.createVerticalStrut(10));
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(fieldWrapper, BorderLayout.CENTER);
+        panel.add(Box.createVerticalStrut(10), BorderLayout.SOUTH);
+
+        errorLabels.put(field, errorLabel);
 
         return panel;
     }
@@ -393,7 +405,7 @@ public class ProduitPanel extends JPanel {
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
         // Modèle de table
-        String[] columns = {"Code", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut"};
+        String[] columns = { "Code", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -424,7 +436,7 @@ public class ProduitPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(produitTable);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
-        
+
         tablePanel.add(scrollPane, BorderLayout.CENTER);
         return tablePanel;
     }
@@ -438,7 +450,7 @@ public class ProduitPanel extends JPanel {
         table.setSelectionBackground(new Color(37, 99, 235, 20));
         table.setSelectionForeground(TEXT_PRIMARY);
         table.setFillsViewportHeight(true);
-        
+
         // Header styling
         JTableHeader header = table.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -447,21 +459,21 @@ public class ProduitPanel extends JPanel {
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
         header.setReorderingAllowed(false);
         header.setResizingAllowed(true);
-        
+
         // Cell renderer with alternating colors
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
+
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
                 }
-                
+
                 setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
                 setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                
+
                 // Status column special formatting
                 if (column == 6 && value != null) {
                     boolean isActive = Boolean.parseBoolean(value.toString());
@@ -470,24 +482,24 @@ public class ProduitPanel extends JPanel {
                 } else {
                     setForeground(TEXT_PRIMARY);
                 }
-                
+
                 return this;
             }
         };
-        
+
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(renderer);
         }
-        
+
         // Column widths
         if (table.getColumnCount() >= 7) {
             table.getColumnModel().getColumn(0).setPreferredWidth(100); // Code
             table.getColumnModel().getColumn(1).setPreferredWidth(200); // Libellé
             table.getColumnModel().getColumn(2).setPreferredWidth(100); // Prix Achat
             table.getColumnModel().getColumn(3).setPreferredWidth(100); // Prix Revente
-            table.getColumnModel().getColumn(4).setPreferredWidth(80);  // PV
-            table.getColumnModel().getColumn(5).setPreferredWidth(80);  // Stock
-            table.getColumnModel().getColumn(6).setPreferredWidth(80);  // Statut
+            table.getColumnModel().getColumn(4).setPreferredWidth(80); // PV
+            table.getColumnModel().getColumn(5).setPreferredWidth(80); // Stock
+            table.getColumnModel().getColumn(6).setPreferredWidth(80); // Statut
         }
     }
 
@@ -499,9 +511,12 @@ public class ProduitPanel extends JPanel {
                 BorderFactory.createMatteBorder(1, 0, 0, 0, BORDER_COLOR),
                 BorderFactory.createEmptyBorder(20, 25, 25, 25)));
 
-        JButton saveButton = createModernButton("Sauvegarder", FontAwesomeSolid.SAVE, SUCCESS_COLOR, e -> saveProduit());
-        JButton updateButton = createModernButton("Modifier", FontAwesomeSolid.EDIT, WARNING_COLOR, e -> updateProduit());
-        JButton deleteButton = createModernButton("Supprimer", FontAwesomeSolid.TRASH, DANGER_COLOR, e -> deleteProduit());
+        JButton saveButton = createModernButton("Sauvegarder", FontAwesomeSolid.SAVE, SUCCESS_COLOR,
+                e -> saveProduit());
+        JButton updateButton = createModernButton("Modifier", FontAwesomeSolid.EDIT, WARNING_COLOR,
+                e -> updateProduit());
+        JButton deleteButton = createModernButton("Supprimer", FontAwesomeSolid.TRASH, DANGER_COLOR,
+                e -> deleteProduit());
         JButton clearButton = createIconButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR);
         clearButton.addActionListener(e -> clearFields());
 
@@ -516,7 +531,8 @@ public class ProduitPanel extends JPanel {
         return buttonPanel;
     }
 
-    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor, ActionListener action) {
+    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor,
+            ActionListener action) {
         JButton button = new JButton(text);
         button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
         button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -526,20 +542,20 @@ public class ProduitPanel extends JPanel {
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.addActionListener(action);
-        
+
         // Hover effect
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 button.setBackground(backgroundColor.darker());
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 button.setBackground(backgroundColor);
             }
         });
-        
+
         return button;
     }
 
@@ -554,7 +570,7 @@ public class ProduitPanel extends JPanel {
                 BorderFactory.createEmptyBorder(8, 8, 8, 8)));
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         // Hover effect
         button.addMouseListener(new MouseAdapter() {
             @Override
@@ -562,14 +578,14 @@ public class ProduitPanel extends JPanel {
                 button.setBackground(new Color(248, 249, 250));
                 button.setIcon(FontIcon.of(icon, 16, color.darker()));
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 button.setBackground(Color.WHITE);
                 button.setIcon(FontIcon.of(icon, 16, color));
             }
         });
-        
+
         return button;
     }
 
@@ -578,7 +594,7 @@ public class ProduitPanel extends JPanel {
             List<ProduitDto> produits = produitService.getActiveProduits();
             int totalProduits = produits.size();
             long produitsActifs = produits.stream().mapToLong(p -> p.getActive() ? 1 : 0).sum();
-            
+
             statsLabel.setText(String.format("%d produits • %d actifs", totalProduits, produitsActifs));
         } catch (Exception e) {
             statsLabel.setText("Statistiques non disponibles");
@@ -586,12 +602,12 @@ public class ProduitPanel extends JPanel {
     }
 
     private void exportProduits() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void importProduits() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'import en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Fonctionnalité d'import en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -696,37 +712,80 @@ public class ProduitPanel extends JPanel {
         activeCheckBox.setSelected(produit.getActive());
     }
 
+    private void clearErrors() {
+        errorLabels.forEach((field, label) -> {
+            label.setVisible(false);
+            label.setText("");
+            if (field instanceof JComboBox) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                        BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+            } else if (field instanceof JScrollPane) {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                        BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+            } else {
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                        BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+            }
+        });
+    }
+
+    private void setFieldError(JComponent field, String message) {
+        JLabel label = errorLabels.get(field);
+        if (label != null) {
+            label.setText(message);
+            label.setVisible(true);
+        }
+        if (field instanceof JComboBox) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(DANGER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        } else if (field instanceof JScrollPane) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(DANGER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        } else {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(DANGER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        }
+    }
+
     private void saveProduit() {
         if (!validateFields()) {
             return;
         }
-        
+
         try {
             ProduitDto produit = createProduitFromFields();
             produitService.saveProduit(produit);
-            
+
             // Animation de succès
-            JOptionPane.showMessageDialog(this, 
-                    "✓ Produit sauvegardé avec succès", 
+            JOptionPane.showMessageDialog(this,
+                    "✓ Produit sauvegardé avec succès",
                     "Succès", JOptionPane.INFORMATION_MESSAGE);
-            
+
             clearFields();
             loadProduits();
+        } catch (IllegalArgumentException e) {
+            setFieldError(codeBarreField, e.getMessage());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                    "❌ Erreur lors de la sauvegarde: " + e.getMessage(), 
+            JOptionPane.showMessageDialog(this,
+                    "❌ Erreur lors de la sauvegarde: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void updateProduit() {
         if (currentProduit == null) {
-            JOptionPane.showMessageDialog(this, 
-                    "⚠️ Veuillez sélectionner un produit à modifier", 
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ Veuillez sélectionner un produit à modifier",
                     "Avertissement", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         if (!validateFields()) {
             return;
         }
@@ -734,24 +793,26 @@ public class ProduitPanel extends JPanel {
         try {
             ProduitDto produit = createProduitFromFields();
             produitService.updateProduit(currentProduit.getId(), produit);
-            
-            JOptionPane.showMessageDialog(this, 
-                    "✓ Produit mis à jour avec succès", 
+
+            JOptionPane.showMessageDialog(this,
+                    "✓ Produit mis à jour avec succès",
                     "Succès", JOptionPane.INFORMATION_MESSAGE);
-            
+
             clearFields();
             loadProduits();
+        } catch (IllegalArgumentException e) {
+            setFieldError(codeBarreField, e.getMessage());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, 
-                    "❌ Erreur lors de la mise à jour: " + e.getMessage(), 
+            JOptionPane.showMessageDialog(this,
+                    "❌ Erreur lors de la mise à jour: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteProduit() {
         if (currentProduit == null) {
-            JOptionPane.showMessageDialog(this, 
-                    "⚠️ Veuillez sélectionner un produit à supprimer", 
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ Veuillez sélectionner un produit à supprimer",
                     "Avertissement", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -760,11 +821,11 @@ public class ProduitPanel extends JPanel {
         int option = JOptionPane.showConfirmDialog(
                 this,
                 String.format("🗑️ Êtes-vous sûr de vouloir supprimer ce produit ?\n\n" +
-                             "Produit: %s\n" +
-                             "Code: %s\n\n" +
-                             "Cette action est irréversible.",
-                             currentProduit.getLibelle(),
-                             currentProduit.getCodeBarre()),
+                        "Produit: %s\n" +
+                        "Code: %s\n\n" +
+                        "Cette action est irréversible.",
+                        currentProduit.getLibelle(),
+                        currentProduit.getCodeBarre()),
                 "Confirmation de suppression",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
@@ -772,16 +833,16 @@ public class ProduitPanel extends JPanel {
         if (option == JOptionPane.YES_OPTION) {
             try {
                 produitService.deleteProduit(currentProduit.getId());
-                
-                JOptionPane.showMessageDialog(this, 
-                        "✓ Produit supprimé avec succès", 
+
+                JOptionPane.showMessageDialog(this,
+                        "✓ Produit supprimé avec succès",
                         "Succès", JOptionPane.INFORMATION_MESSAGE);
-                
+
                 clearFields();
                 loadProduits();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, 
-                        "❌ Erreur lors de la suppression: " + e.getMessage(), 
+                JOptionPane.showMessageDialog(this,
+                        "❌ Erreur lors de la suppression: " + e.getMessage(),
                         "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -848,66 +909,75 @@ public class ProduitPanel extends JPanel {
     }
 
     private boolean validateFields() {
-        StringBuilder errors = new StringBuilder();
-        
+        clearErrors();
+        boolean valid = true;
+
         if (codeBarreField.getText().trim().isEmpty()) {
-            errors.append("• Le code barre est requis\n");
+            setFieldError(codeBarreField, "Code barre requis");
+            valid = false;
         }
-        
         if (libelleField.getText().trim().isEmpty()) {
-            errors.append("• Le libellé est requis\n");
+            setFieldError(libelleField, "Libellé requis");
+            valid = false;
         }
-        
-        // Validation des prix
+
+        String dateStr = datePeremptionField.getText().trim();
+        if (!dateStr.isEmpty()) {
+            try {
+                LocalDate.parse(dateStr);
+            } catch (DateTimeParseException e) {
+                setFieldError(datePeremptionField, "Format de date invalide (YYYY-MM-DD)");
+                valid = false;
+            }
+        }
+
         String prixAchatStr = prixAchatField.getText().trim();
-        String prixReventeStr = prixReventeField.getText().trim();
-        
         if (!prixAchatStr.isEmpty()) {
             try {
                 BigDecimal prixAchat = new BigDecimal(prixAchatStr);
                 if (prixAchat.compareTo(BigDecimal.ZERO) < 0) {
-                    errors.append("• Le prix d'achat ne peut pas être négatif\n");
+                    setFieldError(prixAchatField, "Le prix d'achat ne peut pas être négatif");
+                    valid = false;
                 }
             } catch (NumberFormatException e) {
-                errors.append("• Format du prix d'achat invalide\n");
+                setFieldError(prixAchatField, "Format du prix d'achat invalide");
+                valid = false;
             }
         }
-        
+
+        String prixReventeStr = prixReventeField.getText().trim();
         if (!prixReventeStr.isEmpty()) {
             try {
                 BigDecimal prixRevente = new BigDecimal(prixReventeStr);
                 if (prixRevente.compareTo(BigDecimal.ZERO) < 0) {
-                    errors.append("• Le prix de revente ne peut pas être négatif\n");
+                    setFieldError(prixReventeField, "Le prix de revente ne peut pas être négatif");
+                    valid = false;
                 }
             } catch (NumberFormatException e) {
-                errors.append("• Format du prix de revente invalide\n");
+                setFieldError(prixReventeField, "Format du prix de revente invalide");
+                valid = false;
             }
         }
-        
-        // Validation du stock minimum
+
         String stockMinStr = stockMinimumField.getText().trim();
         if (!stockMinStr.isEmpty()) {
             try {
                 int stockMin = Integer.parseInt(stockMinStr);
                 if (stockMin < 0) {
-                    errors.append("• Le stock minimum ne peut pas être négatif\n");
+                    setFieldError(stockMinimumField, "Le stock minimum ne peut pas être négatif");
+                    valid = false;
                 }
             } catch (NumberFormatException e) {
-                errors.append("• Format du stock minimum invalide\n");
+                setFieldError(stockMinimumField, "Format du stock minimum invalide");
+                valid = false;
             }
         }
-        
-        if (errors.length() > 0) {
-            JOptionPane.showMessageDialog(this, 
-                    "❌ Veuillez corriger les erreurs suivantes:\n\n" + errors.toString(),
-                    "Erreurs de validation", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        
-        return true;
+
+        return valid;
     }
 
     private void clearFields() {
+        clearErrors();
         currentProduit = null;
         codeBarreField.setText("");
         libelleField.setText("");
