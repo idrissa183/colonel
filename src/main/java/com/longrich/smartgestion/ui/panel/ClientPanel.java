@@ -2,13 +2,10 @@ package com.longrich.smartgestion.ui.panel;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +30,6 @@ import javax.swing.table.JTableHeader;
 
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
-import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 
 import com.longrich.smartgestion.dto.ClientDTO;
@@ -353,31 +349,6 @@ public class ClientPanel extends JPanel {
         return checkBox;
     }
 
-    private JButton createIconButton(FontAwesomeSolid icon, String text, Color color) {
-        FontIcon fontIcon = FontIcon.of(icon, 16, Color.WHITE);
-        JButton button = new JButton(text, fontIcon);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        button.setBackground(color);
-        button.setForeground(Color.WHITE);
-        button.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Effet hover
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(color.darker());
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(color);
-            }
-        });
-
-        return button;
-    }
 
     private JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
@@ -434,9 +405,8 @@ public class ClientPanel extends JPanel {
         searchField = createStyledTextField();
         searchField.addActionListener(e -> searchClients());
 
-        JButton searchButton = createIconButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR);
+        JButton searchButton = ButtonFactory.createActionButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR, e -> searchClients());
         searchButton.setPreferredSize(new Dimension(50, 38));
-        searchButton.addActionListener(e -> searchClients());
 
         searchInputPanel.add(searchField, BorderLayout.CENTER);
         searchInputPanel.add(searchButton, BorderLayout.EAST);

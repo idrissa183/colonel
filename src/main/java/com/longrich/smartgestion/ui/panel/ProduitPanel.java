@@ -7,7 +7,6 @@ import com.longrich.smartgestion.ui.components.ButtonFactory;
 import lombok.RequiredArgsConstructor;
 
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
-import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 
 import javax.swing.*;
@@ -18,7 +17,6 @@ import javax.swing.table.JTableHeader;
 
 import java.awt.*;
 // import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
@@ -357,44 +355,64 @@ public class ProduitPanel extends JPanel {
     }
 
     private JPanel createSearchPanel() {
-        JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setBackground(CARD_COLOR);
-        searchPanel.setBorder(BorderFactory.createCompoundBorder(
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(BORDER_COLOR, 1),
                 BorderFactory.createEmptyBorder(20, 20, 20, 20)));
 
-        // Titre et barre de recherche
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(CARD_COLOR);
+        JLabel searchLabel = new JLabel("Rechercher un fournisseur");
+        searchLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        searchLabel.setForeground(TEXT_PRIMARY);
+        panel.add(searchLabel, BorderLayout.NORTH);
 
-        JLabel searchTitle = new JLabel("Liste des Produits");
-        searchTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        searchTitle.setForeground(TEXT_PRIMARY);
-        topPanel.add(searchTitle, BorderLayout.WEST);
-
-        // Champ de recherche avec icône
-        JPanel searchInputPanel = new JPanel(new BorderLayout());
+        JPanel searchInputPanel = new JPanel(new BorderLayout(10, 0));
         searchInputPanel.setBackground(CARD_COLOR);
-        searchInputPanel.setMaximumSize(new Dimension(300, 36));
-        searchInputPanel.setPreferredSize(new Dimension(300, 36));
+        searchInputPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         searchField = createStyledTextField();
-        searchField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(8, 35, 8, 12)));
         searchField.addActionListener(e -> searchProduits());
 
-        // Icône de recherche
-        JLabel searchIcon = new JLabel(FontIcon.of(FontAwesomeSolid.SEARCH, 14, TEXT_SECONDARY));
-        searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        JButton searchButton = ButtonFactory.createActionButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR,
+                e -> searchProduits());
+        searchButton.setPreferredSize(new Dimension(50, 38));
 
-        searchInputPanel.add(searchIcon, BorderLayout.WEST);
         searchInputPanel.add(searchField, BorderLayout.CENTER);
+        searchInputPanel.add(searchButton, BorderLayout.EAST);
 
-        topPanel.add(searchInputPanel, BorderLayout.EAST);
-        searchPanel.add(topPanel, BorderLayout.NORTH);
+        panel.add(searchInputPanel, BorderLayout.CENTER);
 
-        return searchPanel;
+        return panel;
+    }
+
+    private JPanel createTablePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+
+        // En-tête de table
+        JPanel tableHeaderPanel = new JPanel(new BorderLayout());
+        tableHeaderPanel.setBackground(CARD_COLOR);
+        tableHeaderPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+
+        JLabel tableTitle = new JLabel("Liste des Fournisseurs");
+        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        tableTitle.setForeground(TEXT_PRIMARY);
+        tableHeaderPanel.add(tableTitle, BorderLayout.WEST);
+
+        panel.add(tableHeaderPanel, BorderLayout.NORTH);
+
+        // Table
+        createTable();
+        JScrollPane scrollPane = new JScrollPane(produitTable);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(Color.WHITE);
+
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
     }
 
     private JPanel createModernTable() {
@@ -522,64 +540,6 @@ public class ProduitPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         return buttonPanel;
-    }
-
-    private JButton createModernButton(String text, FontAwesomeSolid icon, Color backgroundColor,
-            ActionListener action) {
-        JButton button = new JButton(text);
-        button.setIcon(FontIcon.of(icon, 14, Color.WHITE));
-        button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        button.setBackground(backgroundColor);
-        button.setForeground(Color.WHITE);
-        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.addActionListener(action);
-
-        // Hover effect
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(backgroundColor.darker());
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(backgroundColor);
-            }
-        });
-
-        return button;
-    }
-
-    private JButton createIconButton(FontAwesomeSolid icon, String tooltip, Color color) {
-        JButton button = new JButton();
-        button.setIcon(FontIcon.of(icon, 16, color));
-        button.setToolTipText(tooltip);
-        button.setPreferredSize(new Dimension(40, 40));
-        button.setBackground(Color.WHITE);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        // Hover effect
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(new Color(248, 249, 250));
-                button.setIcon(FontIcon.of(icon, 16, color.darker()));
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(Color.WHITE);
-                button.setIcon(FontIcon.of(icon, 16, color));
-            }
-        });
-
-        return button;
     }
 
     private void updateStats() {
