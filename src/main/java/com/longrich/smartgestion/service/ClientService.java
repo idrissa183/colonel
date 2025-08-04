@@ -21,6 +21,7 @@ public class ClientService {
 
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
+    private final ProvinceService provinceService;
 
     public List<ClientDTO> getAllClients() {
         return clientMapper.toDTOList(clientRepository.findAll());
@@ -49,7 +50,9 @@ public class ClientService {
     }
 
     public List<String> getAllProvinces() {
-        return clientRepository.findAllProvinces();
+        return provinceService.findAll().stream()
+                .map(province -> province.getNom())
+                .toList();
     }
 
     public ClientDTO saveClient(ClientDTO clientDTO) {
@@ -58,6 +61,13 @@ public class ClientService {
         }
 
         Client client = clientMapper.toEntity(clientDTO);
+        
+        // Gérer la province
+        if (clientDTO.getProvince() != null) {
+            provinceService.findByNom(clientDTO.getProvince())
+                    .ifPresent(client::setProvince);
+        }
+        
         Client savedClient = clientRepository.save(client);
         log.info("Client sauvegardé: {}", savedClient.getCode());
         return clientMapper.toDTO(savedClient);
@@ -74,6 +84,15 @@ public class ClientService {
         }
 
         clientMapper.updateEntity(clientDTO, existingClient);
+        
+        // Gérer la province
+        if (clientDTO.getProvince() != null) {
+            provinceService.findByNom(clientDTO.getProvince())
+                    .ifPresent(existingClient::setProvince);
+        } else {
+            existingClient.setProvince(null);
+        }
+        
         Client updatedClient = clientRepository.save(existingClient);
         log.info("Client mis à jour: {}", updatedClient.getCode());
         return clientMapper.toDTO(updatedClient);

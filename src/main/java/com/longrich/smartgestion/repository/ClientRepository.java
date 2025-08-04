@@ -1,6 +1,7 @@
 package com.longrich.smartgestion.repository;
 
 import com.longrich.smartgestion.entity.Client;
+import com.longrich.smartgestion.entity.Province;
 import com.longrich.smartgestion.enums.TypeClient;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,7 +22,7 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
 
     List<Client> findByTypeClient(TypeClient typeClient);
 
-    List<Client> findByProvince(String province);
+    List<Client> findByProvince(Province province);
 
     @Query("SELECT c FROM Client c WHERE c.active = true AND " +
             "(LOWER(c.nom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -29,6 +30,6 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
             "LOWER(c.code) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Client> searchActiveClients(@Param("search") String search);
 
-    @Query("SELECT DISTINCT c.province FROM Client c WHERE c.province IS NOT NULL ORDER BY c.province")
+    @Query("SELECT DISTINCT p.nom FROM Client c JOIN c.province p WHERE p IS NOT NULL ORDER BY p.nom")
     List<String> findAllProvinces();
 }

@@ -10,6 +10,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -41,8 +43,9 @@ public class Client extends BaseEntity {
     @Column(name = "prenom", nullable = false)
     private String prenom;
 
-    @Column(name = "province")
-    private String province;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "province_id")
+    private Province province;
 
     @Column(name = "lieu_naissance")
     private String lieuNaissance;

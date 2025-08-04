@@ -15,10 +15,12 @@ public interface ClientMapper {
     @Mapping(target = "nomComplet", expression = "java(client.getNomComplet())")
     @Mapping(target = "clientId", expression = "java(client.getClientId())")
     @Mapping(target = "peutDeveniPartenaire", expression = "java(client.peutDeveniPartenaire())")
+    @Mapping(target = "province", expression = "java(client.getProvince() != null ? client.getProvince().getNom() : null)")
     ClientDTO toDTO(Client client);
 
     @Mapping(target = "commandes", ignore = true)
     @Mapping(target = "factures", ignore = true)
+    @Mapping(target = "province", ignore = true)
     Client toEntity(ClientDTO clientDTO);
 
     List<ClientDTO> toDTOList(List<Client> clients);
@@ -29,5 +31,6 @@ public interface ClientMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "province", ignore = true)
     void updateEntity(ClientDTO clientDTO, @MappingTarget Client client);
 }

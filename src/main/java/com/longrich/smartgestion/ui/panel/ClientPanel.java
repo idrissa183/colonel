@@ -35,8 +35,10 @@ import org.kordamp.ikonli.swing.FontIcon;
 import org.springframework.context.annotation.Profile;
 
 import com.longrich.smartgestion.dto.ClientDTO;
+import com.longrich.smartgestion.entity.Province;
 import com.longrich.smartgestion.enums.TypeClient;
 import com.longrich.smartgestion.service.ClientService;
+import com.longrich.smartgestion.service.ProvinceService;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,7 @@ public class ClientPanel extends JPanel {
     private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
 
     private final ClientService clientService;
+    private final ProvinceService provinceService;
 
     // Composants UI
     private JTextField codeField;
@@ -523,7 +526,9 @@ public class ClientPanel extends JPanel {
 
     private void loadProvinces() {
         try {
-            List<String> provinces = clientService.getAllProvinces();
+            List<String> provinces = provinceService.findAll().stream()
+                    .map(province -> province.getNom())
+                    .toList();
             provinceCombo.removeAllItems();
             for (String province : provinces) {
                 provinceCombo.addItem(province);
