@@ -1,6 +1,6 @@
 package com.longrich.smartgestion.dto;
 
-import com.longrich.smartgestion.enums.TypeClient;
+import com.longrich.smartgestion.enums.TypeStockiste;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,40 +13,32 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ClientDTO {
+public class FournisseurDTO {
 
     private Long id;
 
-    @NotBlank(message = "Le code est obligatoire")
-    private String code;
+    @NotNull(message = "Le type de stockiste est obligatoire")
+    private TypeStockiste typeStockiste;
 
-    private String codePartenaire;
+    @NotBlank(message = "Le code stockiste est obligatoire")
+    private String codeStockiste;
 
     @NotBlank(message = "Le nom est obligatoire")
     private String nom;
 
-    @NotBlank(message = "Le prénom est obligatoire")
     private String prenom;
 
-    private String province;
-    private String cnib;
+    private String adresse;
     private String telephone;
 
     @Email(message = "Format d'email invalide")
     private String email;
 
-    @NotNull(message = "Le type de client est obligatoire")
-    private TypeClient typeClient;
-
-    private String adresse;
-    private String localisation;
-    private Integer totalPv;
-    private Boolean codeDefinitif;
     private Boolean active;
 
     // Computed fields
     private String nomComplet;
-    private String clientId;
-    private Boolean peutDeveniPartenaire;
-    private Boolean estPartenaire;
+    private Boolean prenomObligatoire;
+    private Boolean estPersonnePhysique;
+    private Boolean estPersonneMorale;
 }

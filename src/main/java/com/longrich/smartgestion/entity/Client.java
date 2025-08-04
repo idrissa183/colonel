@@ -1,6 +1,7 @@
 package com.longrich.smartgestion.entity;
 
 import java.util.List;
+import java.util.Random;
 
 import com.longrich.smartgestion.enums.TypeClient;
 
@@ -35,6 +36,9 @@ public class Client extends BaseEntity {
     @Column(name = "code", unique = true, nullable = false)
     private String code;
 
+    @Column(name = "code_partenaire", unique = true)
+    private String codePartenaire;
+
     @NotBlank(message = "Le nom est obligatoire")
     @Column(name = "nom", nullable = false)
     private String nom;
@@ -47,8 +51,6 @@ public class Client extends BaseEntity {
     @JoinColumn(name = "province_id")
     private Province province;
 
-    @Column(name = "lieu_naissance")
-    private String lieuNaissance;
 
     @Column(name = "cnib", length = 20)
     private String cnib;
@@ -70,11 +72,6 @@ public class Client extends BaseEntity {
     @Column(name = "localisation")
     private String localisation;
 
-    @Column(name = "code_parrain", length = 20)
-    private String codeParrain;
-
-    @Column(name = "code_placement", length = 20)
-    private String codePlacement;
 
     @Builder.Default
     @Column(name = "total_pv", nullable = false)
@@ -102,5 +99,17 @@ public class Client extends BaseEntity {
 
     public boolean peutDeveniPartenaire() {
         return typeClient == TypeClient.EN_ATTENTE_PARTENAIRE && totalPv >= 50000;
+    }
+
+    public void genererCodePartenaire() {
+        if (this.typeClient == TypeClient.PARTENAIRE && this.codePartenaire == null) {
+            Random random = new Random();
+            String numeroAleatoire = String.format("%08d", random.nextInt(100000000));
+            this.codePartenaire = "BF" + numeroAleatoire;
+        }
+    }
+
+    public boolean estPartenaire() {
+        return typeClient == TypeClient.PARTENAIRE;
     }
 }

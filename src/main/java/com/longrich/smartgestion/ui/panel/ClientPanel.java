@@ -75,9 +75,7 @@ public class ClientPanel extends JPanel {
     private JTextField adresseField;
     private JCheckBox activeCheckBox;
     private JTextField cnibField;
-    private JTextField lieuNaissanceField;
-    private JTextField codeParrainField;
-    private JTextField codePlacementField;
+    private JTextField codePartenaireField;
     private JTextField totalPvField;
     private JCheckBox codeDefinitifCheckBox;
     private JPanel formPanel;
@@ -215,13 +213,14 @@ public class ClientPanel extends JPanel {
         codeField = createStyledTextField();
         nomField = createStyledTextField();
         prenomField = createStyledTextField();
-        lieuNaissanceField = createStyledTextField();
+        codePartenaireField = createStyledTextField();
+        codePartenaireField.setEditable(false); // Le code partenaire est généré automatiquement
         cnibField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Code Partenaire:", codeField));
+        formPanel.add(createFieldPanel("Code:", codeField));
         formPanel.add(createFieldPanel("Nom:", nomField));
         formPanel.add(createFieldPanel("Prénom(s):", prenomField));
-        formPanel.add(createFieldPanel("Lieu de naissance:", lieuNaissanceField));
+        formPanel.add(createFieldPanel("Code Partenaire:", codePartenaireField));
         formPanel.add(createFieldPanel("CNIB:", cnibField));
         formPanel.add(Box.createVerticalStrut(15));
 
@@ -246,14 +245,10 @@ public class ClientPanel extends JPanel {
         // Section Longrich
         formPanel.add(createSectionTitle("Informations Longrich"));
 
-        codeParrainField = createStyledTextField();
-        codePlacementField = createStyledTextField();
         totalPvField = createStyledTextField();
         totalPvField.setEditable(false);
         totalPvField.setBackground(new Color(249, 250, 251));
 
-        formPanel.add(createFieldPanel("Code Parrain:", codeParrainField));
-        formPanel.add(createFieldPanel("Code Placement:", codePlacementField));
         formPanel.add(createFieldPanel("Total PV:", totalPvField));
 
         // Checkboxes
@@ -653,15 +648,13 @@ public class ClientPanel extends JPanel {
         codeField.setText(client.getCode());
         nomField.setText(client.getNom());
         prenomField.setText(client.getPrenom());
-        lieuNaissanceField.setText(client.getLieuNaissance());
+        codePartenaireField.setText(client.getCodePartenaire());
         cnibField.setText(client.getCnib());
         provinceCombo.setSelectedItem(client.getProvince());
         telephoneField.setText(client.getTelephone());
         emailField.setText(client.getEmail());
         typeClientCombo.setSelectedItem(client.getTypeClient());
         adresseField.setText(client.getAdresse());
-        codeParrainField.setText(client.getCodeParrain());
-        codePlacementField.setText(client.getCodePlacement());
         totalPvField.setText(client.getTotalPv() != null ? client.getTotalPv().toString() : "0");
         activeCheckBox.setSelected(client.getActive());
         codeDefinitifCheckBox.setSelected(client.getCodeDefinitif() != null ? client.getCodeDefinitif() : false);
@@ -716,10 +709,10 @@ public class ClientPanel extends JPanel {
             setFieldError(prenomField, "Prénom requis");
             valid = false;
         }
-        if (telephoneField.getText().trim().isEmpty()) {
-            setFieldError(telephoneField, "Téléphone requis");
-            valid = false;
-        }
+        // if (telephoneField.getText().trim().isEmpty()) {
+        //     setFieldError(telephoneField, "Téléphone requis");
+        //     valid = false;
+        // }
         String email = emailField.getText().trim();
         if (!email.isEmpty() && !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
             setFieldError(emailField, "Email invalide");
@@ -728,11 +721,18 @@ public class ClientPanel extends JPanel {
 
         TypeClient type = (TypeClient) typeClientCombo.getSelectedItem();
         if (type != TypeClient.NON_PARTENAIRE) {
-            if (codeParrainField.getText().trim().isEmpty()) {
-                setFieldError(codeParrainField, "Code parrain est requis");
-            }
-            if (codePlacementField.getText().trim().isEmpty()) {
-                setFieldError(codePlacementField, "Code placement est requis");
+            // Validation spécifique pour les partenaires : Total PV obligatoire
+            if (type == TypeClient.PARTENAIRE) {
+                try {
+                    int totalPv = Integer.parseInt(totalPvField.getText().trim());
+                    if (totalPv <= 0) {
+                        setFieldError(totalPvField, "Le total PV doit être supérieur à 0 pour les partenaires");
+                        valid = false;
+                    }
+                } catch (NumberFormatException e) {
+                    setFieldError(totalPvField, "Le total PV est obligatoire pour les partenaires");
+                    valid = false;
+                }
             }
             if (totalPvField.getText().trim().isEmpty()) {
                 setFieldError(totalPvField, "Total PV est requis");
@@ -815,15 +815,13 @@ public class ClientPanel extends JPanel {
                 .code(codeField.getText().trim())
                 .nom(nomField.getText().trim())
                 .prenom(prenomField.getText().trim())
-                .lieuNaissance(lieuNaissanceField.getText().trim())
                 .cnib(cnibField.getText().trim())
                 .province((String) provinceCombo.getSelectedItem())
                 .telephone(telephoneField.getText().trim())
                 .email(emailField.getText().trim())
                 .typeClient((TypeClient) typeClientCombo.getSelectedItem())
                 .adresse(adresseField.getText().trim())
-                .codeParrain(codeParrainField.getText().trim())
-                .codePlacement(codePlacementField.getText().trim())
+                .codePartenaire(codePartenaireField.getText().trim())
                 .active(activeCheckBox.isSelected())
                 .codeDefinitif(codeDefinitifCheckBox.isSelected())
                 .build();
@@ -835,15 +833,13 @@ public class ClientPanel extends JPanel {
         codeField.setText("");
         nomField.setText("");
         prenomField.setText("");
-        lieuNaissanceField.setText("");
+        codePartenaireField.setText("");
         cnibField.setText("");
         provinceCombo.setSelectedIndex(-1);
         telephoneField.setText("");
         emailField.setText("");
         typeClientCombo.setSelectedIndex(0);
         adresseField.setText("");
-        codeParrainField.setText("");
-        codePlacementField.setText("");
         totalPvField.setText("0");
         activeCheckBox.setSelected(true);
         codeDefinitifCheckBox.setSelected(false);
@@ -852,24 +848,21 @@ public class ClientPanel extends JPanel {
 
     private void onTypeClientChange(ActionEvent e) {
         TypeClient selectedType = (TypeClient) typeClientCombo.getSelectedItem();
-        boolean isNonPartenaire = selectedType == TypeClient.NON_PARTENAIRE;
+        boolean isPartenaire = selectedType == TypeClient.PARTENAIRE;
 
-        // Hide or disable fields for NON_PARTENAIRE
-        if (codeParrainField.getParent() != null) {
-            codeParrainField.getParent().setVisible(!isNonPartenaire);
+        // Show/hide code partenaire field based on client type
+        if (codePartenaireField.getParent() != null) {
+            codePartenaireField.getParent().setVisible(isPartenaire);
         }
-        if (codePlacementField.getParent() != null) {
-            codePlacementField.getParent().setVisible(!isNonPartenaire);
-        }
+        
+        // Show/hide total PV field for partenaires and en attente partenaire
+        boolean showPv = isPartenaire || selectedType == TypeClient.EN_ATTENTE_PARTENAIRE;
         if (totalPvField.getParent() != null) {
-            totalPvField.getParent().setVisible(!isNonPartenaire);
+            totalPvField.getParent().setVisible(showPv);
         }
-
-        codeParrainField.setEnabled(!isNonPartenaire);
-        codePlacementField.setEnabled(!isNonPartenaire);
-        totalPvField.setEnabled(!isNonPartenaire);
-        codeDefinitifCheckBox.setVisible(!isNonPartenaire);
-        codeDefinitifCheckBox.setEnabled(!isNonPartenaire);
+        totalPvField.setEnabled(showPv);
+        codeDefinitifCheckBox.setVisible(showPv);
+        codeDefinitifCheckBox.setEnabled(showPv);
 
         formPanel.revalidate();
         formPanel.repaint();

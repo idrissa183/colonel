@@ -60,12 +60,23 @@ public class ClientService {
             throw new IllegalArgumentException("Un client avec ce code existe déjà");
         }
 
+        // Validation: Total PV obligatoire pour les partenaires
+        if (clientDTO.getTypeClient() == TypeClient.PARTENAIRE && 
+            (clientDTO.getTotalPv() == null || clientDTO.getTotalPv() <= 0)) {
+            throw new IllegalArgumentException("Le total PV est obligatoire pour les partenaires");
+        }
+
         Client client = clientMapper.toEntity(clientDTO);
         
         // Gérer la province
         if (clientDTO.getProvince() != null) {
             provinceService.findByNom(clientDTO.getProvince())
                     .ifPresent(client::setProvince);
+        }
+        
+        // Générer le code partenaire si nécessaire
+        if (client.getTypeClient() == TypeClient.PARTENAIRE) {
+            client.genererCodePartenaire();
         }
         
         Client savedClient = clientRepository.save(client);
@@ -83,6 +94,12 @@ public class ClientService {
             throw new IllegalArgumentException("Un client avec ce code existe déjà");
         }
 
+        // Validation: Total PV obligatoire pour les partenaires
+        if (clientDTO.getTypeClient() == TypeClient.PARTENAIRE && 
+            (clientDTO.getTotalPv() == null || clientDTO.getTotalPv() <= 0)) {
+            throw new IllegalArgumentException("Le total PV est obligatoire pour les partenaires");
+        }
+
         clientMapper.updateEntity(clientDTO, existingClient);
         
         // Gérer la province
@@ -91,6 +108,12 @@ public class ClientService {
                     .ifPresent(existingClient::setProvince);
         } else {
             existingClient.setProvince(null);
+        }
+        
+        // Générer le code partenaire si passage vers partenaire
+        if (existingClient.getTypeClient() == TypeClient.PARTENAIRE && 
+            existingClient.getCodePartenaire() == null) {
+            existingClient.genererCodePartenaire();
         }
         
         Client updatedClient = clientRepository.save(existingClient);
@@ -134,8 +157,10 @@ public class ClientService {
 
         client.setTypeClient(TypeClient.PARTENAIRE);
         client.setCodeDefinitif(true);
+        client.genererCodePartenaire(); // Générer le code partenaire lors de la promotion
         Client updatedClient = clientRepository.save(client);
-        log.info("Client promu vers partenaire: {}", updatedClient.getCode());
+        log.info("Client promu vers partenaire: {} avec code partenaire: {}", 
+                updatedClient.getCode(), updatedClient.getCodePartenaire());
         return clientMapper.toDTO(updatedClient);
     }
 

@@ -15,6 +15,7 @@ public interface ClientMapper {
     @Mapping(target = "nomComplet", expression = "java(client.getNomComplet())")
     @Mapping(target = "clientId", expression = "java(client.getClientId())")
     @Mapping(target = "peutDeveniPartenaire", expression = "java(client.peutDeveniPartenaire())")
+    @Mapping(target = "estPartenaire", expression = "java(client.estPartenaire())")
     @Mapping(target = "province", expression = "java(client.getProvince() != null ? client.getProvince().getNom() : null)")
     ClientDTO toDTO(Client client);
 

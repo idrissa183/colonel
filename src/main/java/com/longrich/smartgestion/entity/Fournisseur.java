@@ -2,9 +2,13 @@ package com.longrich.smartgestion.entity;
 
 import java.util.List;
 
+import com.longrich.smartgestion.enums.TypeStockiste;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -25,6 +29,10 @@ import lombok.Setter;
 @Builder
 public class Fournisseur extends BaseEntity {
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_stockiste", nullable = false)
+    private TypeStockiste typeStockiste;
+
     @NotBlank(message = "Le code stockiste est obligatoire")
     @Column(name = "code_stockiste", unique = true, nullable = false)
     private String codeStockiste;
@@ -33,8 +41,7 @@ public class Fournisseur extends BaseEntity {
     @Column(name = "nom", nullable = false)
     private String nom;
 
-    @NotBlank(message = "Le prénom est obligatoire")
-    @Column(name = "prenom", nullable = false)
+    @Column(name = "prenom")
     private String prenom;
 
     @Column(name = "adresse")
@@ -57,6 +64,21 @@ public class Fournisseur extends BaseEntity {
 
     // Méthodes utilitaires
     public String getNomComplet() {
-        return nom + " " + prenom;
+        if (typeStockiste == TypeStockiste.PERSONNE_PHYSIQUE && prenom != null) {
+            return nom + " " + prenom;
+        }
+        return nom;
+    }
+
+    public boolean prenomObligatoire() {
+        return typeStockiste == TypeStockiste.PERSONNE_PHYSIQUE;
+    }
+
+    public boolean estPersonnePhysique() {
+        return typeStockiste == TypeStockiste.PERSONNE_PHYSIQUE;
+    }
+
+    public boolean estPersonneMorale() {
+        return typeStockiste == TypeStockiste.PERSONNE_MORALE;
     }
 }
