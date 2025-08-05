@@ -787,12 +787,24 @@ public class ClientPanel extends JPanel {
             return;
         }
 
+        String message = String.format(
+                "🗑️ Êtes-vous sûr de vouloir supprimer ce client ?\n\n" +
+                "Client: %s\n" +
+                "Type: %s\n" +
+                "ID: %d\n\n" +
+                "Cette action est irréversible.",
+                currentClient.getNomComplet() != null ? currentClient.getNomComplet() : 
+                    (currentClient.getNom() + " " + currentClient.getPrenom()),
+                currentClient.getTypeClient() != null ? currentClient.getTypeClient().getDisplayName() : "Non défini",
+                currentClient.getId()
+        );
+        
         int option = JOptionPane.showConfirmDialog(
                 this,
-                "Êtes-vous sûr de vouloir supprimer ce client ?",
-                "Confirmation",
+                message,
+                "Confirmation de suppression",
                 JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
+                JOptionPane.WARNING_MESSAGE);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
