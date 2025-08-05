@@ -252,23 +252,23 @@ public class StockPanel extends JPanel {
 
         filtersContainer.add(firstRowFilters);
 
-        // Boutons d'action rapide
-        JPanel actionButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        actionButtons.setBackground(CARD_COLOR);
-        actionButtons.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        // // Boutons d'action rapide
+        // JPanel actionButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+        // actionButtons.setBackground(CARD_COLOR);
+        // actionButtons.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
-        JButton clearFiltersButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.TIMES, "Effacer filtres", SECONDARY_COLOR, e -> clearFilters());
-        JButton lowStockButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Stocks faibles", WARNING_COLOR, e -> showLowStock());
-        JButton outOfStockButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.TIMES_CIRCLE, "Ruptures", DANGER_COLOR, e -> showOutOfStock());
+        // JButton clearFiltersButton = ButtonFactory.createActionButton(
+        //         FontAwesomeSolid.TIMES, "Effacer filtres", SECONDARY_COLOR, e -> clearFilters());
+        // JButton lowStockButton = ButtonFactory.createActionButton(
+        //         FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Stocks faibles", WARNING_COLOR, e -> showLowStock());
+        // JButton outOfStockButton = ButtonFactory.createActionButton(
+        //         FontAwesomeSolid.TIMES_CIRCLE, "Ruptures", DANGER_COLOR, e -> showOutOfStock());
 
-        actionButtons.add(clearFiltersButton);
-        actionButtons.add(lowStockButton);
-        actionButtons.add(outOfStockButton);
+        // actionButtons.add(clearFiltersButton);
+        // actionButtons.add(lowStockButton);
+        // actionButtons.add(outOfStockButton);
 
-        filtersContainer.add(actionButtons);
+        // filtersContainer.add(actionButtons);
         searchPanel.add(filtersContainer, BorderLayout.CENTER);
 
         return searchPanel;

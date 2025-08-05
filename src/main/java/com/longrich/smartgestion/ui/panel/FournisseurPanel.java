@@ -433,7 +433,7 @@ public class FournisseurPanel extends JPanel {
 
     private void createTable() {
         String[] columns = {
-                "#", "Code Stockiste", "Type", "Nom", "Prénom", "Téléphone",
+                "ID", "Code Stockiste", "Type", "Nom", "Prénom", "Téléphone",
                 "Email", "Statut"
         };
 

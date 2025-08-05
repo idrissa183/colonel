@@ -474,7 +474,7 @@ public class ClientPanel extends JPanel {
 
     private void createTable() {
         String[] columns = {
-                "#", "Code", "Nom", "Prénom", "Province", "Téléphone",
+                "ID", "Code", "Nom", "Prénom", "Province", "Téléphone",
                 "Email", "Type", "PV", "Statut"
         };
 
@@ -514,6 +514,16 @@ public class ClientPanel extends JPanel {
                 }
 
                 setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+                // Coloration spéciale pour le statut
+                if (column == 9 && value != null) { // Colonne Statut
+                    if ("Actif".equals(value.toString())) {
+                        setForeground(SUCCESS_COLOR);
+                    } else {
+                        setForeground(DANGER_COLOR);
+                    }
+                } else {
+                    setForeground(TEXT_PRIMARY);
+                }
                 return c;
             }
         };
