@@ -716,22 +716,23 @@ public class ClientPanel extends JPanel {
             setFieldError(codePartenaireField, "Code partenaire requis");
             valid = false;
         }
-        if (type != TypeClient.NON_PARTENAIRE) {
-            // Validation spécifique pour les partenaires : Total PV obligatoire
-            if (type == TypeClient.PARTENAIRE) {
+        // Validation spécifique pour les partenaires : Total PV obligatoire
+        if (type == TypeClient.PARTENAIRE) {
+            String totalPvText = totalPvField.getText().trim();
+            if (totalPvText.isEmpty()) {
+                setFieldError(totalPvField, "Le total PV est obligatoire pour les partenaires");
+                valid = false;
+            } else {
                 try {
-                    int totalPv = Integer.parseInt(totalPvField.getText().trim());
+                    int totalPv = Integer.parseInt(totalPvText);
                     if (totalPv <= 0) {
                         setFieldError(totalPvField, "Le total PV doit être supérieur à 0 pour les partenaires");
                         valid = false;
                     }
                 } catch (NumberFormatException e) {
-                    setFieldError(totalPvField, "Le total PV est obligatoire pour les partenaires");
+                    setFieldError(totalPvField, "Le total PV doit être un nombre entier valide");
                     valid = false;
                 }
-            }
-            if (totalPvField.getText().trim().isEmpty()) {
-                setFieldError(totalPvField, "Total PV est requis");
             }
         }
 
@@ -813,6 +814,17 @@ public class ClientPanel extends JPanel {
         if (typeClient == TypeClient.PARTENAIRE && !codeSaisi.isBlank()) {
             codePartenaire = codeSaisi;
         }
+        
+        // Récupération du Total PV pour les partenaires
+        Integer totalPv = null;
+        if (typeClient == TypeClient.PARTENAIRE && !totalPvField.getText().trim().isEmpty()) {
+            try {
+                totalPv = Integer.parseInt(totalPvField.getText().trim());
+            } catch (NumberFormatException e) {
+                // Géré par la validation du formulaire
+            }
+        }
+        
         return ClientDTO.builder()
                 // Code supprimé - utilisation de l'ID auto-généré
                 .nom(nomField.getText().trim())
@@ -824,6 +836,7 @@ public class ClientPanel extends JPanel {
                 .typeClient(typeClient)
                 .adresse(adresseField.getText().trim())
                 .codePartenaire(codePartenaire)
+                .totalPv(totalPv)
                 .active(activeCheckBox.isSelected())
                 .codeDefinitif(codeDefinitifCheckBox.isSelected())
                 .build();
