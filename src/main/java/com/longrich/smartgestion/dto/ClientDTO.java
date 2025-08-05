@@ -4,6 +4,7 @@ import com.longrich.smartgestion.enums.TypeClient;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,9 +18,7 @@ public class ClientDTO {
 
     private Long id;
 
-    @NotBlank(message = "Le code est obligatoire")
-    private String code;
-
+    @Pattern(regexp = "^BF\\d{8}$", message = "Le code partenaire doit respecter le format BF suivi de 8 chiffres")
     private String codePartenaire;
 
     @NotBlank(message = "Le nom est obligatoire")
@@ -39,7 +38,6 @@ public class ClientDTO {
     private TypeClient typeClient;
 
     private String adresse;
-    private String localisation;
     private Integer totalPv;
     private Boolean codeDefinitif;
     private Boolean active;

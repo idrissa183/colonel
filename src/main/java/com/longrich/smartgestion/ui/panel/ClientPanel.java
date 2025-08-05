@@ -62,7 +62,6 @@ public class ClientPanel extends JPanel {
     private final ProvinceService provinceService;
 
     // Composants UI
-    private JTextField codeField;
     private JTextField nomField;
     private JTextField prenomField;
     private JComboBox<String> provinceCombo;
@@ -76,6 +75,7 @@ public class ClientPanel extends JPanel {
     private JTextField totalPvField;
     private JCheckBox codeDefinitifCheckBox;
     private JPanel formPanel;
+    private JPanel longrichSection;
 
     private JTable clientTable;
     private DefaultTableModel tableModel;
@@ -206,17 +206,14 @@ public class ClientPanel extends JPanel {
         // Section Informations personnelles
         formPanel.add(createSectionTitle("Informations Personnelles"));
 
-        codeField = createStyledTextField();
         nomField = createStyledTextField();
         prenomField = createStyledTextField();
         codePartenaireField = createStyledTextField();
         codePartenaireField.setEditable(false); // Le code partenaire est généré automatiquement
         cnibField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Code:", codeField));
         formPanel.add(createFieldPanel("Nom:", nomField));
         formPanel.add(createFieldPanel("Prénom(s):", prenomField));
-        formPanel.add(createFieldPanel("Code Partenaire:", codePartenaireField));
         formPanel.add(createFieldPanel("CNIB:", cnibField));
         formPanel.add(Box.createVerticalStrut(15));
 
@@ -238,32 +235,60 @@ public class ClientPanel extends JPanel {
         formPanel.add(createFieldPanel("Adresse:", adresseField));
         formPanel.add(Box.createVerticalStrut(15));
 
-        // Section Longrich
-        formPanel.add(createSectionTitle("Informations Longrich"));
+        // Section Longrich (séparée pour pouvoir la cacher)
+        longrichSection = createLongrichSection();
+        formPanel.add(longrichSection);
+        
+        // Checkbox Client actif (hors section Longrich)
+        JPanel generalCheckboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
+        generalCheckboxPanel.setBackground(CARD_COLOR);
+        generalCheckboxPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        
+        activeCheckBox = createStyledCheckBox("Client actif");
+        activeCheckBox.setSelected(true);
+        generalCheckboxPanel.add(activeCheckBox);
+        
+        formPanel.add(generalCheckboxPanel);
+        formPanel.add(Box.createVerticalGlue());
 
+        // Initialiser la visibilité de la section Longrich (masquée par défaut)
+        if (longrichSection != null) {
+            longrichSection.setVisible(false);
+        }
+
+        return formPanel;
+    }
+
+    private JPanel createLongrichSection() {
+        JPanel section = new JPanel();
+        section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+        section.setBackground(CARD_COLOR);
+        section.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        
+        // Titre de section
+        section.add(createSectionTitle("Informations Longrich"));
+        
+        // Code Partenaire field
+        section.add(createFieldPanel("Code Partenaire:", codePartenaireField));
+        
+        // Total PV field
         totalPvField = createStyledTextField();
         totalPvField.setEditable(false);
         totalPvField.setBackground(new Color(249, 250, 251));
-
-        formPanel.add(createFieldPanel("Total PV:", totalPvField));
-
-        // Checkboxes
+        section.add(createFieldPanel("Total PV:", totalPvField));
+        
+        // Code définitif checkbox
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
         checkboxPanel.setBackground(CARD_COLOR);
         checkboxPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-
-        activeCheckBox = createStyledCheckBox("Client actif");
-        activeCheckBox.setSelected(true);
+        
         codeDefinitifCheckBox = createStyledCheckBox("Code définitif");
-
-        checkboxPanel.add(activeCheckBox);
-        checkboxPanel.add(Box.createHorizontalStrut(20));
         checkboxPanel.add(codeDefinitifCheckBox);
-
-        formPanel.add(checkboxPanel);
-        formPanel.add(Box.createVerticalGlue());
-
-        return formPanel;
+        
+        section.add(checkboxPanel);
+        section.add(Box.createVerticalStrut(15));
+        
+        return section;
     }
 
     private JLabel createSectionTitle(String title) {
@@ -539,7 +564,7 @@ public class ClientPanel extends JPanel {
                 ClientDTO client = clients.get(i);
                 Object[] row = {
                         i + 1,
-                        client.getCode(),
+                        client.getId(),
                         client.getNom(),
                         client.getPrenom(),
                         client.getProvince(),
@@ -585,7 +610,7 @@ public class ClientPanel extends JPanel {
                 ClientDTO client = clients.get(i);
                 Object[] row = {
                         i + 1,
-                        client.getCode(),
+                        client.getId(),
                         client.getNom(),
                         client.getPrenom(),
                         client.getProvince(),
@@ -605,8 +630,8 @@ public class ClientPanel extends JPanel {
     private void loadSelectedClient() {
         int selectedRow = clientTable.getSelectedRow();
         if (selectedRow >= 0) {
-            String code = (String) tableModel.getValueAt(selectedRow, 1);
-            clientService.getClientByCode(code).ifPresent(client -> {
+            Long clientId = (Long) tableModel.getValueAt(selectedRow, 0);
+            clientService.getClientById(clientId).ifPresent(client -> {
                 currentClient = client;
                 populateFields(client);
             });
@@ -614,7 +639,7 @@ public class ClientPanel extends JPanel {
     }
 
     private void populateFields(ClientDTO client) {
-        codeField.setText(client.getCode());
+        // Code supprimé - utilisation de l'ID auto-généré
         nomField.setText(client.getNom());
         prenomField.setText(client.getPrenom());
         codePartenaireField.setText(client.getCodePartenaire());
@@ -666,10 +691,7 @@ public class ClientPanel extends JPanel {
         clearErrors();
         boolean valid = true;
 
-        if (codeField.getText().trim().isEmpty()) {
-            setFieldError(codeField, "Code requis");
-            valid = false;
-        }
+        // Validation du code supprimée - ID auto-généré
         if (nomField.getText().trim().isEmpty()) {
             setFieldError(nomField, "Nom requis");
             valid = false;
@@ -723,7 +745,7 @@ public class ClientPanel extends JPanel {
             loadClients();
             updateStats();
         } catch (IllegalArgumentException e) {
-            setFieldError(codeField, e.getMessage());
+            showErrorMessage(e.getMessage());
         } catch (Exception e) {
             showErrorMessage("Erreur: " + e.getMessage());
         }
@@ -747,7 +769,7 @@ public class ClientPanel extends JPanel {
             loadClients();
             updateStats();
         } catch (IllegalArgumentException e) {
-            setFieldError(codeField, e.getMessage());
+            showErrorMessage(e.getMessage());
         } catch (Exception e) {
             showErrorMessage("Erreur: " + e.getMessage());
         }
@@ -781,7 +803,7 @@ public class ClientPanel extends JPanel {
 
     private ClientDTO createClientFromFields() {
         return ClientDTO.builder()
-                .code(codeField.getText().trim())
+                // Code supprimé - utilisation de l'ID auto-généré
                 .nom(nomField.getText().trim())
                 .prenom(prenomField.getText().trim())
                 .cnib(cnibField.getText().trim())
@@ -799,7 +821,7 @@ public class ClientPanel extends JPanel {
     private void clearFields() {
         clearErrors();
         currentClient = null;
-        codeField.setText("");
+        // Code field supprimé
         nomField.setText("");
         prenomField.setText("");
         codePartenaireField.setText("");
@@ -819,19 +841,10 @@ public class ClientPanel extends JPanel {
         TypeClient selectedType = (TypeClient) typeClientCombo.getSelectedItem();
         boolean isPartenaire = selectedType == TypeClient.PARTENAIRE;
 
-        // Show/hide code partenaire field based on client type
-        if (codePartenaireField.getParent() != null) {
-            codePartenaireField.getParent().setVisible(isPartenaire);
+        // Masquer/afficher toute la section Longrich selon le type de client
+        if (longrichSection != null) {
+            longrichSection.setVisible(isPartenaire);
         }
-
-        // Show/hide total PV field for partenaires and en attente partenaire
-        boolean showPv = isPartenaire || selectedType == TypeClient.EN_ATTENTE_PARTENAIRE;
-        if (totalPvField.getParent() != null) {
-            totalPvField.getParent().setVisible(showPv);
-        }
-        totalPvField.setEnabled(showPv);
-        codeDefinitifCheckBox.setVisible(showPv);
-        codeDefinitifCheckBox.setEnabled(showPv);
 
         formPanel.revalidate();
         formPanel.repaint();

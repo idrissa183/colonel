@@ -14,9 +14,9 @@ import java.util.Optional;
 @Repository
 public interface ClientRepository extends JpaRepository<Client, Long> {
 
-    Optional<Client> findByCode(String code);
+    Optional<Client> findByCodePartenaire(String codePartenaire);
 
-    boolean existsByCode(String code);
+    boolean existsByCodePartenaire(String codePartenaire);
 
     List<Client> findByActiveTrue();
 
@@ -27,9 +27,12 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
     @Query("SELECT c FROM Client c WHERE c.active = true AND " +
             "(LOWER(c.nom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(c.prenom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(c.code) LIKE LOWER(CONCAT('%', :search, '%')))")
+            "LOWER(c.codePartenaire) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<Client> searchActiveClients(@Param("search") String search);
 
     @Query("SELECT DISTINCT p.nom FROM Client c JOIN c.province p WHERE p IS NOT NULL ORDER BY p.nom")
     List<String> findAllProvinces();
+    
+    @Query("SELECT c FROM Client c WHERE c.active = true AND c.id = :id")
+    Optional<Client> findActiveById(@Param("id") Long id);
 }

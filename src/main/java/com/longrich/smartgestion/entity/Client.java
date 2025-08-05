@@ -11,12 +11,16 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,10 +36,12 @@ import lombok.Setter;
 @Builder
 public class Client extends BaseEntity {
 
-    @NotBlank(message = "Le code est obligatoire")
-    @Column(name = "code", unique = true, nullable = false)
-    private String code;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
+    @Pattern(regexp = "^BF\\d{8}$", message = "Le code partenaire doit respecter le format BF suivi de 8 chiffres")
     @Column(name = "code_partenaire", unique = true)
     private String codePartenaire;
 
@@ -69,9 +75,6 @@ public class Client extends BaseEntity {
     @Column(name = "adresse")
     private String adresse;
 
-    @Column(name = "localisation")
-    private String localisation;
-
 
     @Builder.Default
     @Column(name = "total_pv", nullable = false)
@@ -94,7 +97,11 @@ public class Client extends BaseEntity {
     }
 
     public String getClientId() {
-        return code + " - " + getNomComplet() + " " + telephone + " " + (localisation != null ? localisation : "");
+        String clientId = id + " - " + getNomComplet();
+        if (telephone != null && !telephone.isEmpty()) {
+            clientId += " " + telephone;
+        }
+        return clientId;
     }
 
     public boolean peutDeveniPartenaire() {

@@ -36,8 +36,8 @@ public class ClientService {
                 .map(clientMapper::toDTO);
     }
 
-    public Optional<ClientDTO> getClientByCode(String code) {
-        return clientRepository.findByCode(code)
+    public Optional<ClientDTO> getClientByCodePartenaire(String codePartenaire) {
+        return clientRepository.findByCodePartenaire(codePartenaire)
                 .map(clientMapper::toDTO);
     }
 
@@ -56,8 +56,21 @@ public class ClientService {
     }
 
     public ClientDTO saveClient(ClientDTO clientDTO) {
-        if (clientDTO.getId() == null && clientRepository.existsByCode(clientDTO.getCode())) {
-            throw new IllegalArgumentException("Un client avec ce code existe déjà");
+        if (clientDTO.getId() == null && clientDTO.getCodePartenaire() != null && 
+            clientRepository.existsByCodePartenaire(clientDTO.getCodePartenaire())) {
+            throw new IllegalArgumentException("Un client avec ce code partenaire existe déjà");
+        }
+        
+        // Validation: Le code partenaire est obligatoire uniquement pour les partenaires
+        if (clientDTO.getTypeClient() == TypeClient.PARTENAIRE && 
+            (clientDTO.getCodePartenaire() == null || clientDTO.getCodePartenaire().trim().isEmpty())) {
+            throw new IllegalArgumentException("Le code partenaire est obligatoire pour les clients partenaires");
+        }
+        
+        // Validation: Le code partenaire ne doit pas être présent pour les non-partenaires
+        if (clientDTO.getTypeClient() != TypeClient.PARTENAIRE && 
+            clientDTO.getCodePartenaire() != null && !clientDTO.getCodePartenaire().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le code partenaire n'est autorisé que pour les clients partenaires");
         }
 
         // Validation: Total PV obligatoire pour les partenaires
@@ -74,13 +87,14 @@ public class ClientService {
                     .ifPresent(client::setProvince);
         }
         
-        // Générer le code partenaire si nécessaire
-        if (client.getTypeClient() == TypeClient.PARTENAIRE) {
+        // Générer le code partenaire si nécessaire et pas déjà défini
+        if (client.getTypeClient() == TypeClient.PARTENAIRE && 
+            (client.getCodePartenaire() == null || client.getCodePartenaire().trim().isEmpty())) {
             client.genererCodePartenaire();
         }
         
         Client savedClient = clientRepository.save(client);
-        log.info("Client sauvegardé: {}", savedClient.getCode());
+        log.info("Client sauvegardé: {}", savedClient.getId());
         return clientMapper.toDTO(savedClient);
     }
 
@@ -88,10 +102,23 @@ public class ClientService {
         Client existingClient = clientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
 
-        // Vérifier si le code est modifié et s'il existe déjà
-        if (!existingClient.getCode().equals(clientDTO.getCode()) &&
-                clientRepository.existsByCode(clientDTO.getCode())) {
-            throw new IllegalArgumentException("Un client avec ce code existe déjà");
+        // Vérifier si le code partenaire est modifié et s'il existe déjà
+        if (clientDTO.getCodePartenaire() != null && 
+            !clientDTO.getCodePartenaire().equals(existingClient.getCodePartenaire()) &&
+                clientRepository.existsByCodePartenaire(clientDTO.getCodePartenaire())) {
+            throw new IllegalArgumentException("Un client avec ce code partenaire existe déjà");
+        }
+        
+        // Validation: Le code partenaire est obligatoire uniquement pour les partenaires
+        if (clientDTO.getTypeClient() == TypeClient.PARTENAIRE && 
+            (clientDTO.getCodePartenaire() == null || clientDTO.getCodePartenaire().trim().isEmpty())) {
+            throw new IllegalArgumentException("Le code partenaire est obligatoire pour les clients partenaires");
+        }
+        
+        // Validation: Le code partenaire ne doit pas être présent pour les non-partenaires
+        if (clientDTO.getTypeClient() != TypeClient.PARTENAIRE && 
+            clientDTO.getCodePartenaire() != null && !clientDTO.getCodePartenaire().trim().isEmpty()) {
+            throw new IllegalArgumentException("Le code partenaire n'est autorisé que pour les clients partenaires");
         }
 
         // Validation: Total PV obligatoire pour les partenaires
@@ -117,7 +144,7 @@ public class ClientService {
         }
         
         Client updatedClient = clientRepository.save(existingClient);
-        log.info("Client mis à jour: {}", updatedClient.getCode());
+        log.info("Client mis à jour: {}", updatedClient.getId());
         return clientMapper.toDTO(updatedClient);
     }
 
@@ -128,11 +155,11 @@ public class ClientService {
         // Soft delete
         client.setActive(false);
         clientRepository.save(client);
-        log.info("Client désactivé: {}", client.getCode());
+        log.info("Client désactivé: {}", client.getId());
     }
 
-    public boolean existsByCode(String code) {
-        return clientRepository.existsByCode(code);
+    public boolean existsByCodePartenaire(String codePartenaire) {
+        return clientRepository.existsByCodePartenaire(codePartenaire);
     }
 
     public List<ClientDTO> getClientsEnAttentePartenaire() {
@@ -160,7 +187,7 @@ public class ClientService {
         client.genererCodePartenaire(); // Générer le code partenaire lors de la promotion
         Client updatedClient = clientRepository.save(client);
         log.info("Client promu vers partenaire: {} avec code partenaire: {}", 
-                updatedClient.getCode(), updatedClient.getCodePartenaire());
+                updatedClient.getId(), updatedClient.getCodePartenaire());
         return clientMapper.toDTO(updatedClient);
     }
 
@@ -170,6 +197,6 @@ public class ClientService {
 
         client.setTotalPv(client.getTotalPv() + pv);
         clientRepository.save(client);
-        log.info("PV ajoutés au client {}: +{} (Total: {})", client.getCode(), pv, client.getTotalPv());
+        log.info("PV ajoutés au client {}: +{} (Total: {})", client.getId(), pv, client.getTotalPv());
     }
 }

@@ -1,8 +1,8 @@
 package com.longrich.smartgestion.enums;
 
 public enum TypeClient {
-    PARTENAIRE("Partenaire"),
     NON_PARTENAIRE("Non Partenaire"),
+    PARTENAIRE("Partenaire"),
     STOCKISTE("Stockiste"),
     EN_ATTENTE_PARTENAIRE("En Attente Partenaire");
 
