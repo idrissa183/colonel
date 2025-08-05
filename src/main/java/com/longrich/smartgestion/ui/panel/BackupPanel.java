@@ -127,8 +127,9 @@ public class BackupPanel extends JPanel {
         splitPane.setBackground(BACKGROUND_COLOR);
         splitPane.setBorder(null);
         splitPane.setDividerSize(8);
-        splitPane.setResizeWeight(0.35);
+        splitPane.setResizeWeight(0.4); // Augmenté pour plus d'espace à gauche
         splitPane.setOneTouchExpandable(true);
+        splitPane.setContinuousLayout(true); // Amélioration de l'expérience utilisateur
 
         // Panneau gauche - Actions de sauvegarde/restauration
         JPanel actionsPanel = createActionsPanel();
@@ -322,34 +323,64 @@ public class BackupPanel extends JPanel {
         section.add(sectionTitle);
         section.add(Box.createVerticalStrut(20));
 
-        // Barre de progression
+        // Barre de progression améliorée
+        JPanel progressContainer = new JPanel();
+        progressContainer.setLayout(new BoxLayout(progressContainer, BoxLayout.Y_AXIS));
+        progressContainer.setBackground(CARD_COLOR);
+        progressContainer.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        progressContainer.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
         progressBar.setString("Prêt");
-        progressBar.setPreferredSize(new Dimension(0, 25));
+        progressBar.setPreferredSize(new Dimension(0, 28));
+        progressBar.setBackground(new Color(243, 244, 246));
+        progressBar.setForeground(PRIMARY_COLOR);
+        progressBar.setBorder(BorderFactory.createLineBorder(BORDER_COLOR, 1));
         progressBar.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        section.add(progressBar);
-        section.add(Box.createVerticalStrut(10));
+        
+        progressContainer.add(progressBar);
+        section.add(progressContainer);
+        section.add(Box.createVerticalStrut(12));
 
-        // Statut
+        // Statut amélioré
+        JPanel statusContainer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        statusContainer.setBackground(CARD_COLOR);
+        statusContainer.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        
         statusLabel = new JLabel("Système prêt pour les opérations de sauvegarde/restauration");
         statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         statusLabel.setForeground(TEXT_SECONDARY);
-        statusLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        section.add(statusLabel);
-        section.add(Box.createVerticalStrut(15));
+        
+        statusContainer.add(statusLabel);
+        section.add(statusContainer);
+        section.add(Box.createVerticalStrut(18));
 
-        // Statistiques
-        JPanel statsGrid = new JPanel(new GridLayout(2, 2, 10, 10));
-        statsGrid.setBackground(CARD_COLOR);
-        statsGrid.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        // Statistiques avec mise en page responsive
+        JPanel statsContainer = new JPanel();
+        statsContainer.setLayout(new BoxLayout(statsContainer, BoxLayout.Y_AXIS));
+        statsContainer.setBackground(CARD_COLOR);
+        statsContainer.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        
+        // Première ligne de statistiques
+        JPanel statsRow1 = new JPanel(new GridLayout(1, 2, 15, 0));
+        statsRow1.setBackground(CARD_COLOR);
+        statsRow1.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        statsRow1.add(createStatCard("Dernière Sauvegarde", "Il y a 2 jours", "last_backup"));
+        statsRow1.add(createStatCard("Taille Totale", "1.2 GB", "total_size"));
+        
+        // Deuxième ligne de statistiques
+        JPanel statsRow2 = new JPanel(new GridLayout(1, 2, 15, 0));
+        statsRow2.setBackground(CARD_COLOR);
+        statsRow2.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        statsRow2.add(createStatCard("Sauvegardes", "15", "backup_count"));
+        statsRow2.add(createStatCard("Prochaine Auto", "Dans 5 jours", "next_auto"));
+        
+        statsContainer.add(statsRow1);
+        statsContainer.add(Box.createVerticalStrut(12));
+        statsContainer.add(statsRow2);
 
-        statsGrid.add(createStatCard("Dernière Sauvegarde", "Il y a 2 jours", "last_backup"));
-        statsGrid.add(createStatCard("Taille Totale", "1.2 GB", "total_size"));
-        statsGrid.add(createStatCard("Sauvegardes", "15", "backup_count"));
-        statsGrid.add(createStatCard("Prochaine Auto", "Dans 5 jours", "next_auto"));
-
-        section.add(statsGrid);
+        section.add(statsContainer);
 
         return section;
     }
@@ -360,22 +391,25 @@ public class BackupPanel extends JPanel {
         card.setBackground(new Color(248, 250, 252));
         card.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
+        card.setMinimumSize(new Dimension(120, 70));
+        card.setPreferredSize(new Dimension(0, 75));
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         titleLabel.setForeground(TEXT_SECONDARY);
         titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         valueLabel.setForeground(TEXT_PRIMARY);
         valueLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         card.add(titleLabel);
-        card.add(Box.createVerticalStrut(3));
+        card.add(Box.createVerticalStrut(8));
         card.add(valueLabel);
+        card.add(Box.createVerticalGlue());
 
         statusLabels.put(key, valueLabel);
         return card;
@@ -414,11 +448,14 @@ public class BackupPanel extends JPanel {
 
         container.add(headerPanel, BorderLayout.NORTH);
 
-        // Table d'historique
+        // Table d'historique avec améliorations
         createBackupTable();
         JScrollPane scrollPane = new JScrollPane(backupTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         container.add(scrollPane, BorderLayout.CENTER);
 
         return container;

@@ -66,7 +66,7 @@ public class DashboardPanel extends JPanel {
     private JLabel stockAlertsLabel;
     private JLabel caLabel;
     private DefaultListModel<String> activitiesModel;
-    private JLabel lastUpdateLabel;
+    // private JLabel lastUpdateLabel;
 
     @PostConstruct
     public void initializeUI() {
@@ -95,10 +95,10 @@ public class DashboardPanel extends JPanel {
         headerPanel.add(titleLabel, BorderLayout.WEST);
 
         // Dernière mise à jour
-        lastUpdateLabel = new JLabel();
-        lastUpdateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lastUpdateLabel.setForeground(TEXT_SECONDARY);
-        headerPanel.add(lastUpdateLabel, BorderLayout.EAST);
+        // lastUpdateLabel = new JLabel();
+        // lastUpdateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        // lastUpdateLabel.setForeground(TEXT_SECONDARY);
+        // headerPanel.add(lastUpdateLabel, BorderLayout.EAST);
 
         add(headerPanel, BorderLayout.NORTH);
     }
@@ -402,7 +402,7 @@ public class DashboardPanel extends JPanel {
             }
 
             loadRecentActivities();
-            updateLastUpdateTime();
+            // updateLastUpdateTime();
 
         } catch (Exception e) {
             // Gestion d'erreur silencieuse pour ne pas casser l'interface
@@ -440,13 +440,13 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    private void updateLastUpdateTime() {
-        if (lastUpdateLabel != null) {
-            String currentTime = LocalDateTime.now().format(
-                    DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"));
-            lastUpdateLabel.setText("Dernière mise à jour: " + currentTime);
-        }
-    }
+    // private void updateLastUpdateTime() {
+    //     if (lastUpdateLabel != null) {
+    //         String currentTime = LocalDateTime.now().format(
+    //                 DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm:ss"));
+    //         lastUpdateLabel.setText("Dernière mise à jour: " + currentTime);
+    //     }
+    // }
 
     private void startAutoRefresh() {
         // Actualisation automatique toutes les 5 minutes

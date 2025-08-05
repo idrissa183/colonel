@@ -90,6 +90,16 @@ public class ClientPanel extends JPanel {
 
     private ClientDTO currentClient;
     private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
+    
+    // Boutons d'action
+    private JButton saveButton;
+    private JButton updateButton;
+    private JButton deleteButton;
+    private JButton clearButton;
+    
+    // Mode actuel (ajout, modification, suppression)
+    private enum FormMode { ADD, EDIT, DELETE }
+    private FormMode currentMode = FormMode.ADD;
 
     @PostConstruct
     public void initializeUI() {
@@ -385,21 +395,63 @@ public class ClientPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
         buttonPanel.setBackground(BACKGROUND_COLOR);
 
-        JButton saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
+        saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
                 e -> saveClient());
-        JButton updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
+        updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
                 e -> updateClient());
-        JButton deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
+        deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
                 e -> deleteClient());
-        JButton clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
+        clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
                 e -> clearFields());
 
         buttonPanel.add(saveButton);
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(clearButton);
+        
+        updateButtonVisibility();
 
         return buttonPanel;
+    }
+    
+    /**
+     * Met à jour la visibilité des boutons selon le mode actuel
+     */
+    private void updateButtonVisibility() {
+        switch (currentMode) {
+            case ADD:
+                saveButton.setVisible(true);
+                updateButton.setVisible(false);
+                deleteButton.setVisible(false);
+                clearButton.setVisible(true);
+                break;
+            case EDIT:
+                saveButton.setVisible(false);
+                updateButton.setVisible(true);
+                deleteButton.setVisible(false);
+                clearButton.setVisible(true);
+                break;
+            case DELETE:
+                saveButton.setVisible(false);
+                updateButton.setVisible(false);
+                deleteButton.setVisible(true);
+                clearButton.setVisible(true);
+                break;
+        }
+        
+        // Forcer le rafraîchissement du layout
+        if (saveButton.getParent() != null) {
+            saveButton.getParent().revalidate();
+            saveButton.getParent().repaint();
+        }
+    }
+    
+    /**
+     * Change le mode du formulaire
+     */
+    private void setFormMode(FormMode mode) {
+        this.currentMode = mode;
+        updateButtonVisibility();
     }
 
     private JPanel createTableContainer() {
@@ -655,6 +707,7 @@ public class ClientPanel extends JPanel {
                 clientService.getClientById(clientId).ifPresent(client -> {
                     currentClient = client;
                     populateFields(client);
+                    setFormMode(FormMode.EDIT); // Passer en mode édition
                 });
             } catch (Exception e) {
                 showErrorMessage("Erreur lors du chargement du client: " + e.getMessage());
@@ -897,6 +950,7 @@ public class ClientPanel extends JPanel {
         activeCheckBox.setSelected(true);
         codeDefinitifCheckBox.setSelected(false);
         clientTable.clearSelection();
+        setFormMode(FormMode.ADD);
     }
 
     private void onTypeClientChange(ActionEvent e) {

@@ -72,6 +72,16 @@ public class ProduitPanel extends JPanel {
     private ProduitDto currentProduit;
 
     private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
+    
+    // Boutons d'action
+    private JButton saveButton;
+    private JButton updateButton;
+    private JButton deleteButton;
+    private JButton clearButton;
+    
+    // Mode actuel (ajout, modification, suppression)
+    private enum FormMode { ADD, EDIT, DELETE }
+    private FormMode currentMode = FormMode.ADD;
 
     @PostConstruct
     public void initializeUI() {
@@ -509,21 +519,63 @@ public class ProduitPanel extends JPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
         buttonPanel.setBackground(BACKGROUND_COLOR);
 
-        JButton saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
+        saveButton = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Sauvegarder", SUCCESS_COLOR,
                 e -> saveProduit());
-        JButton updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
+        updateButton = ButtonFactory.createActionButton(FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR,
                 e -> updateProduit());
-        JButton deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
+        deleteButton = ButtonFactory.createActionButton(FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR,
                 e -> deleteProduit());
-        JButton clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
+        clearButton = ButtonFactory.createActionButton(FontAwesomeSolid.ERASER, "Vider", SECONDARY_COLOR,
                 e -> clearFields());
 
         buttonPanel.add(saveButton);
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(clearButton);
+        
+        updateButtonVisibility();
 
         return buttonPanel;
+    }
+    
+    /**
+     * Met à jour la visibilité des boutons selon le mode actuel
+     */
+    private void updateButtonVisibility() {
+        switch (currentMode) {
+            case ADD:
+                saveButton.setVisible(true);
+                updateButton.setVisible(false);
+                deleteButton.setVisible(false);
+                clearButton.setVisible(true);
+                break;
+            case EDIT:
+                saveButton.setVisible(false);
+                updateButton.setVisible(true);
+                deleteButton.setVisible(false);
+                clearButton.setVisible(true);
+                break;
+            case DELETE:
+                saveButton.setVisible(false);
+                updateButton.setVisible(false);
+                deleteButton.setVisible(true);
+                clearButton.setVisible(true);
+                break;
+        }
+        
+        // Forcer le rafraîchissement du layout
+        if (saveButton.getParent() != null) {
+            saveButton.getParent().revalidate();
+            saveButton.getParent().repaint();
+        }
+    }
+    
+    /**
+     * Change le mode du formulaire
+     */
+    private void setFormMode(FormMode mode) {
+        this.currentMode = mode;
+        updateButtonVisibility();
     }
 
     private void updateStats() {
@@ -664,6 +716,7 @@ public class ProduitPanel extends JPanel {
                             .orElse(produits.get(0));
                     currentProduit = produit;
                     populateFields(produit);
+                    setFormMode(FormMode.EDIT); // Passer en mode édition
                 }
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Erreur lors du chargement du produit: " + e.getMessage(),
@@ -988,5 +1041,6 @@ public class ProduitPanel extends JPanel {
         stockMinimumField.setText("");
         activeCheckBox.setSelected(true);
         produitTable.clearSelection();
+        setFormMode(FormMode.ADD);
     }
 }
