@@ -630,29 +630,39 @@ public class ClientPanel extends JPanel {
 
     private void loadSelectedClient() {
         int selectedRow = clientTable.getSelectedRow();
+        
         if (selectedRow >= 0) {
-            Long clientId = (Long) tableModel.getValueAt(selectedRow, 0);
-            clientService.getClientById(clientId).ifPresent(client -> {
-                currentClient = client;
-                populateFields(client);
-            });
+            try {
+                // L'ID du client est dans la colonne 1 (la colonne 0 contient le numéro de ligne) 
+                Long clientId = (Long) tableModel.getValueAt(selectedRow, 1);
+                
+                clientService.getClientById(clientId).ifPresent(client -> {
+                    currentClient = client;
+                    populateFields(client);
+                });
+            } catch (Exception e) {
+                showErrorMessage("Erreur lors du chargement du client: " + e.getMessage());
+            }
         }
     }
 
     private void populateFields(ClientDTO client) {
         // Code supprimé - utilisation de l'ID auto-généré
-        nomField.setText(client.getNom());
-        prenomField.setText(client.getPrenom());
-        codePartenaireField.setText(client.getCodePartenaire());
-        cnibField.setText(client.getCnib());
+        nomField.setText(client.getNom() != null ? client.getNom() : "");
+        prenomField.setText(client.getPrenom() != null ? client.getPrenom() : "");
+        codePartenaireField.setText(client.getCodePartenaire() != null ? client.getCodePartenaire() : "");
+        cnibField.setText(client.getCnib() != null ? client.getCnib() : "");
         provinceCombo.setSelectedItem(client.getProvince());
-        telephoneField.setText(client.getTelephone());
-        emailField.setText(client.getEmail());
+        telephoneField.setText(client.getTelephone() != null ? client.getTelephone() : "");
+        emailField.setText(client.getEmail() != null ? client.getEmail() : "");
         typeClientCombo.setSelectedItem(client.getTypeClient());
-        adresseField.setText(client.getAdresse());
+        adresseField.setText(client.getAdresse() != null ? client.getAdresse() : "");
         totalPvField.setText(client.getTotalPv() != null ? client.getTotalPv().toString() : "0");
-        activeCheckBox.setSelected(client.getActive());
+        activeCheckBox.setSelected(client.getActive() != null ? client.getActive() : true);
         codeDefinitifCheckBox.setSelected(client.getCodeDefinitif() != null ? client.getCodeDefinitif() : false);
+        
+        // Déclencher la logique de visibilité de la section Longrich
+        onTypeClientChange(null);
     }
 
     private void clearErrors() {
