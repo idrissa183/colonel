@@ -14,9 +14,6 @@ public class FamilleProduitDTO {
 
     private Long id;
 
-    @NotBlank(message = "Le code famille est obligatoire")
-    private String codeFamille;
-
     @NotBlank(message = "Le libellé famille est obligatoire")
     private String libelleFamille;
 

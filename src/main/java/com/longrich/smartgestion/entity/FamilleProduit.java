@@ -14,10 +14,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class FamilleProduit extends BaseEntity {
-
-    @NotBlank(message = "Le code famille est obligatoire")
-    @Column(name = "code_famille", nullable = false, unique = true, length = 20)
-    private String codeFamille;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
     @NotBlank(message = "Le libellé famille est obligatoire")
     @Column(name = "libelle_famille", nullable = false, length = 100)

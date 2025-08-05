@@ -391,7 +391,7 @@ public class FournisseurPanel extends JPanel {
             case EDIT:
                 saveButton.setVisible(false);
                 updateButton.setVisible(true);
-                deleteButton.setVisible(false);
+                deleteButton.setVisible(true);
                 clearButton.setVisible(true);
                 break;
             case DELETE:
@@ -580,7 +580,7 @@ public class FournisseurPanel extends JPanel {
 
     private void loadFournisseurs() {
         try {
-            List<FournisseurDTO> fournisseurs = fournisseurService.getActiveFournisseurs();
+            List<FournisseurDTO> fournisseurs = fournisseurService.getAllFournisseurs();
             tableModel.setRowCount(0);
 
             for (int i = 0; i < fournisseurs.size(); i++) {

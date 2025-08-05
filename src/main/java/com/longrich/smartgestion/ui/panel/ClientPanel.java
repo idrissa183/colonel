@@ -428,7 +428,7 @@ public class ClientPanel extends JPanel {
             case EDIT:
                 saveButton.setVisible(false);
                 updateButton.setVisible(true);
-                deleteButton.setVisible(false);
+                deleteButton.setVisible(true);
                 clearButton.setVisible(true);
                 break;
             case DELETE:
@@ -532,7 +532,7 @@ public class ClientPanel extends JPanel {
 
     private void createTable() {
         String[] columns = {
-                "ID", "Code", "Nom", "Prénom", "Province", "Téléphone",
+                "ID", "Nom", "Prénom", "Province", "Téléphone",
                 "Email", "Type", "PV", "Statut"
         };
 
@@ -573,7 +573,7 @@ public class ClientPanel extends JPanel {
 
                 setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
                 // Coloration spéciale pour le statut
-                if (column == 9 && value != null) { // Colonne Statut
+                if (column == 8 && value != null) { // Colonne Statut
                     if ("Actif".equals(value.toString())) {
                         setForeground(SUCCESS_COLOR);
                     } else {
@@ -626,13 +626,12 @@ public class ClientPanel extends JPanel {
 
     private void loadClients() {
         try {
-            List<ClientDTO> clients = clientService.getActiveClients();
+            List<ClientDTO> clients = clientService.getAllClients();
             tableModel.setRowCount(0);
 
             for (int i = 0; i < clients.size(); i++) {
                 ClientDTO client = clients.get(i);
                 Object[] row = {
-                        i + 1,
                         client.getId(),
                         client.getNom(),
                         client.getPrenom(),
@@ -678,7 +677,6 @@ public class ClientPanel extends JPanel {
             for (int i = 0; i < clients.size(); i++) {
                 ClientDTO client = clients.get(i);
                 Object[] row = {
-                        i + 1,
                         client.getId(),
                         client.getNom(),
                         client.getPrenom(),
@@ -701,8 +699,8 @@ public class ClientPanel extends JPanel {
         
         if (selectedRow >= 0) {
             try {
-                // L'ID du client est dans la colonne 1 (la colonne 0 contient le numéro de ligne) 
-                Long clientId = (Long) tableModel.getValueAt(selectedRow, 1);
+                // L'ID du client est dans la colonne 0
+                Long clientId = (Long) tableModel.getValueAt(selectedRow, 0);
                 
                 clientService.getClientById(clientId).ifPresent(client -> {
                     currentClient = client;

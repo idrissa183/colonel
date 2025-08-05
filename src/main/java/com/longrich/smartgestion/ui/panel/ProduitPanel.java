@@ -490,7 +490,7 @@ public class ProduitPanel extends JPanel {
                 if (column == 6 && value != null) {
                     boolean isActive = Boolean.parseBoolean(value.toString());
                     setText(isActive ? "Actif" : "Inactif");
-                    setForeground(isActive ? SUCCESS_COLOR : TEXT_SECONDARY);
+                    setForeground(isActive ? SUCCESS_COLOR : DANGER_COLOR);
                 } else {
                     setForeground(TEXT_PRIMARY);
                 }
@@ -552,7 +552,7 @@ public class ProduitPanel extends JPanel {
             case EDIT:
                 saveButton.setVisible(false);
                 updateButton.setVisible(true);
-                deleteButton.setVisible(false);
+                deleteButton.setVisible(true);
                 clearButton.setVisible(true);
                 break;
             case DELETE:
@@ -580,7 +580,7 @@ public class ProduitPanel extends JPanel {
 
     private void updateStats() {
         try {
-            List<ProduitDto> produits = produitService.getActiveProduits();
+            List<ProduitDto> produits = produitService.getAllProduits();
             int totalProduits = produits.size();
             long produitsActifs = produits.stream().mapToLong(p -> p.getActive() ? 1 : 0).sum();
 
@@ -655,7 +655,7 @@ public class ProduitPanel extends JPanel {
 
     private void loadProduits() {
         try {
-            List<ProduitDto> produits = produitService.getActiveProduits();
+            List<ProduitDto> produits = produitService.getAllProduits();
             tableModel.setRowCount(0);
 
             for (ProduitDto produit : produits) {
@@ -879,6 +879,7 @@ public class ProduitPanel extends JPanel {
                 // Code barre supprimé
                 .libelle(libelleField.getText().trim())
                 .description(descriptionArea.getText().trim())
+                .familleName((String) familleCombo.getSelectedItem())
                 .active(activeCheckBox.isSelected());
 
         // Date de péremption

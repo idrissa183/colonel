@@ -31,20 +31,16 @@ public class FamilleProduitService {
                 .map(this::convertToDTO);
     }
 
-    public Optional<FamilleProduitDTO> getFamilleByCode(String codeFamille) {
-        return familleProduitRepository.findByCodeFamille(codeFamille)
-                .map(this::convertToDTO);
-    }
 
     public FamilleProduitDTO saveFamille(FamilleProduitDTO familleDTO) {
         if (familleDTO.getId() == null &&
-                familleProduitRepository.existsByCodeFamille(familleDTO.getCodeFamille())) {
-            throw new IllegalArgumentException("Une famille avec ce code existe déjà");
+                familleProduitRepository.existsByLibelleFamille(familleDTO.getLibelleFamille())) {
+            throw new IllegalArgumentException("Une famille avec ce libellé existe déjà");
         }
 
         FamilleProduit famille = convertToEntity(familleDTO);
         FamilleProduit savedFamille = familleProduitRepository.save(famille);
-        log.info("Famille produit sauvegardée: {}", savedFamille.getCodeFamille());
+        log.info("Famille produit sauvegardée: {}", savedFamille.getLibelleFamille());
         return convertToDTO(savedFamille);
     }
 
@@ -52,14 +48,14 @@ public class FamilleProduitService {
         FamilleProduit existingFamille = familleProduitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Famille produit non trouvée"));
 
-        if (!existingFamille.getCodeFamille().equals(familleDTO.getCodeFamille()) &&
-                familleProduitRepository.existsByCodeFamille(familleDTO.getCodeFamille())) {
-            throw new IllegalArgumentException("Une famille avec ce code existe déjà");
+        if (!existingFamille.getLibelleFamille().equals(familleDTO.getLibelleFamille()) &&
+                familleProduitRepository.existsByLibelleFamille(familleDTO.getLibelleFamille())) {
+            throw new IllegalArgumentException("Une famille avec ce libellé existe déjà");
         }
 
         updateFamilleFromDTO(existingFamille, familleDTO);
         FamilleProduit updatedFamille = familleProduitRepository.save(existingFamille);
-        log.info("Famille produit mise à jour: {}", updatedFamille.getCodeFamille());
+        log.info("Famille produit mise à jour: {}", updatedFamille.getLibelleFamille());
         return convertToDTO(updatedFamille);
     }
 
@@ -69,13 +65,12 @@ public class FamilleProduitService {
 
         famille.setActive(false);
         familleProduitRepository.save(famille);
-        log.info("Famille produit désactivée: {}", famille.getCodeFamille());
+        log.info("Famille produit désactivée: {}", famille.getLibelleFamille());
     }
 
     private FamilleProduitDTO convertToDTO(FamilleProduit famille) {
         return FamilleProduitDTO.builder()
                 .id(famille.getId())
-                .codeFamille(famille.getCodeFamille())
                 .libelleFamille(famille.getLibelleFamille())
                 .description(famille.getDescription())
                 .active(famille.getActive())
@@ -88,7 +83,6 @@ public class FamilleProduitService {
         if (dto.getId() != null) {
             famille.setId(dto.getId());
         }
-        famille.setCodeFamille(dto.getCodeFamille());
         famille.setLibelleFamille(dto.getLibelleFamille());
         famille.setDescription(dto.getDescription());
         famille.setActive(Boolean.TRUE.equals(dto.getActive()));
@@ -96,7 +90,6 @@ public class FamilleProduitService {
     }
 
     private void updateFamilleFromDTO(FamilleProduit famille, FamilleProduitDTO dto) {
-        famille.setCodeFamille(dto.getCodeFamille());
         famille.setLibelleFamille(dto.getLibelleFamille());
         famille.setDescription(dto.getDescription());
         famille.setActive(Boolean.TRUE.equals(dto.getActive()));

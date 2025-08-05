@@ -12,11 +12,7 @@ public interface FamilleProduitRepository extends JpaRepository<FamilleProduit, 
 
     Optional<FamilleProduit> findByLibelleFamille(String libelleFamille);
 
-    Optional<FamilleProduit> findByCodeFamille(String codeFamille);
-
     boolean existsByLibelleFamille(String libelleFamille);
-
-    boolean existsByCodeFamille(String codeFamille);
 
     List<FamilleProduit> findByActiveTrue();
 }
