@@ -41,7 +41,7 @@ public class Client extends BaseEntity {
     @Column(name = "id")
     private Long id;
 
-    @Pattern(regexp = "^BF\\d{8}$", message = "Le code partenaire doit respecter le format BF suivi de 8 chiffres")
+    @Pattern(regexp = "^(BF\\d{8})?$", message = "Le code partenaire doit respecter le format BF suivi de 8 chiffres")
     @Column(name = "code_partenaire", unique = true)
     private String codePartenaire;
 

@@ -802,6 +802,12 @@ public class ClientPanel extends JPanel {
     }
 
     private ClientDTO createClientFromFields() {
+        TypeClient typeClient = (TypeClient) typeClientCombo.getSelectedItem();
+        String codePartenaire = null;
+        String codeSaisi = codePartenaireField.getText().trim();
+        if (typeClient == TypeClient.PARTENAIRE && !codeSaisi.isBlank()) {
+            codePartenaire = codeSaisi;
+        }
         return ClientDTO.builder()
                 // Code supprimé - utilisation de l'ID auto-généré
                 .nom(nomField.getText().trim())
@@ -810,9 +816,9 @@ public class ClientPanel extends JPanel {
                 .province((String) provinceCombo.getSelectedItem())
                 .telephone(telephoneField.getText().trim())
                 .email(emailField.getText().trim())
-                .typeClient((TypeClient) typeClientCombo.getSelectedItem())
+                .typeClient(typeClient)
                 .adresse(adresseField.getText().trim())
-                .codePartenaire(codePartenaireField.getText().trim())
+                .codePartenaire(codePartenaire)
                 .active(activeCheckBox.isSelected())
                 .codeDefinitif(codeDefinitifCheckBox.isSelected())
                 .build();
