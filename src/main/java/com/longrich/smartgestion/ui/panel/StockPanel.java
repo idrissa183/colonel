@@ -722,7 +722,7 @@ public class StockPanel extends JPanel {
 
                 Object[] row = {
                         produit.getLibelle(),
-                        produit.getCodeBarre(),
+                        produit.getId(),
                         produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
                         produit.getStockMinimum() != null ? produit.getStockMinimum().toString() : "0",
                         status,
@@ -752,7 +752,7 @@ public class StockPanel extends JPanel {
             produitsList = produitService.getActiveProduits();
             produitCombo.removeAllItems();
             for (ProduitDto produit : produitsList) {
-                produitCombo.addItem(produit.getLibelle() + " (" + produit.getCodeBarre() + ")");
+                produitCombo.addItem(produit.getLibelle() + " (" + produit.getId() + ")");
             }
         } catch (Exception e) {
             // Gestion d'erreur silencieuse
@@ -795,7 +795,7 @@ public class StockPanel extends JPanel {
 
                 Object[] row = {
                         produit.getLibelle(),
-                        produit.getCodeBarre(),
+                        produit.getId(),
                         produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
                         produit.getStockMinimum() != null ? produit.getStockMinimum().toString() : "0",
                         status,
@@ -822,8 +822,8 @@ public class StockPanel extends JPanel {
                 // Filtre par recherche
                 if (!searchText.isEmpty()) {
                     boolean matchesSearch = produit.getLibelle().toLowerCase().contains(searchText) ||
-                            (produit.getCodeBarre() != null &&
-                                    produit.getCodeBarre().toLowerCase().contains(searchText));
+                            (produit.getId() != null &&
+                                    produit.getId().toString().toLowerCase().contains(searchText));
                     if (!matchesSearch)
                         continue;
                 }
@@ -843,7 +843,7 @@ public class StockPanel extends JPanel {
                 String lastUpdate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                 Object[] row = {
                         produit.getLibelle(),
-                        produit.getCodeBarre(),
+                        produit.getId(),
                         produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
                         produit.getStockMinimum() != null ? produit.getStockMinimum().toString() : "0",
                         status,

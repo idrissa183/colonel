@@ -77,7 +77,7 @@ public class Client extends BaseEntity {
 
 
     @Builder.Default
-    @Column(name = "total_pv", nullable = false)
+    @Column(name = "total_pv")
     private Integer totalPv = 0;
 
     @Builder.Default

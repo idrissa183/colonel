@@ -15,7 +15,7 @@ public interface LigneCommandeMapper {
     @Mapping(target = "commandeId", source = "commande.id")
     @Mapping(target = "produitId", source = "produit.id")
     @Mapping(target = "produitLibelle", source = "produit.libelle")
-    @Mapping(target = "produitCode", source = "produit.codeBarre")
+    @Mapping(target = "produitCode", source = "produit.id")
     @Mapping(target = "quantiteRestante", expression = "java(ligneCommande.getQuantiteRestante())")
     @Mapping(target = "livreCompletement", expression = "java(ligneCommande.isLivreCompletement())")
     @Mapping(target = "livrePartiellement", expression = "java(ligneCommande.isLivrePartiellement())")

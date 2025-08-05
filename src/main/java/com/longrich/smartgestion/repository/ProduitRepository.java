@@ -12,17 +12,14 @@ import java.util.Optional;
 @Repository
 public interface ProduitRepository extends JpaRepository<Produit, Long> {
 
-       Optional<Produit> findByCodeBarre(String codeBarre);
-
-       boolean existsByCodeBarre(String codeBarre);
+       // Méthodes de recherche par code barre supprimées - utilisation de l'ID
 
        List<Produit> findByActiveTrue();
 
        List<Produit> findByFamilleProduitId(Long familleProduitId);
 
        @Query("SELECT p FROM Produit p WHERE p.active = true AND " +
-                     "(LOWER(p.libelle) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-                     "LOWER(p.codeBarre) LIKE LOWER(CONCAT('%', :search, '%')))")
+                     "LOWER(p.libelle) LIKE LOWER(CONCAT('%', :search, '%'))")
        List<Produit> searchActiveProduits(@Param("search") String search);
 
        @Query("SELECT p FROM Produit p JOIN p.stocks s WHERE " +

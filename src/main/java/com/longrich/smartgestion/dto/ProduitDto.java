@@ -19,9 +19,6 @@ public class ProduitDto {
 
     private Long id;
 
-    @NotBlank(message = "Le code barre est obligatoire")
-    private String codeBarre;
-
     @NotBlank(message = "Le libellé est obligatoire")
     private String libelle;
 

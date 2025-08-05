@@ -49,7 +49,6 @@ public class ProduitPanel extends JPanel {
     private final ProduitService produitService;
 
     // Composants UI
-    private JTextField codeBarreField;
     private JTextField libelleField;
     private JTextArea descriptionArea;
     private JTextField datePeremptionField;
@@ -181,11 +180,9 @@ public class ProduitPanel extends JPanel {
 
         // Section Identification
         formPanel.add(createSectionTitle("Identification"));
-        codeBarreField = createStyledTextField();
         libelleField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Code barre:", codeBarreField));
-        formPanel.add(createFieldPanel("Libellé:", libelleField));
+        formPanel.add(createFieldPanel("Libellé *:", libelleField));
 
         // Description avec TextArea stylée
         descriptionArea = createStyledTextArea();
@@ -211,9 +208,9 @@ public class ProduitPanel extends JPanel {
         prixReventeField = createStyledTextField();
         pvField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Prix d'achat (FCFA):", prixAchatField));
-        formPanel.add(createFieldPanel("Prix de revente (FCFA):", prixReventeField));
-        formPanel.add(createFieldPanel("Nombre de PV:", pvField));
+        formPanel.add(createFieldPanel("Prix d'achat (FCFA) *:", prixAchatField));
+        formPanel.add(createFieldPanel("Prix de revente (FCFA) *:", prixReventeField));
+        formPanel.add(createFieldPanel("Nombre de PV *:", pvField));
         formPanel.add(Box.createVerticalStrut(15));
 
         // Section Stock et Dates
@@ -405,7 +402,7 @@ public class ProduitPanel extends JPanel {
         tablePanel.add(tableHeaderPanel, BorderLayout.NORTH);
 
         // Modèle de table
-        String[] columns = { "Code", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut" };
+        String[] columns = { "ID", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -567,7 +564,7 @@ public class ProduitPanel extends JPanel {
 
             for (ProduitDto produit : produits) {
                 Object[] row = {
-                        produit.getCodeBarre(),
+                        produit.getId(),
                         produit.getLibelle(),
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
@@ -597,7 +594,7 @@ public class ProduitPanel extends JPanel {
 
             for (ProduitDto produit : produits) {
                 Object[] row = {
-                        produit.getCodeBarre(),
+                        produit.getId(),
                         produit.getLibelle(),
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
@@ -621,7 +618,7 @@ public class ProduitPanel extends JPanel {
                 List<ProduitDto> produits = produitService.searchProduits(codeBarre);
                 if (!produits.isEmpty()) {
                     ProduitDto produit = produits.stream()
-                            .filter(p -> codeBarre.equals(p.getCodeBarre()))
+                            .filter(p -> codeBarre.equals(p.getId().toString()))
                             .findFirst()
                             .orElse(produits.get(0));
                     currentProduit = produit;
@@ -635,7 +632,7 @@ public class ProduitPanel extends JPanel {
     }
 
     private void populateFields(ProduitDto produit) {
-        codeBarreField.setText(produit.getCodeBarre());
+        // Code barre supprimé - utilisation de l'ID auto-généré
         libelleField.setText(produit.getLibelle());
         descriptionArea.setText(produit.getDescription());
         datePeremptionField.setText(produit.getDatePeremption() != null ? produit.getDatePeremption().toString() : "");
@@ -705,7 +702,7 @@ public class ProduitPanel extends JPanel {
             clearFields();
             loadProduits();
         } catch (IllegalArgumentException e) {
-            setFieldError(codeBarreField, e.getMessage());
+            JOptionPane.showMessageDialog(this, "Erreur: " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "❌ Erreur lors de la sauvegarde: " + e.getMessage(),
@@ -736,7 +733,7 @@ public class ProduitPanel extends JPanel {
             clearFields();
             loadProduits();
         } catch (IllegalArgumentException e) {
-            setFieldError(codeBarreField, e.getMessage());
+            JOptionPane.showMessageDialog(this, "Erreur: " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "❌ Erreur lors de la mise à jour: " + e.getMessage(),
@@ -757,10 +754,10 @@ public class ProduitPanel extends JPanel {
                 this,
                 String.format("🗑️ Êtes-vous sûr de vouloir supprimer ce produit ?\n\n" +
                         "Produit: %s\n" +
-                        "Code: %s\n\n" +
+                        "ID: %s\n\n" +
                         "Cette action est irréversible.",
                         currentProduit.getLibelle(),
-                        currentProduit.getCodeBarre()),
+                        currentProduit.getId()),
                 "Confirmation de suppression",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
@@ -785,7 +782,7 @@ public class ProduitPanel extends JPanel {
 
     private ProduitDto createProduitFromFields() {
         ProduitDto.ProduitDtoBuilder builder = ProduitDto.builder()
-                .codeBarre(codeBarreField.getText().trim())
+                // Code barre supprimé
                 .libelle(libelleField.getText().trim())
                 .description(descriptionArea.getText().trim())
                 .active(activeCheckBox.isSelected());
@@ -847,15 +844,13 @@ public class ProduitPanel extends JPanel {
         clearErrors();
         boolean valid = true;
 
-        if (codeBarreField.getText().trim().isEmpty()) {
-            setFieldError(codeBarreField, "Code barre requis");
-            valid = false;
-        }
+        // Validation du libellé (requis)
         if (libelleField.getText().trim().isEmpty()) {
             setFieldError(libelleField, "Libellé requis");
             valid = false;
         }
 
+        // Validation de la date de péremption (optionnelle mais format requis si renseignée)
         String dateStr = datePeremptionField.getText().trim();
         if (!dateStr.isEmpty()) {
             try {
@@ -866,12 +861,16 @@ public class ProduitPanel extends JPanel {
             }
         }
 
+        // Validation du prix d'achat (requis et positif)
         String prixAchatStr = prixAchatField.getText().trim();
-        if (!prixAchatStr.isEmpty()) {
+        if (prixAchatStr.isEmpty()) {
+            setFieldError(prixAchatField, "Prix d'achat requis");
+            valid = false;
+        } else {
             try {
                 BigDecimal prixAchat = new BigDecimal(prixAchatStr);
-                if (prixAchat.compareTo(BigDecimal.ZERO) < 0) {
-                    setFieldError(prixAchatField, "Le prix d'achat ne peut pas être négatif");
+                if (prixAchat.compareTo(BigDecimal.ZERO) <= 0) {
+                    setFieldError(prixAchatField, "Le prix d'achat doit être positif");
                     valid = false;
                 }
             } catch (NumberFormatException e) {
@@ -880,16 +879,38 @@ public class ProduitPanel extends JPanel {
             }
         }
 
+        // Validation du prix de revente (requis et positif)
         String prixReventeStr = prixReventeField.getText().trim();
-        if (!prixReventeStr.isEmpty()) {
+        if (prixReventeStr.isEmpty()) {
+            setFieldError(prixReventeField, "Prix de revente requis");
+            valid = false;
+        } else {
             try {
                 BigDecimal prixRevente = new BigDecimal(prixReventeStr);
-                if (prixRevente.compareTo(BigDecimal.ZERO) < 0) {
-                    setFieldError(prixReventeField, "Le prix de revente ne peut pas être négatif");
+                if (prixRevente.compareTo(BigDecimal.ZERO) <= 0) {
+                    setFieldError(prixReventeField, "Le prix de revente doit être positif");
                     valid = false;
                 }
             } catch (NumberFormatException e) {
                 setFieldError(prixReventeField, "Format du prix de revente invalide");
+                valid = false;
+            }
+        }
+
+        // Validation du nombre de PV (requis et positif ou nul)
+        String pvStr = pvField.getText().trim();
+        if (pvStr.isEmpty()) {
+            setFieldError(pvField, "Nombre de PV requis");
+            valid = false;
+        } else {
+            try {
+                BigDecimal pv = new BigDecimal(pvStr);
+                if (pv.compareTo(BigDecimal.ZERO) < 0) {
+                    setFieldError(pvField, "Le nombre de PV ne peut pas être négatif");
+                    valid = false;
+                }
+            } catch (NumberFormatException e) {
+                setFieldError(pvField, "Format du nombre de PV invalide");
                 valid = false;
             }
         }
@@ -914,7 +935,7 @@ public class ProduitPanel extends JPanel {
     private void clearFields() {
         clearErrors();
         currentProduit = null;
-        codeBarreField.setText("");
+        // Code barre field supprimé
         libelleField.setText("");
         descriptionArea.setText("");
         datePeremptionField.setText("");

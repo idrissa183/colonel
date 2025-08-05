@@ -192,7 +192,7 @@ public class FournisseurPanel extends JPanel {
         typeStockisteCombo = new JComboBox<>(TypeStockiste.values());
         styleComboBox(typeStockisteCombo);
         typeStockisteCombo.addActionListener(this::onTypeStockisteChange);
-        formPanel.add(createFieldPanel("Type:", typeStockisteCombo));
+        formPanel.add(createFieldPanel("Type *:", typeStockisteCombo));
         formPanel.add(Box.createVerticalStrut(15));
 
         // Section Identification
@@ -202,8 +202,8 @@ public class FournisseurPanel extends JPanel {
         nomField = createStyledTextField();
         prenomField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Code Stockiste:", codeStockisteField));
-        formPanel.add(createFieldPanel("Nom:", nomField));
+        formPanel.add(createFieldPanel("Code Stockiste *:", codeStockisteField));
+        formPanel.add(createFieldPanel("Nom *:", nomField));
         formPanel.add(createFieldPanel("Prénom(s):", prenomField));
         formPanel.add(Box.createVerticalStrut(15));
 
@@ -772,7 +772,7 @@ public class FournisseurPanel extends JPanel {
 
         if (prenomLabel != null) {
             if (isPersonnePhysique) {
-                prenomLabel.setText("Prénom(s): *");
+                prenomLabel.setText("Prénom(s) *:");
                 prenomLabel.setForeground(TEXT_PRIMARY);
             } else {
                 prenomLabel.setText("Prénom(s):");

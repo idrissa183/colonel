@@ -209,11 +209,12 @@ public class ClientPanel extends JPanel {
         nomField = createStyledTextField();
         prenomField = createStyledTextField();
         codePartenaireField = createStyledTextField();
-        codePartenaireField.setEditable(false); // Le code partenaire est généré automatiquement
+        // codePartenaireField.setEditable(false); // Le code partenaire est généré
+        // automatiquement
         cnibField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Nom:", nomField));
-        formPanel.add(createFieldPanel("Prénom(s):", prenomField));
+        formPanel.add(createFieldPanel("Nom *:", nomField));
+        formPanel.add(createFieldPanel("Prénom(s) *:", prenomField));
         formPanel.add(createFieldPanel("CNIB:", cnibField));
         formPanel.add(Box.createVerticalStrut(15));
 
@@ -229,7 +230,7 @@ public class ClientPanel extends JPanel {
         emailField = createStyledTextField();
         adresseField = createStyledTextField();
 
-        formPanel.add(createFieldPanel("Province:", provinceCombo));
+        formPanel.add(createFieldPanel("Province *:", provinceCombo));
         formPanel.add(createFieldPanel("Téléphone:", telephoneField));
         formPanel.add(createFieldPanel("Email:", emailField));
         formPanel.add(createFieldPanel("Adresse:", adresseField));
@@ -238,16 +239,16 @@ public class ClientPanel extends JPanel {
         // Section Longrich (séparée pour pouvoir la cacher)
         longrichSection = createLongrichSection();
         formPanel.add(longrichSection);
-        
+
         // Checkbox Client actif (hors section Longrich)
         JPanel generalCheckboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
         generalCheckboxPanel.setBackground(CARD_COLOR);
         generalCheckboxPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        
+
         activeCheckBox = createStyledCheckBox("Client actif");
         activeCheckBox.setSelected(true);
         generalCheckboxPanel.add(activeCheckBox);
-        
+
         formPanel.add(generalCheckboxPanel);
         formPanel.add(Box.createVerticalGlue());
 
@@ -264,30 +265,30 @@ public class ClientPanel extends JPanel {
         section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
         section.setBackground(CARD_COLOR);
         section.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        
+
         // Titre de section
         section.add(createSectionTitle("Informations Longrich"));
-        
+
         // Code Partenaire field
-        section.add(createFieldPanel("Code Partenaire:", codePartenaireField));
-        
+        section.add(createFieldPanel("Code Partenaire *:", codePartenaireField));
+
         // Total PV field
         totalPvField = createStyledTextField();
-        totalPvField.setEditable(false);
-        totalPvField.setBackground(new Color(249, 250, 251));
-        section.add(createFieldPanel("Total PV:", totalPvField));
-        
+        // totalPvField.setEditable(false);
+        // totalPvField.setBackground(new Color(249, 250, 251));
+        section.add(createFieldPanel("Total PV *:", totalPvField));
+
         // Code définitif checkbox
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
         checkboxPanel.setBackground(CARD_COLOR);
         checkboxPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        
+
         codeDefinitifCheckBox = createStyledCheckBox("Code définitif");
         checkboxPanel.add(codeDefinitifCheckBox);
-        
+
         section.add(checkboxPanel);
         section.add(Box.createVerticalStrut(15));
-        
+
         return section;
     }
 
@@ -374,7 +375,6 @@ public class ClientPanel extends JPanel {
         return checkBox;
     }
 
-
     private JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
         buttonPanel.setBackground(BACKGROUND_COLOR);
@@ -430,7 +430,8 @@ public class ClientPanel extends JPanel {
         searchField = createStyledTextField();
         searchField.addActionListener(e -> searchClients());
 
-        JButton searchButton = ButtonFactory.createActionButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR, e -> searchClients());
+        JButton searchButton = ButtonFactory.createActionButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR,
+                e -> searchClients());
         searchButton.setPreferredSize(new Dimension(50, 38));
 
         searchInputPanel.add(searchField, BorderLayout.CENTER);
@@ -711,6 +712,10 @@ public class ClientPanel extends JPanel {
         }
 
         TypeClient type = (TypeClient) typeClientCombo.getSelectedItem();
+        if (type == TypeClient.PARTENAIRE && codePartenaireField.getText().trim().isEmpty()) {
+            setFieldError(codePartenaireField, "Code partenaire requis");
+            valid = false;
+        }
         if (type != TypeClient.NON_PARTENAIRE) {
             // Validation spécifique pour les partenaires : Total PV obligatoire
             if (type == TypeClient.PARTENAIRE) {
@@ -851,6 +856,14 @@ public class ClientPanel extends JPanel {
         if (longrichSection != null) {
             longrichSection.setVisible(isPartenaire);
         }
+
+        // Activer/désactiver les champs spécifiques Longrich
+        codePartenaireField.setEditable(isPartenaire);
+        totalPvField.setEditable(isPartenaire);
+
+        Color bg = isPartenaire ? Color.WHITE : BACKGROUND_COLOR;
+        codePartenaireField.setBackground(bg);
+        totalPvField.setBackground(bg);
 
         formPanel.revalidate();
         formPanel.repaint();

@@ -8,6 +8,9 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -30,9 +33,10 @@ import lombok.Setter;
 @Builder
 public class Produit extends BaseEntity {
 
-    @NotBlank(message = "Le code barre est obligatoire")
-    @Column(name = "code_barre", unique = true, nullable = false)
-    private String codeBarre;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
     @NotBlank(message = "Le libellé est obligatoire")
     @Column(name = "libelle", nullable = false)
@@ -92,7 +96,7 @@ public class Produit extends BaseEntity {
     }
 
     public String getProductDisplay() {
-        return codeBarre + " - " + libelle + " - " + prixRevente + "F - " + pv + " PV";
+        return id + " - " + libelle + " - " + prixRevente + "F - " + pv + " PV";
     }
 
     public boolean isStockCritique() {

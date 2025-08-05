@@ -40,10 +40,7 @@ public class ProduitService {
                 .map(this::convertToDto);
     }
 
-    public Optional<ProduitDto> getProduitByCodeBarre(String codeBarre) {
-        return produitRepository.findByCodeBarre(codeBarre)
-                .map(this::convertToDto);
-    }
+    // Méthode de recherche par code barre supprimée - utilisation de l'ID
 
     public List<ProduitDto> searchProduits(String search) {
         return produitRepository.searchActiveProduits(search).stream()
@@ -64,13 +61,11 @@ public class ProduitService {
     }
 
     public ProduitDto saveProduit(ProduitDto produitDto) {
-        if (produitDto.getId() == null && produitRepository.existsByCodeBarre(produitDto.getCodeBarre())) {
-            throw new IllegalArgumentException("Un produit avec ce code barre existe déjà");
-        }
+        // Validation du code barre supprimée - ID auto-généré
 
         Produit produit = convertToEntity(produitDto);
         Produit savedProduit = produitRepository.save(produit);
-        log.info("Produit sauvegardé: {}", savedProduit.getCodeBarre());
+        log.info("Produit sauvegardé: {}", savedProduit.getId());
         return convertToDto(savedProduit);
     }
 
@@ -78,15 +73,11 @@ public class ProduitService {
         Produit existingProduit = produitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé"));
 
-        // Vérifier si le code barre est modifié et s'il existe déjà
-        if (!existingProduit.getCodeBarre().equals(produitDto.getCodeBarre()) &&
-                produitRepository.existsByCodeBarre(produitDto.getCodeBarre())) {
-            throw new IllegalArgumentException("Un produit avec ce code barre existe déjà");
-        }
+        // Validation du code barre supprimée - ID auto-généré
 
         updateProduitFromDto(existingProduit, produitDto);
         Produit updatedProduit = produitRepository.save(existingProduit);
-        log.info("Produit mis à jour: {}", updatedProduit.getCodeBarre());
+        log.info("Produit mis à jour: {}", updatedProduit.getId());
         return convertToDto(updatedProduit);
     }
 
@@ -97,13 +88,13 @@ public class ProduitService {
         // Soft delete
         produit.setActive(false);
         produitRepository.save(produit);
-        log.info("Produit désactivé: {}", produit.getCodeBarre());
+        log.info("Produit désactivé: {}", produit.getId());
     }
 
     private ProduitDto convertToDto(Produit produit) {
         ProduitDto dto = ProduitDto.builder()
                 .id(produit.getId())
-                .codeBarre(produit.getCodeBarre())
+                // Code barre supprimé
                 .libelle(produit.getLibelle())
                 .description(produit.getDescription())
                 .datePeremption(produit.getDatePeremption())
@@ -138,7 +129,7 @@ public class ProduitService {
         if (dto.getId() != null) {
             produit.setId(dto.getId());
         }
-        produit.setCodeBarre(dto.getCodeBarre());
+        // Code barre supprimé
         produit.setLibelle(dto.getLibelle());
         produit.setDescription(dto.getDescription());
         produit.setDatePeremption(dto.getDatePeremption());
@@ -158,7 +149,7 @@ public class ProduitService {
     }
 
     private void updateProduitFromDto(Produit produit, ProduitDto dto) {
-        produit.setCodeBarre(dto.getCodeBarre());
+        // Code barre supprimé
         produit.setLibelle(dto.getLibelle());
         produit.setDescription(dto.getDescription());
         produit.setDatePeremption(dto.getDatePeremption());
