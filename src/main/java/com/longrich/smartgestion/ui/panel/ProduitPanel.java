@@ -214,7 +214,7 @@ public class ProduitPanel extends JPanel {
         familleCombo = new JComboBox<>();
         styleComboBox(familleCombo);
         loadFamilles();
-        formPanel.add(createFieldPanel("Famille:", familleCombo));
+        formPanel.add(createFieldPanel("Famille *:", familleCombo));
         formPanel.add(Box.createVerticalStrut(15));
 
         // Section Prix et PV
@@ -645,8 +645,11 @@ public class ProduitPanel extends JPanel {
     private void loadFamilles() {
         // Charger les familles de produits
         familleCombo.removeAllItems();
-        familleCombo.addItem("Beauté");
+        // familleCombo.addItem("Beauté");
+        familleCombo.addItem("Nutrition");
         familleCombo.addItem("Soins");
+        familleCombo.addItem("Cosmétique");
+        familleCombo.addItem("Hygiène");
         familleCombo.addItem("Autre");
     }
 
@@ -706,18 +709,15 @@ public class ProduitPanel extends JPanel {
     private void loadSelectedProduit() {
         int selectedRow = produitTable.getSelectedRow();
         if (selectedRow >= 0) {
-            String codeBarre = (String) tableModel.getValueAt(selectedRow, 0);
             try {
-                List<ProduitDto> produits = produitService.searchProduits(codeBarre);
-                if (!produits.isEmpty()) {
-                    ProduitDto produit = produits.stream()
-                            .filter(p -> codeBarre.equals(p.getId().toString()))
-                            .findFirst()
-                            .orElse(produits.get(0));
+                // L'ID du produit est dans la colonne 0
+                Long produitId = (Long) tableModel.getValueAt(selectedRow, 0);
+                
+                produitService.getProduitById(produitId).ifPresent(produit -> {
                     currentProduit = produit;
                     populateFields(produit);
                     setFormMode(FormMode.EDIT); // Passer en mode édition
-                }
+                });
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Erreur lors du chargement du produit: " + e.getMessage(),
                         "Erreur", JOptionPane.ERROR_MESSAGE);
