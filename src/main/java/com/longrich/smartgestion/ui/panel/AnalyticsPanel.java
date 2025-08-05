@@ -7,6 +7,10 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 // import java.time.LocalDate;
 // import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -17,6 +21,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -102,18 +107,18 @@ public class AnalyticsPanel extends JPanel {
         JLabel periodLabel = new JLabel("Période:");
         periodLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         periodLabel.setForeground(TEXT_SECONDARY);
-        
+
         periodCombo = new JComboBox<>(new String[] {
-            "Aujourd'hui", "Cette semaine", "Ce mois", "Ce trimestre", "Cette année", "Personnalisé"
+                "Aujourd'hui", "Cette semaine", "Ce mois", "Ce trimestre", "Cette année", "Personnalisé"
         });
         styleComboBox(periodCombo);
         periodCombo.setSelectedItem("Ce mois");
         periodCombo.addActionListener(e -> loadAnalyticsData());
 
         JButton exportButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportAnalytics());
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportAnalytics());
         JButton refreshButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", SECONDARY_COLOR, e -> refreshData());
 
         panel.add(periodLabel);
         panel.add(periodCombo);
@@ -162,7 +167,7 @@ public class AnalyticsPanel extends JPanel {
         kpiGrid.add(createKPICard("📦 Ventes", "1,234", "+8.3%", INFO_COLOR, "ventes"));
         kpiGrid.add(createKPICard("👥 Nouveaux Clients", "89", "+15.2%", PRIMARY_COLOR, "clients"));
         kpiGrid.add(createKPICard("📊 Marge Moyenne", "34.8%", "+2.1%", SUCCESS_COLOR, "marge"));
-        
+
         kpiGrid.add(createKPICard("🏆 PV Générés", "45,678", "+18.9%", WARNING_COLOR, "pv"));
         kpiGrid.add(createKPICard("💸 Commissions", "12,340 €", "+22.4%", SUCCESS_COLOR, "commissions"));
         kpiGrid.add(createKPICard("📈 Conversion", "3.4%", "+0.8%", INFO_COLOR, "conversion"));
@@ -177,9 +182,8 @@ public class AnalyticsPanel extends JPanel {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(CARD_COLOR);
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         // Titre
@@ -197,8 +201,8 @@ public class AnalyticsPanel extends JPanel {
         // Évolution
         JLabel changeLabel = new JLabel(change);
         changeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        changeLabel.setForeground(change.startsWith("+") ? SUCCESS_COLOR : 
-                                 change.startsWith("-") ? DANGER_COLOR : TEXT_SECONDARY);
+        changeLabel.setForeground(
+                change.startsWith("+") ? SUCCESS_COLOR : change.startsWith("-") ? DANGER_COLOR : TEXT_SECONDARY);
         changeLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         card.add(titleLabel);
@@ -246,7 +250,7 @@ public class AnalyticsPanel extends JPanel {
         // Graphique des ventes
         container.add(createChartPlaceholder("📈 Évolution des Ventes", "Graphique linéaire des ventes par période"));
         container.add(Box.createVerticalStrut(15));
-        
+
         // Graphique des produits top
         container.add(createChartPlaceholder("🏆 Top Produits", "Graphique en barres des produits les plus vendus"));
 
@@ -257,9 +261,8 @@ public class AnalyticsPanel extends JPanel {
         JPanel chart = new JPanel(new BorderLayout());
         chart.setBackground(CARD_COLOR);
         chart.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
         chart.setPreferredSize(new Dimension(0, 200));
 
         // Titre
@@ -272,12 +275,11 @@ public class AnalyticsPanel extends JPanel {
         JPanel chartArea = new JPanel();
         chartArea.setBackground(new Color(248, 250, 252));
         chartArea.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
-            BorderFactory.createEmptyBorder(40, 40, 40, 40)
-        ));
+                BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
+                BorderFactory.createEmptyBorder(40, 40, 40, 40)));
 
         JLabel placeholder = new JLabel("<html><center>" + description + "<br><br>" +
-            "<span style='color: #64748b; font-size: 12px;'>Graphique interactif disponible<br>dans la version complète</span></center></html>");
+                "<span style='color: #64748b; font-size: 12px;'>Graphique interactif disponible<br>dans la version complète</span></center></html>");
         placeholder.setHorizontalAlignment(SwingConstants.CENTER);
         placeholder.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         placeholder.setForeground(TEXT_SECONDARY);
@@ -291,9 +293,8 @@ public class AnalyticsPanel extends JPanel {
         JPanel container = new JPanel(new BorderLayout());
         container.setBackground(CARD_COLOR);
         container.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            BorderFactory.createEmptyBorder(0, 0, 0, 0)
-        ));
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
         // En-tête
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -319,7 +320,7 @@ public class AnalyticsPanel extends JPanel {
 
     private void createAnalyticsTable() {
         String[] columns = {
-            "Période", "Ventes", "CA (€)", "Clients", "PV", "Commissions (€)", "Marge (%)"
+                "Période", "Ventes", "CA (€)", "Clients", "PV", "Commissions (€)", "Marge (%)"
         };
 
         tableModel = new DefaultTableModel(columns, 0) {
@@ -350,8 +351,8 @@ public class AnalyticsPanel extends JPanel {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
-                java.awt.Component c = super.getTableCellRendererComponent(table, value, 
-                    isSelected, hasFocus, row, column);
+                java.awt.Component c = super.getTableCellRendererComponent(table, value,
+                        isSelected, hasFocus, row, column);
 
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(249, 250, 251));
@@ -382,9 +383,8 @@ public class AnalyticsPanel extends JPanel {
         comboBox.setBackground(Color.WHITE);
         comboBox.setForeground(TEXT_PRIMARY);
         comboBox.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
-        ));
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
         comboBox.setPreferredSize(new Dimension(0, 38));
         comboBox.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
@@ -398,25 +398,25 @@ public class AnalyticsPanel extends JPanel {
 
         if ("Aujourd'hui".equals(period)) {
             sampleData = new String[][] {
-                {"Aujourd'hui", "15", "3,250", "8", "1,234", "485", "32.1"},
+                    { "Aujourd'hui", "15", "3,250", "8", "1,234", "485", "32.1" },
             };
         } else if ("Cette semaine".equals(period)) {
             sampleData = new String[][] {
-                {"Lundi", "18", "4,120", "12", "1,567", "623", "33.8"},
-                {"Mardi", "22", "5,340", "15", "2,123", "845", "31.2"},
-                {"Mercredi", "19", "4,580", "11", "1,834", "734", "35.1"},
-                {"Jeudi", "25", "6,120", "18", "2,456", "982", "33.4"},
-                {"Vendredi", "21", "5,210", "14", "2,089", "836", "32.8"},
-                {"Samedi", "28", "7,340", "22", "2,934", "1,174", "34.2"},
-                {"Dimanche", "15", "3,680", "9", "1,478", "591", "30.9"},
+                    { "Lundi", "18", "4,120", "12", "1,567", "623", "33.8" },
+                    { "Mardi", "22", "5,340", "15", "2,123", "845", "31.2" },
+                    { "Mercredi", "19", "4,580", "11", "1,834", "734", "35.1" },
+                    { "Jeudi", "25", "6,120", "18", "2,456", "982", "33.4" },
+                    { "Vendredi", "21", "5,210", "14", "2,089", "836", "32.8" },
+                    { "Samedi", "28", "7,340", "22", "2,934", "1,174", "34.2" },
+                    { "Dimanche", "15", "3,680", "9", "1,478", "591", "30.9" },
             };
         } else {
             // Données mensuelles par défaut
             sampleData = new String[][] {
-                {"Semaine 1", "145", "32,450", "89", "12,567", "5,027", "33.2"},
-                {"Semaine 2", "167", "38,120", "102", "14,234", "5,694", "34.1"},
-                {"Semaine 3", "134", "29,890", "78", "11,456", "4,582", "32.8"},
-                {"Semaine 4", "189", "42,340", "125", "16,789", "6,716", "35.6"},
+                    { "Semaine 1", "145", "32,450", "89", "12,567", "5,027", "33.2" },
+                    { "Semaine 2", "167", "38,120", "102", "14,234", "5,694", "34.1" },
+                    { "Semaine 3", "134", "29,890", "78", "11,456", "4,582", "32.8" },
+                    { "Semaine 4", "189", "42,340", "125", "16,789", "6,716", "35.6" },
             };
         }
 
@@ -431,20 +431,20 @@ public class AnalyticsPanel extends JPanel {
     private void updateKPIs(String period) {
         // Simulation de mise à jour des KPIs selon la période
         Map<String, String[]> periodData = new HashMap<>();
-        
+
         periodData.put("Aujourd'hui", new String[] {
-            "3,250 €", "+5.2%", "15", "+12%", "8", "+25%", "32.1%", "+1.1%",
-            "1,234", "+8%", "485 €", "+15%", "2.1%", "+0.3%", "2", "-1"
+                "3,250 €", "+5.2%", "15", "+12%", "8", "+25%", "32.1%", "+1.1%",
+                "1,234", "+8%", "485 €", "+15%", "2.1%", "+0.3%", "2", "-1"
         });
-        
+
         periodData.put("Cette semaine", new String[] {
-            "36,390 €", "+8.7%", "148", "+18%", "109", "+22%", "33.1%", "+1.8%",
-            "15,681", "+12%", "6,272 €", "+19%", "2.8%", "+0.5%", "5", "-2"
+                "36,390 €", "+8.7%", "148", "+18%", "109", "+22%", "33.1%", "+1.8%",
+                "15,681", "+12%", "6,272 €", "+19%", "2.8%", "+0.5%", "5", "-2"
         });
 
         String[] data = periodData.getOrDefault(period, new String[] {
-            "125,450 €", "+12.5%", "1,234", "+8.3%", "89", "+15.2%", "34.8%", "+2.1%",
-            "45,678", "+18.9%", "12,340 €", "+22.4%", "3.4%", "+0.8%", "12", "-3"
+                "125,450 €", "+12.5%", "1,234", "+8.3%", "89", "+15.2%", "34.8%", "+2.1%",
+                "45,678", "+18.9%", "12,340 €", "+22.4%", "3.4%", "+0.8%", "12", "-3"
         });
 
         // Mise à jour des labels KPI
@@ -461,26 +461,98 @@ public class AnalyticsPanel extends JPanel {
     private void updateKPILabel(String key, String value, String change) {
         JLabel valueLabel = kpiLabels.get(key + "_value");
         JLabel changeLabel = kpiLabels.get(key + "_change");
-        
-        if (valueLabel != null) valueLabel.setText(value);
+
+        if (valueLabel != null)
+            valueLabel.setText(value);
         if (changeLabel != null) {
             changeLabel.setText(change);
-            changeLabel.setForeground(change.startsWith("+") ? SUCCESS_COLOR : 
-                                     change.startsWith("-") ? DANGER_COLOR : TEXT_SECONDARY);
+            changeLabel.setForeground(
+                    change.startsWith("+") ? SUCCESS_COLOR : change.startsWith("-") ? DANGER_COLOR : TEXT_SECONDARY);
         }
     }
 
+    private String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        String escaped = value.replace("\"", "\"\"");
+        if (escaped.contains(",") || escaped.contains("\"") || escaped.contains("\n")) {
+            return "\"" + escaped + "\"";
+        }
+        return escaped;
+    }
+
     private void exportAnalytics() {
-        // TODO: Implémenter l'export des analytics
-        javax.swing.JOptionPane.showMessageDialog(this, 
-            "Fonctionnalité d'export en cours de développement", 
-            "Information", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Exporter les analytics");
+        chooser.setSelectedFile(new File("analytics.csv"));
+
+        int result = chooser.showSaveDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".csv")) {
+            file = new File(file.getParentFile(), file.getName() + ".csv");
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+            // Export KPIs
+            writer.println("KPI,Value,Change");
+            String[][] kpis = {
+                    { "ca", "Chiffre d'Affaires" },
+                    { "ventes", "Ventes" },
+                    { "clients", "Nouveaux Clients" },
+                    { "marge", "Marge Moyenne" },
+                    { "pv", "PV Générés" },
+                    { "commissions", "Commissions" },
+                    { "conversion", "Conversion" },
+                    { "stock", "Stock Critique" }
+            };
+            for (String[] kpi : kpis) {
+                JLabel valueLabel = kpiLabels.get(kpi[0] + "_value");
+                JLabel changeLabel = kpiLabels.get(kpi[0] + "_change");
+                String value = valueLabel != null ? valueLabel.getText() : "";
+                String change = changeLabel != null ? changeLabel.getText() : "";
+                writer.printf("%s,%s,%s%n", escapeCsv(kpi[1]), escapeCsv(value), escapeCsv(change));
+            }
+            writer.println();
+
+            // Export table data
+            for (int i = 0; i < tableModel.getColumnCount(); i++) {
+                writer.print(escapeCsv(tableModel.getColumnName(i)));
+                if (i < tableModel.getColumnCount() - 1) {
+                    writer.print(",");
+                }
+            }
+            writer.println();
+
+            for (int row = 0; row < tableModel.getRowCount(); row++) {
+                for (int col = 0; col < tableModel.getColumnCount(); col++) {
+                    Object value = tableModel.getValueAt(row, col);
+                    writer.print(escapeCsv(value != null ? value.toString() : ""));
+                    if (col < tableModel.getColumnCount() - 1) {
+                        writer.print(",");
+                    }
+                }
+                writer.println();
+            }
+
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "✓ Analytics exportés vers " + file.getAbsolutePath(),
+                    "Succès", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                    "Erreur lors de l'export: " + ex.getMessage(),
+                    "Erreur", javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void refreshData() {
         loadAnalyticsData();
-        javax.swing.JOptionPane.showMessageDialog(this, 
-            "✓ Données analytics actualisées", 
-            "Succès", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+        javax.swing.JOptionPane.showMessageDialog(this,
+                "✓ Données analytics actualisées",
+                "Succès", javax.swing.JOptionPane.INFORMATION_MESSAGE);
     }
 }

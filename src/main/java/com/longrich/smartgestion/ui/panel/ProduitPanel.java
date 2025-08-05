@@ -10,6 +10,7 @@ import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.springframework.context.annotation.Profile;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 // import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -19,6 +20,10 @@ import java.awt.*;
 // import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -534,8 +539,44 @@ public class ProduitPanel extends JPanel {
     }
 
     private void exportProduits() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement",
-                "Information", JOptionPane.INFORMATION_MESSAGE);
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter les produits");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".csv")) {
+                file = new File(file.getParentFile(), file.getName() + ".csv");
+            }
+
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                writer.println("Code,Nom,Categorie,Prix");
+                int codeIndex = tableModel.findColumn("ID");
+                int nameIndex = tableModel.findColumn("Libellé");
+                int categoryIndex = tableModel.findColumn("Catégorie");
+                int priceIndex = tableModel.findColumn("Prix Revente");
+                if (priceIndex < 0) {
+                    priceIndex = tableModel.findColumn("Prix");
+                }
+
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    String code = codeIndex >= 0 ? String.valueOf(tableModel.getValueAt(i, codeIndex)) : "";
+                    String name = nameIndex >= 0 ? String.valueOf(tableModel.getValueAt(i, nameIndex)) : "";
+                    String category = categoryIndex >= 0 ? String.valueOf(tableModel.getValueAt(i, categoryIndex)) : "";
+                    String price = priceIndex >= 0 ? String.valueOf(tableModel.getValueAt(i, priceIndex)) : "";
+                    price = price.replace(" FCFA", "");
+                    writer.printf("%s,%s,%s,%s%n", code, name, category, price);
+                }
+
+                JOptionPane.showMessageDialog(this,
+                        "Produits exportés vers " + file.getAbsolutePath(),
+                        "Export réussi", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "Erreur lors de l'export : " + ex.getMessage(),
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void importProduits() {
@@ -850,7 +891,8 @@ public class ProduitPanel extends JPanel {
             valid = false;
         }
 
-        // Validation de la date de péremption (optionnelle mais format requis si renseignée)
+        // Validation de la date de péremption (optionnelle mais format requis si
+        // renseignée)
         String dateStr = datePeremptionField.getText().trim();
         if (!dateStr.isEmpty()) {
             try {

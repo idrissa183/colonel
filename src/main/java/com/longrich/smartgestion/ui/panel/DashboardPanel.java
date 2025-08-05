@@ -46,7 +46,7 @@ public class DashboardPanel extends JPanel {
 
     // Couleurs modernes identiques à ProduitPanel
     private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
-    private static final Color SECONDARY_COLOR = new Color(107, 114, 128);
+    // private static final Color SECONDARY_COLOR = new Color(107, 114, 128);
     private static final Color SUCCESS_COLOR = new Color(34, 197, 94);
     private static final Color WARNING_COLOR = new Color(245, 158, 11);
     private static final Color DANGER_COLOR = new Color(239, 68, 68);

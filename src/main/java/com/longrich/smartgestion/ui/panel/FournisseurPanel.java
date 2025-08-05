@@ -6,6 +6,11 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +22,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -24,6 +30,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -334,7 +341,6 @@ public class FournisseurPanel extends JPanel {
         return checkBox;
     }
 
-
     private JPanel createButtonPanel() {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 20));
         buttonPanel.setBackground(BACKGROUND_COLOR);
@@ -390,7 +396,8 @@ public class FournisseurPanel extends JPanel {
         searchField = createStyledTextField();
         searchField.addActionListener(e -> searchFournisseurs());
 
-        JButton searchButton = ButtonFactory.createActionButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR, e -> searchFournisseurs());
+        JButton searchButton = ButtonFactory.createActionButton(FontAwesomeSolid.SEARCH, "", PRIMARY_COLOR,
+                e -> searchFournisseurs());
         searchButton.setPreferredSize(new Dimension(50, 38));
 
         searchInputPanel.add(searchField, BorderLayout.CENTER);
@@ -785,7 +792,34 @@ public class FournisseurPanel extends JPanel {
     }
 
     private void exportFournisseurs() {
-        showInfoMessage("Fonctionnalité d'export en cours de développement");
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter les fournisseurs");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+        fileChooser.setSelectedFile(new File("fournisseurs.csv"));
+
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".csv")) {
+                file = new File(file.getAbsolutePath() + ".csv");
+            }
+
+            try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8))) {
+                writer.println("ID,Code Stockiste,Nom,Prénom,Téléphone,Email");
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    writer.printf("%s,%s,%s,%s,%s,%s%n",
+                            tableModel.getValueAt(i, 0),
+                            tableModel.getValueAt(i, 1),
+                            tableModel.getValueAt(i, 3),
+                            tableModel.getValueAt(i, 4),
+                            tableModel.getValueAt(i, 5),
+                            tableModel.getValueAt(i, 6));
+                }
+                showSuccessMessage("Fournisseurs exportés avec succès");
+            } catch (IOException ex) {
+                showErrorMessage("Erreur lors de l'export: " + ex.getMessage());
+            }
+        }
     }
 
     private void importFournisseurs() {

@@ -10,6 +10,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,6 +26,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -30,6 +34,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -258,11 +263,14 @@ public class StockPanel extends JPanel {
         // actionButtons.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
 
         // JButton clearFiltersButton = ButtonFactory.createActionButton(
-        //         FontAwesomeSolid.TIMES, "Effacer filtres", SECONDARY_COLOR, e -> clearFilters());
+        // FontAwesomeSolid.TIMES, "Effacer filtres", SECONDARY_COLOR, e ->
+        // clearFilters());
         // JButton lowStockButton = ButtonFactory.createActionButton(
-        //         FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Stocks faibles", WARNING_COLOR, e -> showLowStock());
+        // FontAwesomeSolid.EXCLAMATION_TRIANGLE, "Stocks faibles", WARNING_COLOR, e ->
+        // showLowStock());
         // JButton outOfStockButton = ButtonFactory.createActionButton(
-        //         FontAwesomeSolid.TIMES_CIRCLE, "Ruptures", DANGER_COLOR, e -> showOutOfStock());
+        // FontAwesomeSolid.TIMES_CIRCLE, "Ruptures", DANGER_COLOR, e ->
+        // showOutOfStock());
 
         // actionButtons.add(clearFiltersButton);
         // actionButtons.add(lowStockButton);
@@ -942,8 +950,31 @@ public class StockPanel extends JPanel {
     }
 
     private void exportStock() {
-        JOptionPane.showMessageDialog(this, "Fonctionnalité d'export en cours de développement",
-                "Information", JOptionPane.INFORMATION_MESSAGE);
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter le stock");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".csv")) {
+                file = new File(file.getAbsolutePath() + ".csv");
+            }
+
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                writer.println("Code,Quantite,Statut");
+                for (int i = 0; i < tableModel.getRowCount(); i++) {
+                    String code = String.valueOf(tableModel.getValueAt(i, 1));
+                    String quantite = String.valueOf(tableModel.getValueAt(i, 2));
+                    String statut = String.valueOf(tableModel.getValueAt(i, 4));
+                    writer.printf("%s,%s,%s%n", code, quantite, statut);
+                }
+                showSuccessMessage("Stock exporté vers " + file.getAbsolutePath());
+            } catch (Exception ex) {
+                showErrorMessage("Erreur lors de l'export du stock");
+            }
+        }
+
     }
 
     private void refreshData() {

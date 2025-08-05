@@ -2,6 +2,9 @@ package com.longrich.smartgestion.ui.panel;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +22,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 // import com.longrich.smartgestion.entity.Client;
+
 import com.longrich.smartgestion.entity.Commande;
 import com.longrich.smartgestion.entity.Facture;
 // import com.longrich.smartgestion.entity.Produit;
@@ -75,20 +79,20 @@ public class VentePanel extends JPanel {
         ventes = new ArrayList<>();
         commandesEnCours = new ArrayList<>();
         facturesImpayes = new ArrayList<>();
-        
+
         // Données simulées pour démonstration
         LocalDateTime now = LocalDateTime.now();
-        
+
         // Ventes récentes
-        ventes.add(new VenteRecord("VTE001", "FACT-001", "Martin Dupont", "Partenaire", 
+        ventes.add(new VenteRecord("VTE001", "FACT-001", "Martin Dupont", "Partenaire",
                 now.minusHours(2), new BigDecimal("150000"), new BigDecimal("450"), "Payée"));
-        ventes.add(new VenteRecord("VTE002", "FACT-002", "Sophie Laurent", "Semi-grossiste", 
+        ventes.add(new VenteRecord("VTE002", "FACT-002", "Sophie Laurent", "Semi-grossiste",
                 now.minusHours(5), new BigDecimal("89000"), new BigDecimal("267"), "En attente"));
-        ventes.add(new VenteRecord("VTE003", "FACT-003", "Ahmed Ben Ali", "Grossiste", 
+        ventes.add(new VenteRecord("VTE003", "FACT-003", "Ahmed Ben Ali", "Grossiste",
                 now.minusDays(1), new BigDecimal("245000"), new BigDecimal("735"), "Payée"));
-        ventes.add(new VenteRecord("VTE004", "FACT-004", "Fatou Ouédraogo", "Individuel", 
+        ventes.add(new VenteRecord("VTE004", "FACT-004", "Fatou Ouédraogo", "Individuel",
                 now.minusDays(2), new BigDecimal("25000"), new BigDecimal("75"), "Annulée"));
-        ventes.add(new VenteRecord("VTE005", "FACT-005", "Ibrahim Sankara", "Partenaire", 
+        ventes.add(new VenteRecord("VTE005", "FACT-005", "Ibrahim Sankara", "Partenaire",
                 now.minusDays(3), new BigDecimal("180000"), new BigDecimal("540"), "Payée"));
     }
 
@@ -120,13 +124,13 @@ public class VentePanel extends JPanel {
         panel.setBackground(ComponentFactory.getBackgroundColor());
 
         JButton newSaleButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.PLUS, "Nouvelle Vente", ComponentFactory.getSuccessColor(), 
+                FontAwesomeSolid.PLUS, "Nouvelle Vente", ComponentFactory.getSuccessColor(),
                 e -> createNewSale());
         JButton refreshButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.SYNC_ALT, "Actualiser", ComponentFactory.getSecondaryColor(), 
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", ComponentFactory.getSecondaryColor(),
                 e -> refreshData());
         JButton exportButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.FILE_EXPORT, "Exporter", ComponentFactory.getPrimaryColor(), 
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", ComponentFactory.getPrimaryColor(),
                 e -> exportSalesData());
 
         panel.add(newSaleButton);
@@ -143,16 +147,16 @@ public class VentePanel extends JPanel {
 
         // Onglet Tableau de bord
         tabbedPane.addTab("📊 Tableau de bord", createDashboardPanel());
-        
+
         // Onglet Historique des ventes
         tabbedPane.addTab("📋 Historique", createHistoryPanel());
-        
+
         // Onglet Commandes en cours
         tabbedPane.addTab("⏳ Commandes en cours", createOrdersPanel());
-        
+
         // Onglet Factures impayées
         tabbedPane.addTab("💳 Factures impayées", createUnpaidInvoicesPanel());
-        
+
         // Onglet Rapports
         tabbedPane.addTab("📈 Rapports", createReportsPanel());
 
@@ -171,19 +175,19 @@ public class VentePanel extends JPanel {
         JPanel contentPanel = new JPanel(new GridLayout(2, 2, 15, 15));
         contentPanel.setBackground(ComponentFactory.getBackgroundColor());
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-        
+
         // Graphique des ventes du mois
         contentPanel.add(createSalesChartCard());
-        
+
         // Top clients
         contentPanel.add(createTopClientsCard());
-        
+
         // Produits les plus vendus
         contentPanel.add(createTopProductsCard());
-        
+
         // Objectifs de vente
         contentPanel.add(createSalesTargetsCard());
-        
+
         panel.add(contentPanel, BorderLayout.CENTER);
         return panel;
     }
@@ -193,22 +197,26 @@ public class VentePanel extends JPanel {
         panel.setBackground(ComponentFactory.getBackgroundColor());
 
         // CA Jour
-        JPanel caJourCard = createStatCard("CA Aujourd'hui", "0 FCFA", ComponentFactory.getSuccessColor(), FontAwesomeSolid.CALENDAR_DAY);
+        JPanel caJourCard = createStatCard("CA Aujourd'hui", "0 FCFA", ComponentFactory.getSuccessColor(),
+                FontAwesomeSolid.CALENDAR_DAY);
         caJourLabel = (JLabel) ((JPanel) caJourCard.getComponent(1)).getComponent(0);
         panel.add(caJourCard);
 
         // CA Mois
-        JPanel caMoisCard = createStatCard("CA ce Mois", "0 FCFA", ComponentFactory.getPrimaryColor(), FontAwesomeSolid.CALENDAR_ALT);
+        JPanel caMoisCard = createStatCard("CA ce Mois", "0 FCFA", ComponentFactory.getPrimaryColor(),
+                FontAwesomeSolid.CALENDAR_ALT);
         caMoisLabel = (JLabel) ((JPanel) caMoisCard.getComponent(1)).getComponent(0);
         panel.add(caMoisCard);
 
         // Total ventes
-        JPanel totalCard = createStatCard("Total Ventes", "0", ComponentFactory.getWarningColor(), FontAwesomeSolid.SHOPPING_CART);
+        JPanel totalCard = createStatCard("Total Ventes", "0", ComponentFactory.getWarningColor(),
+                FontAwesomeSolid.SHOPPING_CART);
         totalVentesLabel = (JLabel) ((JPanel) totalCard.getComponent(1)).getComponent(0);
         panel.add(totalCard);
 
         // Commandes en cours
-        JPanel commandesCard = createStatCard("Commandes en cours", "0", ComponentFactory.getSecondaryColor(), FontAwesomeSolid.CLOCK);
+        JPanel commandesCard = createStatCard("Commandes en cours", "0", ComponentFactory.getSecondaryColor(),
+                FontAwesomeSolid.CLOCK);
         commandesEnCoursLabel = (JLabel) ((JPanel) commandesCard.getComponent(1)).getComponent(0);
         panel.add(commandesCard);
 
@@ -235,7 +243,7 @@ public class VentePanel extends JPanel {
         JLabel valueLabel = new JLabel(value);
         valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valueLabel.setForeground(color);
-        
+
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         titleLabel.setForeground(ComponentFactory.getTextSecondaryColor());
@@ -250,43 +258,43 @@ public class VentePanel extends JPanel {
     private JPanel createSalesChartCard() {
         JPanel card = ComponentFactory.createCardPanel();
         card.setLayout(new BorderLayout());
-        
+
         JLabel title = ComponentFactory.createSectionTitle("Évolution des Ventes (30 derniers jours)");
         card.add(title, BorderLayout.NORTH);
-        
+
         // Simulation d'un graphique
         JPanel chartArea = new JPanel();
         chartArea.setBackground(Color.WHITE);
         chartArea.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         chartArea.add(new JLabel("📈 Graphique des ventes en cours de développement"));
         card.add(chartArea, BorderLayout.CENTER);
-        
+
         return card;
     }
 
     private JPanel createTopClientsCard() {
         JPanel card = ComponentFactory.createCardPanel();
         card.setLayout(new BorderLayout());
-        
+
         JLabel title = ComponentFactory.createSectionTitle("Top 5 Clients");
         card.add(title, BorderLayout.NORTH);
-        
+
         JPanel clientsList = new JPanel();
         clientsList.setLayout(new BoxLayout(clientsList, BoxLayout.Y_AXIS));
         clientsList.setBackground(ComponentFactory.getCardColor());
         clientsList.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        
-        String[] topClients = {"Martin Dupont - 450,000 FCFA", "Ahmed Ben Ali - 245,000 FCFA", 
-                              "Ibrahim Sankara - 180,000 FCFA", "Sophie Laurent - 89,000 FCFA", 
-                              "Fatou Ouédraogo - 25,000 FCFA"};
-        
+
+        String[] topClients = { "Martin Dupont - 450,000 FCFA", "Ahmed Ben Ali - 245,000 FCFA",
+                "Ibrahim Sankara - 180,000 FCFA", "Sophie Laurent - 89,000 FCFA",
+                "Fatou Ouédraogo - 25,000 FCFA" };
+
         for (int i = 0; i < topClients.length; i++) {
             JLabel clientLabel = new JLabel((i + 1) + ". " + topClients[i]);
             clientLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             clientLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
             clientsList.add(clientLabel);
         }
-        
+
         card.add(clientsList, BorderLayout.CENTER);
         return card;
     }
@@ -294,26 +302,26 @@ public class VentePanel extends JPanel {
     private JPanel createTopProductsCard() {
         JPanel card = ComponentFactory.createCardPanel();
         card.setLayout(new BorderLayout());
-        
+
         JLabel title = ComponentFactory.createSectionTitle("Produits les plus vendus");
         card.add(title, BorderLayout.NORTH);
-        
+
         JPanel productsList = new JPanel();
         productsList.setLayout(new BoxLayout(productsList, BoxLayout.Y_AXIS));
         productsList.setBackground(ComponentFactory.getCardColor());
         productsList.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
-        
-        String[] topProducts = {"Longrich Superbklean - 45 unités", "Longrich Bamboo Salt - 32 unités", 
-                               "Longrich Cordyceps - 28 unités", "Longrich Wig Shampoo - 25 unités", 
-                               "Longrich Hand Cream - 20 unités"};
-        
+
+        String[] topProducts = { "Longrich Superbklean - 45 unités", "Longrich Bamboo Salt - 32 unités",
+                "Longrich Cordyceps - 28 unités", "Longrich Wig Shampoo - 25 unités",
+                "Longrich Hand Cream - 20 unités" };
+
         for (int i = 0; i < topProducts.length; i++) {
             JLabel productLabel = new JLabel((i + 1) + ". " + topProducts[i]);
             productLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             productLabel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
             productsList.add(productLabel);
         }
-        
+
         card.add(productsList, BorderLayout.CENTER);
         return card;
     }
@@ -321,25 +329,27 @@ public class VentePanel extends JPanel {
     private JPanel createSalesTargetsCard() {
         JPanel card = ComponentFactory.createCardPanel();
         card.setLayout(new BorderLayout());
-        
+
         JLabel title = ComponentFactory.createSectionTitle("Objectifs de Vente");
         card.add(title, BorderLayout.NORTH);
-        
+
         JPanel targetsPanel = new JPanel();
         targetsPanel.setLayout(new BoxLayout(targetsPanel, BoxLayout.Y_AXIS));
         targetsPanel.setBackground(ComponentFactory.getCardColor());
         targetsPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        
+
         // Objectif mensuel
-        JPanel objectifMois = createProgressBar("Objectif Mensuel", 689000, 1000000, ComponentFactory.getPrimaryColor());
+        JPanel objectifMois = createProgressBar("Objectif Mensuel", 689000, 1000000,
+                ComponentFactory.getPrimaryColor());
         targetsPanel.add(objectifMois);
-        
+
         targetsPanel.add(Box.createVerticalStrut(15));
-        
+
         // Objectif trimestriel
-        JPanel objectifTrimestre = createProgressBar("Objectif Trimestriel", 1890000, 3000000, ComponentFactory.getSuccessColor());
+        JPanel objectifTrimestre = createProgressBar("Objectif Trimestriel", 1890000, 3000000,
+                ComponentFactory.getSuccessColor());
         targetsPanel.add(objectifTrimestre);
-        
+
         card.add(targetsPanel, BorderLayout.CENTER);
         return card;
     }
@@ -347,11 +357,11 @@ public class VentePanel extends JPanel {
     private JPanel createProgressBar(String label, long current, long target, Color color) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(ComponentFactory.getCardColor());
-        
+
         JLabel titleLabel = new JLabel(label);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
         panel.add(titleLabel, BorderLayout.NORTH);
-        
+
         JProgressBar progressBar = new JProgressBar(0, (int) target);
         progressBar.setValue((int) current);
         progressBar.setStringPainted(true);
@@ -359,7 +369,7 @@ public class VentePanel extends JPanel {
         progressBar.setForeground(color);
         progressBar.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         panel.add(progressBar, BorderLayout.CENTER);
-        
+
         return panel;
     }
 
@@ -389,7 +399,7 @@ public class VentePanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         panel.add(ComponentFactory.createLabel("Recherche:"), gbc);
-        
+
         searchField = ComponentFactory.createStyledTextField("Numéro, client...");
         searchField.setPreferredSize(new Dimension(200, 38));
         searchField.addActionListener(e -> filterVentes());
@@ -399,8 +409,9 @@ public class VentePanel extends JPanel {
         // Période
         gbc.gridx = 2;
         panel.add(ComponentFactory.createLabel("Période:"), gbc);
-        
-        String[] periodes = {"Aujourd'hui", "Cette semaine", "Ce mois", "Ce trimestre", "Cette année", "Personnalisée"};
+
+        String[] periodes = { "Aujourd'hui", "Cette semaine", "Ce mois", "Ce trimestre", "Cette année",
+                "Personnalisée" };
         periodeCombo = ComponentFactory.createStyledComboBox(periodes);
         periodeCombo.addActionListener(this::onPeriodeChange);
         gbc.gridx = 3;
@@ -409,8 +420,8 @@ public class VentePanel extends JPanel {
         // Statut
         gbc.gridx = 4;
         panel.add(ComponentFactory.createLabel("Statut:"), gbc);
-        
-        String[] statuts = {"Tous", "Payée", "En attente", "Annulée"};
+
+        String[] statuts = { "Tous", "Payée", "En attente", "Annulée" };
         statusCombo = ComponentFactory.createStyledComboBox(statuts);
         statusCombo.addActionListener(e -> filterVentes());
         gbc.gridx = 5;
@@ -442,7 +453,8 @@ public class VentePanel extends JPanel {
         JLabel tableTitle = ComponentFactory.createSectionTitle("Historique des Ventes");
         panel.add(tableTitle, BorderLayout.NORTH);
 
-        String[] columns = {"N° Vente", "N° Facture", "Client", "Type Client", "Date", "Montant (FCFA)", "PV", "Statut", "Actions"};
+        String[] columns = { "N° Vente", "N° Facture", "Client", "Type Client", "Date", "Montant (FCFA)", "PV",
+                "Statut", "Actions" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -452,7 +464,7 @@ public class VentePanel extends JPanel {
 
         ventesTable = new JTable(tableModel);
         styleTable(ventesTable);
-        
+
         // Ajuster les largeurs des colonnes
         ventesTable.getColumn("N° Vente").setPreferredWidth(80);
         ventesTable.getColumn("N° Facture").setPreferredWidth(80);
@@ -475,68 +487,71 @@ public class VentePanel extends JPanel {
     private JPanel createOrdersPanel() {
         JPanel panel = ComponentFactory.createCardPanel();
         panel.setLayout(new BorderLayout());
-        
+
         JLabel title = ComponentFactory.createSectionTitle("Commandes en cours de traitement");
         panel.add(title, BorderLayout.NORTH);
-        
+
         // Table des commandes en cours
-        String[] columns = {"N° Commande", "Client", "Date Commande", "Date Livraison", "Statut", "Montant", "Actions"};
+        String[] columns = { "N° Commande", "Client", "Date Commande", "Date Livraison", "Statut", "Montant",
+                "Actions" };
         DefaultTableModel ordersModel = new DefaultTableModel(columns, 0);
         JTable ordersTable = new JTable(ordersModel);
         styleTable(ordersTable);
-        
+
         JScrollPane scrollPane = new JScrollPane(ordersTable);
         scrollPane.setBorder(null);
         panel.add(scrollPane, BorderLayout.CENTER);
-        
+
         return panel;
     }
 
     private JPanel createUnpaidInvoicesPanel() {
         JPanel panel = ComponentFactory.createCardPanel();
         panel.setLayout(new BorderLayout());
-        
+
         JLabel title = ComponentFactory.createSectionTitle("Factures impayées");
         panel.add(title, BorderLayout.NORTH);
-        
+
         // Table des factures impayées
-        String[] columns = {"N° Facture", "Client", "Date Émission", "Date Échéance", "Montant Total", "Montant Payé", "Reste à Payer", "Actions"};
+        String[] columns = { "N° Facture", "Client", "Date Émission", "Date Échéance", "Montant Total", "Montant Payé",
+                "Reste à Payer", "Actions" };
         DefaultTableModel invoicesModel = new DefaultTableModel(columns, 0);
         JTable invoicesTable = new JTable(invoicesModel);
         styleTable(invoicesTable);
-        
+
         JScrollPane scrollPane = new JScrollPane(invoicesTable);
         scrollPane.setBorder(null);
         panel.add(scrollPane, BorderLayout.CENTER);
-        
+
         return panel;
     }
 
     private JPanel createReportsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(ComponentFactory.getBackgroundColor());
-        
+
         // En-tête avec sélection de rapport
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setBackground(ComponentFactory.getBackgroundColor());
-        
+
         headerPanel.add(ComponentFactory.createLabel("Type de rapport:"));
-        String[] reportTypes = {"Ventes par période", "Ventes par client", "Ventes par produit", "CA par vendeur", "Comparatif mensuel"};
+        String[] reportTypes = { "Ventes par période", "Ventes par client", "Ventes par produit", "CA par vendeur",
+                "Comparatif mensuel" };
         JComboBox<String> reportCombo = ComponentFactory.createStyledComboBox(reportTypes);
         headerPanel.add(reportCombo);
-        
+
         JButton generateButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.CHART_BAR, "Générer", ComponentFactory.getPrimaryColor(), 
+                FontAwesomeSolid.CHART_BAR, "Générer", ComponentFactory.getPrimaryColor(),
                 e -> generateReport());
         headerPanel.add(generateButton);
-        
+
         panel.add(headerPanel, BorderLayout.NORTH);
-        
+
         // Zone de contenu du rapport
         JPanel reportContent = ComponentFactory.createCardPanel();
         reportContent.add(new JLabel("Sélectionnez un type de rapport et cliquez sur Générer"));
         panel.add(reportContent, BorderLayout.CENTER);
-        
+
         return panel;
     }
 
@@ -562,15 +577,15 @@ public class VentePanel extends JPanel {
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
+
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
                 }
-                
+
                 setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
                 setFont(new Font("Segoe UI", Font.PLAIN, 12));
                 setForeground(ComponentFactory.getTextPrimaryColor());
-                
+
                 // Couleurs spéciales pour les statuts
                 if (table.getColumnName(column).equals("Statut")) {
                     if ("Payée".equals(value)) {
@@ -584,11 +599,11 @@ public class VentePanel extends JPanel {
                         setFont(new Font("Segoe UI", Font.BOLD, 12));
                     }
                 }
-                
+
                 return this;
             }
         };
-        
+
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(renderer);
         }
@@ -598,7 +613,7 @@ public class VentePanel extends JPanel {
     private void onPeriodeChange(ActionEvent e) {
         JComboBox<?> combo = (JComboBox<?>) e.getSource();
         boolean isPersonnalisee = "Personnalisée".equals(combo.getSelectedItem());
-        
+
         // Afficher/masquer les sélecteurs de date
         Container parent = dateDebutPicker.getParent();
         if (parent != null) {
@@ -606,7 +621,7 @@ public class VentePanel extends JPanel {
             parent.getParent().revalidate();
             parent.getParent().repaint();
         }
-        
+
         if (!isPersonnalisee) {
             filterVentes();
         }
@@ -616,15 +631,15 @@ public class VentePanel extends JPanel {
         tableModel.setRowCount(0);
         for (VenteRecord vente : ventes) {
             Object[] row = {
-                vente.numeroVente,
-                vente.numeroFacture,
-                vente.clientNom,
-                vente.typeClient,
-                vente.dateVente.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
-                String.format("%,.0f", vente.montant),
-                vente.pv,
-                vente.statut,
-                "" // Actions
+                    vente.numeroVente,
+                    vente.numeroFacture,
+                    vente.clientNom,
+                    vente.typeClient,
+                    vente.dateVente.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")),
+                    String.format("%,.0f", vente.montant),
+                    vente.pv,
+                    vente.statut,
+                    "" // Actions
             };
             tableModel.addRow(row);
         }
@@ -641,15 +656,15 @@ public class VentePanel extends JPanel {
                 .filter(v -> v.dateVente.toLocalDate().equals(LocalDateTime.now().toLocalDate()))
                 .map(v -> v.montant)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         BigDecimal caMois = ventes.stream()
                 .filter(v -> v.dateVente.getMonth() == LocalDateTime.now().getMonth())
                 .map(v -> v.montant)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         long totalVentes = ventes.size();
         long commandesEnCours = 3; // Simulé
-        
+
         caJourLabel.setText(String.format("%,.0f FCFA", caJour));
         caMoisLabel.setText(String.format("%,.0f FCFA", caMois));
         totalVentesLabel.setText(String.valueOf(totalVentes));
@@ -657,7 +672,7 @@ public class VentePanel extends JPanel {
     }
 
     private void createNewSale() {
-        JOptionPane.showMessageDialog(this, "Création d'une nouvelle vente en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Création d'une nouvelle vente en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -668,12 +683,61 @@ public class VentePanel extends JPanel {
     }
 
     private void exportSalesData() {
-        JOptionPane.showMessageDialog(this, "Export des données de vente en cours de développement", 
-                "Information", JOptionPane.INFORMATION_MESSAGE);
+        int selectedTab = tabbedPane.getSelectedIndex();
+        if (selectedTab != 1) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner l'onglet Historique pour exporter les ventes",
+                    "Information", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Exporter les ventes");
+        chooser.setSelectedFile(new File("ventes.csv"));
+        int result = chooser.showSaveDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".csv")) {
+            file = new File(file.getParentFile(), file.getName() + ".csv");
+        }
+
+        try (FileWriter writer = new FileWriter(file)) {
+            // Entêtes (on ignore la colonne Actions)
+            for (int col = 0; col < ventesTable.getColumnCount() - 1; col++) {
+                writer.append(ventesTable.getColumnName(col));
+                if (col < ventesTable.getColumnCount() - 2) {
+                    writer.append(',');
+                }
+            }
+            writer.append('\n');
+
+            // Données
+            for (int row = 0; row < ventesTable.getRowCount(); row++) {
+                for (int col = 0; col < ventesTable.getColumnCount() - 1; col++) {
+                    Object value = ventesTable.getValueAt(row, col);
+                    writer.append(value == null ? "" : value.toString());
+                    if (col < ventesTable.getColumnCount() - 2) {
+                        writer.append(',');
+                    }
+                }
+                writer.append('\n');
+            }
+
+            JOptionPane.showMessageDialog(this, "Export réalisé avec succès", "Succès",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors de l'export: " + ex.getMessage(), "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
     }
 
     private void generateReport() {
-        JOptionPane.showMessageDialog(this, "Génération de rapport en cours de développement", 
+        JOptionPane.showMessageDialog(this, "Génération de rapport en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -682,9 +746,9 @@ public class VentePanel extends JPanel {
         String numeroVente, numeroFacture, clientNom, typeClient, statut;
         LocalDateTime dateVente;
         BigDecimal montant, pv;
-        
-        VenteRecord(String numeroVente, String numeroFacture, String clientNom, String typeClient, 
-                   LocalDateTime dateVente, BigDecimal montant, BigDecimal pv, String statut) {
+
+        VenteRecord(String numeroVente, String numeroFacture, String clientNom, String typeClient,
+                LocalDateTime dateVente, BigDecimal montant, BigDecimal pv, String statut) {
             this.numeroVente = numeroVente;
             this.numeroFacture = numeroFacture;
             this.clientNom = clientNom;

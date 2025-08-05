@@ -9,6 +9,10 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +24,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -29,6 +34,7 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -67,7 +73,7 @@ public class FacturePanel extends JPanel {
     private JTextField searchField;
     private JComboBox<String> statusFilter;
     private JComboBox<String> periodFilter;
-    
+
     // Formulaire de création/édition
     private ComponentFactory.FieldPanel clientField;
     private ComponentFactory.FieldPanel invoiceNumberField;
@@ -77,7 +83,7 @@ public class FacturePanel extends JPanel {
     private ComponentFactory.FieldPanel taxField;
     private ComponentFactory.FieldPanel statusField;
     private ComponentFactory.FieldPanel notesField;
-    
+
     private final Map<String, JLabel> statsLabels = new HashMap<>();
     private boolean isEditMode = false;
 
@@ -120,11 +126,11 @@ public class FacturePanel extends JPanel {
         panel.setBackground(BACKGROUND_COLOR);
 
         JButton newInvoiceButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.PLUS, "Nouvelle Facture", PRIMARY_COLOR, e -> showInvoiceForm(false));
+                FontAwesomeSolid.PLUS, "Nouvelle Facture", PRIMARY_COLOR, e -> showInvoiceForm(false));
         JButton exportButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportInvoices());
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", SUCCESS_COLOR, e -> exportInvoices());
         JButton printButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.PRINT, "Imprimer", INFO_COLOR, e -> printSelected());
+                FontAwesomeSolid.PRINT, "Imprimer", INFO_COLOR, e -> printSelected());
 
         panel.add(newInvoiceButton);
         panel.add(exportButton);
@@ -184,9 +190,8 @@ public class FacturePanel extends JPanel {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBackground(CARD_COLOR);
         card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR, 1),
-            BorderFactory.createEmptyBorder(20, 20, 20, 20)
-        ));
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)));
         card.setPreferredSize(new Dimension(180, 80));
 
         JLabel titleLabel = new JLabel(title);
@@ -220,7 +225,7 @@ public class FacturePanel extends JPanel {
         // Filtre par statut
         JLabel statusLabel = ComponentFactory.createLabel("Statut:");
         statusFilter = ComponentFactory.createStyledComboBox(new String[] {
-            "Tous", "Brouillon", "Envoyée", "Payée", "En retard", "Annulée"
+                "Tous", "Brouillon", "Envoyée", "Payée", "En retard", "Annulée"
         });
         statusFilter.setPreferredSize(new Dimension(120, 38));
         statusFilter.addActionListener(e -> applyFilters());
@@ -228,14 +233,14 @@ public class FacturePanel extends JPanel {
         // Filtre par période
         JLabel periodLabel = ComponentFactory.createLabel("Période:");
         periodFilter = ComponentFactory.createStyledComboBox(new String[] {
-            "Tout", "Aujourd'hui", "Cette semaine", "Ce mois", "Ce trimestre"
+                "Tout", "Aujourd'hui", "Cette semaine", "Ce mois", "Ce trimestre"
         });
         periodFilter.setPreferredSize(new Dimension(120, 38));
         periodFilter.addActionListener(e -> applyFilters());
 
         // Bouton de réinitialisation
         JButton resetButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.UNDO, "Réinitialiser", SECONDARY_COLOR, e -> resetFilters());
+                FontAwesomeSolid.UNDO, "Réinitialiser", SECONDARY_COLOR, e -> resetFilters());
 
         filterPanel.add(searchPanel);
         filterPanel.add(Box.createHorizontalStrut(15));
@@ -267,11 +272,11 @@ public class FacturePanel extends JPanel {
         tableActionsPanel.setBackground(CARD_COLOR);
 
         JButton editButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR, e -> editSelectedInvoice());
+                FontAwesomeSolid.EDIT, "Modifier", WARNING_COLOR, e -> editSelectedInvoice());
         JButton deleteButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR, e -> deleteSelectedInvoice());
+                FontAwesomeSolid.TRASH, "Supprimer", DANGER_COLOR, e -> deleteSelectedInvoice());
         JButton duplicateButton = ButtonFactory.createActionButton(
-            FontAwesomeSolid.COPY, "Dupliquer", INFO_COLOR, e -> duplicateSelectedInvoice());
+                FontAwesomeSolid.COPY, "Dupliquer", INFO_COLOR, e -> duplicateSelectedInvoice());
 
         tableActionsPanel.add(editButton);
         tableActionsPanel.add(deleteButton);
@@ -292,7 +297,7 @@ public class FacturePanel extends JPanel {
 
     private void createInvoiceTable() {
         String[] columns = {
-            "N° Facture", "Client", "Date", "Échéance", "Montant HT", "TVA", "Total TTC", "Statut"
+                "N° Facture", "Client", "Date", "Échéance", "Montant HT", "TVA", "Total TTC", "Statut"
         };
 
         tableModel = new DefaultTableModel(columns, 0) {
@@ -323,8 +328,8 @@ public class FacturePanel extends JPanel {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
-                java.awt.Component c = super.getTableCellRendererComponent(table, value, 
-                    isSelected, hasFocus, row, column);
+                java.awt.Component c = super.getTableCellRendererComponent(table, value,
+                        isSelected, hasFocus, row, column);
 
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(249, 250, 251));
@@ -381,13 +386,20 @@ public class FacturePanel extends JPanel {
 
         // Données d'exemple
         Object[][] sampleData = {
-            {"FAC-2025-001", "Longrich Store Paris", "04/08/2025", "04/09/2025", "1,250.00", "250.00", "1,500.00", "✅ Payée"},
-            {"FAC-2025-002", "Beauty Center Lyon", "03/08/2025", "03/09/2025", "890.50", "178.10", "1,068.60", "⏳ En attente"},
-            {"FAC-2025-003", "Wellness Spa Nice", "02/08/2025", "02/09/2025", "2,100.00", "420.00", "2,520.00", "✅ Payée"},
-            {"FAC-2025-004", "Health Shop Marseille", "01/08/2025", "01/09/2025", "675.25", "135.05", "810.30", "⚠️ En retard"},
-            {"FAC-2025-005", "Longrich Partner Toulouse", "31/07/2025", "31/08/2025", "1,450.75", "290.15", "1,740.90", "📝 Brouillon"},
-            {"FAC-2025-006", "Beauty World Bordeaux", "30/07/2025", "30/08/2025", "980.00", "196.00", "1,176.00", "✅ Payée"},
-            {"FAC-2025-007", "Wellness Center Nantes", "29/07/2025", "29/08/2025", "1,120.50", "224.10", "1,344.60", "⏳ En attente"}
+                { "FAC-2025-001", "Longrich Store Paris", "04/08/2025", "04/09/2025", "1,250.00", "250.00", "1,500.00",
+                        "✅ Payée" },
+                { "FAC-2025-002", "Beauty Center Lyon", "03/08/2025", "03/09/2025", "890.50", "178.10", "1,068.60",
+                        "⏳ En attente" },
+                { "FAC-2025-003", "Wellness Spa Nice", "02/08/2025", "02/09/2025", "2,100.00", "420.00", "2,520.00",
+                        "✅ Payée" },
+                { "FAC-2025-004", "Health Shop Marseille", "01/08/2025", "01/09/2025", "675.25", "135.05", "810.30",
+                        "⚠️ En retard" },
+                { "FAC-2025-005", "Longrich Partner Toulouse", "31/07/2025", "31/08/2025", "1,450.75", "290.15",
+                        "1,740.90", "📝 Brouillon" },
+                { "FAC-2025-006", "Beauty World Bordeaux", "30/07/2025", "30/08/2025", "980.00", "196.00", "1,176.00",
+                        "✅ Payée" },
+                { "FAC-2025-007", "Wellness Center Nantes", "29/07/2025", "29/08/2025", "1,120.50", "224.10",
+                        "1,344.60", "⏳ En attente" }
         };
 
         for (Object[] row : sampleData) {
@@ -397,15 +409,14 @@ public class FacturePanel extends JPanel {
 
     private void showInvoiceForm(boolean editMode) {
         this.isEditMode = editMode;
-        
+
         JPanel formPanel = createInvoiceFormPanel();
-        
+
         String title = editMode ? "Modifier la Facture" : "Nouvelle Facture";
         int option = JOptionPane.showConfirmDialog(
-            this, formPanel, title, 
-            JOptionPane.OK_CANCEL_OPTION, 
-            JOptionPane.PLAIN_MESSAGE
-        );
+                this, formPanel, title,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
 
         if (option == JOptionPane.OK_OPTION) {
             if (validateForm()) {
@@ -418,62 +429,70 @@ public class FacturePanel extends JPanel {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBackground(CARD_COLOR);
         panel.setPreferredSize(new Dimension(600, 500));
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
 
         // Ligne 1 - Client et N° facture
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.5;
-        clientField = ComponentFactory.createFieldPanel("Client", 
-            ComponentFactory.createStyledComboBox(new String[] {
-                "Longrich Store Paris", "Beauty Center Lyon", "Wellness Spa Nice", 
-                "Health Shop Marseille", "Longrich Partner Toulouse"
-            }), true);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
+        clientField = ComponentFactory.createFieldPanel("Client",
+                ComponentFactory.createStyledComboBox(new String[] {
+                        "Longrich Store Paris", "Beauty Center Lyon", "Wellness Spa Nice",
+                        "Health Shop Marseille", "Longrich Partner Toulouse"
+                }), true);
         panel.add(clientField, gbc);
 
         gbc.gridx = 1;
-        invoiceNumberField = ComponentFactory.createFieldPanel("N° Facture", 
-            ComponentFactory.createStyledTextField(), true);
-        ((JTextField) invoiceNumberField.getField()).setText("FAC-2025-" + 
-            String.format("%03d", tableModel.getRowCount() + 1));
+        invoiceNumberField = ComponentFactory.createFieldPanel("N° Facture",
+                ComponentFactory.createStyledTextField(), true);
+        ((JTextField) invoiceNumberField.getField()).setText("FAC-2025-" +
+                String.format("%03d", tableModel.getRowCount() + 1));
         panel.add(invoiceNumberField, gbc);
 
         // Ligne 2 - Dates
-        gbc.gridx = 0; gbc.gridy = 1;
-        dateField = ComponentFactory.createFieldPanel("Date de facture", 
-            ComponentFactory.createStyledTextField(), true);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        dateField = ComponentFactory.createFieldPanel("Date de facture",
+                ComponentFactory.createStyledTextField(), true);
         ((JTextField) dateField.getField()).setText(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         panel.add(dateField, gbc);
 
         gbc.gridx = 1;
-        dueDateField = ComponentFactory.createFieldPanel("Date d'échéance", 
-            ComponentFactory.createStyledTextField(), true);
-        ((JTextField) dueDateField.getField()).setText(LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        dueDateField = ComponentFactory.createFieldPanel("Date d'échéance",
+                ComponentFactory.createStyledTextField(), true);
+        ((JTextField) dueDateField.getField())
+                .setText(LocalDate.now().plusDays(30).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         panel.add(dueDateField, gbc);
 
         // Ligne 3 - Montants
-        gbc.gridx = 0; gbc.gridy = 2;
-        amountField = ComponentFactory.createFieldPanel("Montant HT (€)", 
-            ComponentFactory.createStyledTextField(), true);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        amountField = ComponentFactory.createFieldPanel("Montant HT (€)",
+                ComponentFactory.createStyledTextField(), true);
         panel.add(amountField, gbc);
 
         gbc.gridx = 1;
-        taxField = ComponentFactory.createFieldPanel("TVA (%)", 
-            ComponentFactory.createStyledTextField(), true);
+        taxField = ComponentFactory.createFieldPanel("TVA (%)",
+                ComponentFactory.createStyledTextField(), true);
         ((JTextField) taxField.getField()).setText("20.0");
         panel.add(taxField, gbc);
 
         // Ligne 4 - Statut
-        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-        statusField = ComponentFactory.createFieldPanel("Statut", 
-            ComponentFactory.createStyledComboBox(new String[] {
-                "Brouillon", "Envoyée", "Payée", "En retard", "Annulée"
-            }), true);
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        statusField = ComponentFactory.createFieldPanel("Statut",
+                ComponentFactory.createStyledComboBox(new String[] {
+                        "Brouillon", "Envoyée", "Payée", "En retard", "Annulée"
+                }), true);
         panel.add(statusField, gbc);
 
         // Ligne 5 - Notes
-        gbc.gridy = 4; gbc.weighty = 1.0;
+        gbc.gridy = 4;
+        gbc.weighty = 1.0;
         JTextArea notesArea = ComponentFactory.createStyledTextArea(4);
         notesArea.setToolTipText("Notes ou commentaires sur la facture");
         JScrollPane notesScroll = ComponentFactory.createStyledScrollPane(notesArea);
@@ -591,8 +610,8 @@ public class FacturePanel extends JPanel {
             };
 
             Object[] newRow = {
-                invoiceNumber, client, date, dueDate, 
-                formattedAmount, formattedTax, formattedTotal, statusIcon
+                    invoiceNumber, client, date, dueDate,
+                    formattedAmount, formattedTax, formattedTotal, statusIcon
             };
 
             if (isEditMode && invoiceTable.getSelectedRow() >= 0) {
@@ -601,35 +620,35 @@ public class FacturePanel extends JPanel {
                 for (int i = 0; i < newRow.length; i++) {
                     tableModel.setValueAt(newRow[i], selectedRow, i);
                 }
-                JOptionPane.showMessageDialog(this, 
-                    "✓ Facture modifiée avec succès !", 
-                    "Succès", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "✓ Facture modifiée avec succès !",
+                        "Succès", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 // Création
                 tableModel.insertRow(0, newRow);
-                JOptionPane.showMessageDialog(this, 
-                    "✓ Facture créée avec succès !", 
-                    "Succès", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "✓ Facture créée avec succès !",
+                        "Succès", JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, 
-                "Erreur dans les montants saisis", 
-                "Erreur", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Erreur dans les montants saisis",
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void editSelectedInvoice() {
         int selectedRow = invoiceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                "Veuillez sélectionner une facture à modifier", 
-                "Sélection requise", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner une facture à modifier",
+                    "Sélection requise", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         showInvoiceForm(true);
-        
+
         // Pré-remplir le formulaire avec les données sélectionnées
         // (Ce code serait normalement dans showInvoiceForm mais simplifié ici)
     }
@@ -637,33 +656,33 @@ public class FacturePanel extends JPanel {
     private void deleteSelectedInvoice() {
         int selectedRow = invoiceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                "Veuillez sélectionner une facture à supprimer", 
-                "Sélection requise", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner une facture à supprimer",
+                    "Sélection requise", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String invoiceNumber = (String) tableModel.getValueAt(selectedRow, 0);
         int confirm = JOptionPane.showConfirmDialog(this,
-            "Êtes-vous sûr de vouloir supprimer la facture " + invoiceNumber + " ?",
-            "Confirmation de suppression", 
-            JOptionPane.YES_NO_OPTION, 
-            JOptionPane.WARNING_MESSAGE);
+                "Êtes-vous sûr de vouloir supprimer la facture " + invoiceNumber + " ?",
+                "Confirmation de suppression",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
             tableModel.removeRow(selectedRow);
-            JOptionPane.showMessageDialog(this, 
-                "✓ Facture supprimée avec succès !", 
-                "Succès", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "✓ Facture supprimée avec succès !",
+                    "Succès", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
     private void duplicateSelectedInvoice() {
         int selectedRow = invoiceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                "Veuillez sélectionner une facture à dupliquer", 
-                "Sélection requise", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner une facture à dupliquer",
+                    "Sélection requise", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -680,9 +699,9 @@ public class FacturePanel extends JPanel {
         originalRow[7] = "📝 Brouillon";
 
         tableModel.insertRow(0, originalRow);
-        JOptionPane.showMessageDialog(this, 
-            "✓ Facture dupliquée avec succès !", 
-            "Succès", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this,
+                "✓ Facture dupliquée avec succès !",
+                "Succès", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void applyFilters() {
@@ -690,12 +709,12 @@ public class FacturePanel extends JPanel {
         String searchText = searchField.getText().toLowerCase().trim();
         String selectedStatus = (String) statusFilter.getSelectedItem();
         String selectedPeriod = (String) periodFilter.getSelectedItem();
-        
+
         // Logique de filtrage simplifiée pour la démo
         if (!searchText.isEmpty() || !"Tous".equals(selectedStatus) || !"Tout".equals(selectedPeriod)) {
-            JOptionPane.showMessageDialog(this, 
-                "Filtres appliqués : " + searchText + " | " + selectedStatus + " | " + selectedPeriod, 
-                "Filtrage", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Filtres appliqués : " + searchText + " | " + selectedStatus + " | " + selectedPeriod,
+                    "Filtrage", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -707,23 +726,72 @@ public class FacturePanel extends JPanel {
     }
 
     private void exportInvoices() {
-        JOptionPane.showMessageDialog(this, 
-            "Export des factures en cours de développement", 
-            "Information", JOptionPane.INFORMATION_MESSAGE);
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter les factures");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+        fileChooser.setSelectedFile(new File("factures.csv"));
+
+        int userSelection = fileChooser.showSaveDialog(this);
+        if (userSelection != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = fileChooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".csv")) {
+            file = new File(file.getParentFile(), file.getName() + ".csv");
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+            int columnCount = tableModel.getColumnCount();
+            // Écriture de l'en-tête
+            for (int i = 0; i < columnCount; i++) {
+                writer.print(tableModel.getColumnName(i));
+                if (i < columnCount - 1) {
+                    writer.print(",");
+                }
+            }
+            writer.println();
+
+            // Écriture des lignes
+            for (int row = 0; row < tableModel.getRowCount(); row++) {
+                for (int col = 0; col < columnCount; col++) {
+                    Object value = tableModel.getValueAt(row, col);
+                    String text = value != null ? value.toString() : "";
+                    if (text.contains(",") || text.contains("\"") || text.contains("\n")) {
+                        text = "\"" + text.replace("\"", "\"\"") + "\"";
+                    }
+                    writer.print(text);
+                    if (col < columnCount - 1) {
+                        writer.print(",");
+                    }
+                }
+                writer.println();
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Exportation des factures réussie",
+                    "Export terminé", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors de l'exportation des factures : " + ex.getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+
     }
 
     private void printSelected() {
         int selectedRow = invoiceTable.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, 
-                "Veuillez sélectionner une facture à imprimer", 
-                "Sélection requise", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner une facture à imprimer",
+                    "Sélection requise", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         String invoiceNumber = (String) tableModel.getValueAt(selectedRow, 0);
-        JOptionPane.showMessageDialog(this, 
-            "Impression de la facture " + invoiceNumber + " en cours...", 
-            "Impression", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this,
+                "Impression de la facture " + invoiceNumber + " en cours...",
+                "Impression", JOptionPane.INFORMATION_MESSAGE);
     }
 }

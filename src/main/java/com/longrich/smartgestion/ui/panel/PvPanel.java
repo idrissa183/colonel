@@ -2,6 +2,9 @@ package com.longrich.smartgestion.ui.panel;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -9,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -67,20 +71,20 @@ public class PvPanel extends JPanel {
     private void initializeData() {
         pvRecords = new ArrayList<>();
         commissionRecords = new ArrayList<>();
-        
+
         // Données simulées pour démonstration
-        pvRecords.add(new PvRecord("CLT001", "Martin Dupont", "Partenaire", 
+        pvRecords.add(new PvRecord("CLT001", "Martin Dupont", "Partenaire",
                 LocalDate.now().minusDays(5), new BigDecimal("150"), new BigDecimal("45000")));
-        pvRecords.add(new PvRecord("CLT002", "Sophie Laurent", "Semi-grossiste", 
+        pvRecords.add(new PvRecord("CLT002", "Sophie Laurent", "Semi-grossiste",
                 LocalDate.now().minusDays(3), new BigDecimal("89"), new BigDecimal("26700")));
-        pvRecords.add(new PvRecord("CLT003", "Ahmed Ben Ali", "Grossiste", 
+        pvRecords.add(new PvRecord("CLT003", "Ahmed Ben Ali", "Grossiste",
                 LocalDate.now().minusDays(1), new BigDecimal("245"), new BigDecimal("73500")));
-        
-        commissionRecords.add(new CommissionRecord("Martin Dupont", "Commission Directe", 
+
+        commissionRecords.add(new CommissionRecord("Martin Dupont", "Commission Directe",
                 LocalDate.now().minusDays(5), new BigDecimal("150"), new BigDecimal("15000")));
-        commissionRecords.add(new CommissionRecord("Sophie Laurent", "Commission Niveau 2", 
+        commissionRecords.add(new CommissionRecord("Sophie Laurent", "Commission Niveau 2",
                 LocalDate.now().minusDays(3), new BigDecimal("89"), new BigDecimal("4450")));
-        commissionRecords.add(new CommissionRecord("Ahmed Ben Ali", "Bonus Leadership", 
+        commissionRecords.add(new CommissionRecord("Ahmed Ben Ali", "Bonus Leadership",
                 LocalDate.now().minusDays(1), new BigDecimal("245"), new BigDecimal("24500")));
     }
 
@@ -118,13 +122,13 @@ public class PvPanel extends JPanel {
         panel.setBackground(ComponentFactory.getBackgroundColor());
 
         JButton calculateButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.CALCULATOR, "Calculer", ComponentFactory.getPrimaryColor(), 
+                FontAwesomeSolid.CALCULATOR, "Calculer", ComponentFactory.getPrimaryColor(),
                 e -> calculateCommissions());
         JButton exportButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.FILE_EXPORT, "Exporter", ComponentFactory.getSuccessColor(), 
+                FontAwesomeSolid.FILE_EXPORT, "Exporter", ComponentFactory.getSuccessColor(),
                 e -> exportPvData());
         JButton refreshButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.SYNC_ALT, "Actualiser", ComponentFactory.getSecondaryColor(), 
+                FontAwesomeSolid.SYNC_ALT, "Actualiser", ComponentFactory.getSecondaryColor(),
                 e -> refreshData());
 
         panel.add(calculateButton);
@@ -184,7 +188,7 @@ public class PvPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         panel.add(ComponentFactory.createLabel("Recherche:"), gbc);
-        
+
         searchField = ComponentFactory.createStyledTextField("Nom du client...");
         searchField.setPreferredSize(new Dimension(200, 38));
         searchField.addActionListener(e -> filterPvData());
@@ -194,8 +198,8 @@ public class PvPanel extends JPanel {
         // Période
         gbc.gridx = 2;
         panel.add(ComponentFactory.createLabel("Période:"), gbc);
-        
-        String[] periodes = {"Cette semaine", "Ce mois", "Ce trimestre", "Cette année", "Personnalisée"};
+
+        String[] periodes = { "Cette semaine", "Ce mois", "Ce trimestre", "Cette année", "Personnalisée" };
         periodeCombo = ComponentFactory.createStyledComboBox(periodes);
         periodeCombo.addActionListener(this::onPeriodeChange);
         gbc.gridx = 3;
@@ -204,8 +208,8 @@ public class PvPanel extends JPanel {
         // Type de client
         gbc.gridx = 4;
         panel.add(ComponentFactory.createLabel("Type:"), gbc);
-        
-        String[] types = {"Tous", "Partenaire", "Grossiste", "Semi-grossiste", "Individuel"};
+
+        String[] types = { "Tous", "Partenaire", "Grossiste", "Semi-grossiste", "Individuel" };
         typeCombo = ComponentFactory.createStyledComboBox(types);
         typeCombo.addActionListener(e -> filterPvData());
         gbc.gridx = 5;
@@ -239,7 +243,7 @@ public class PvPanel extends JPanel {
         panel.add(tableTitle, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"Client", "Code", "Type", "Date", "PV Gagné", "Montant (FCFA)", "Statut"};
+        String[] columns = { "Client", "Code", "Type", "Date", "PV Gagné", "Montant (FCFA)", "Statut" };
         pvTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -264,12 +268,14 @@ public class PvPanel extends JPanel {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         // Total PV
-        JPanel pvSummaryCard = createSummaryCard("Total PV", "0", ComponentFactory.getPrimaryColor(), FontAwesomeSolid.STAR);
+        JPanel pvSummaryCard = createSummaryCard("Total PV", "0", ComponentFactory.getPrimaryColor(),
+                FontAwesomeSolid.STAR);
         totalPvLabel = (JLabel) ((JPanel) pvSummaryCard.getComponent(1)).getComponent(0);
         panel.add(pvSummaryCard);
 
         // Total Montant
-        JPanel montantSummaryCard = createSummaryCard("Montant Total", "0 FCFA", ComponentFactory.getSuccessColor(), FontAwesomeSolid.MONEY_BILL_WAVE);
+        JPanel montantSummaryCard = createSummaryCard("Montant Total", "0 FCFA", ComponentFactory.getSuccessColor(),
+                FontAwesomeSolid.MONEY_BILL_WAVE);
         panel.add(montantSummaryCard);
 
         return panel;
@@ -297,7 +303,7 @@ public class PvPanel extends JPanel {
         JLabel tableTitle = ComponentFactory.createSectionTitle("Commissions et Bonus");
         panel.add(tableTitle, BorderLayout.NORTH);
 
-        String[] columns = {"Bénéficiaire", "Type Commission", "Date", "PV Base", "Montant (FCFA)", "Statut"};
+        String[] columns = { "Bénéficiaire", "Type Commission", "Date", "PV Base", "Montant (FCFA)", "Statut" };
         commissionsTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -322,16 +328,19 @@ public class PvPanel extends JPanel {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
 
         // Total commissions
-        JPanel totalCard = createSummaryCard("Total Commissions", "0 FCFA", ComponentFactory.getWarningColor(), FontAwesomeSolid.COINS);
+        JPanel totalCard = createSummaryCard("Total Commissions", "0 FCFA", ComponentFactory.getWarningColor(),
+                FontAwesomeSolid.COINS);
         totalCommissionsLabel = (JLabel) ((JPanel) totalCard.getComponent(1)).getComponent(0);
         panel.add(totalCard);
 
         // Commissions ce mois
-        JPanel moisCard = createSummaryCard("Ce Mois", "0 FCFA", ComponentFactory.getPrimaryColor(), FontAwesomeSolid.CALENDAR_ALT);
+        JPanel moisCard = createSummaryCard("Ce Mois", "0 FCFA", ComponentFactory.getPrimaryColor(),
+                FontAwesomeSolid.CALENDAR_ALT);
         panel.add(moisCard);
 
         // Bonus leadership
-        JPanel bonusCard = createSummaryCard("Bonus Leadership", "0 FCFA", ComponentFactory.getSuccessColor(), FontAwesomeSolid.TROPHY);
+        JPanel bonusCard = createSummaryCard("Bonus Leadership", "0 FCFA", ComponentFactory.getSuccessColor(),
+                FontAwesomeSolid.TROPHY);
         panel.add(bonusCard);
 
         return panel;
@@ -352,25 +361,28 @@ public class PvPanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
 
         // Montant de vente
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         formPanel.add(ComponentFactory.createLabel("Montant de vente (FCFA):"), gbc);
         JTextField montantField = ComponentFactory.createStyledTextField();
         gbc.gridx = 1;
         formPanel.add(montantField, gbc);
 
         // Type de client
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         formPanel.add(ComponentFactory.createLabel("Type de client:"), gbc);
-        String[] typesClient = {"Partenaire", "Grossiste", "Semi-grossiste", "Individuel"};
+        String[] typesClient = { "Partenaire", "Grossiste", "Semi-grossiste", "Individuel" };
         JComboBox<String> typeClientCombo = ComponentFactory.createStyledComboBox(typesClient);
         gbc.gridx = 1;
         formPanel.add(typeClientCombo, gbc);
 
         // Bouton simuler
-        gbc.gridx = 1; gbc.gridy = 2;
+        gbc.gridx = 1;
+        gbc.gridy = 2;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         JButton simulerButton = ButtonFactory.createActionButton(
-                FontAwesomeSolid.CALCULATOR, "Simuler", ComponentFactory.getPrimaryColor(), 
+                FontAwesomeSolid.CALCULATOR, "Simuler", ComponentFactory.getPrimaryColor(),
                 e -> simulateCommission(montantField, typeClientCombo));
         formPanel.add(simulerButton, gbc);
 
@@ -405,7 +417,7 @@ public class PvPanel extends JPanel {
         JLabel valueLabel = new JLabel(value);
         valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         valueLabel.setForeground(color);
-        
+
         JLabel titleLabel = new JLabel(title);
         titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         titleLabel.setForeground(ComponentFactory.getTextSecondaryColor());
@@ -439,19 +451,19 @@ public class PvPanel extends JPanel {
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
+
                 if (!isSelected) {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 249, 250));
                 }
-                
+
                 setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
                 setFont(new Font("Segoe UI", Font.PLAIN, 12));
                 setForeground(ComponentFactory.getTextPrimaryColor());
-                
+
                 return this;
             }
         };
-        
+
         for (int i = 0; i < table.getColumnCount(); i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(renderer);
         }
@@ -461,7 +473,7 @@ public class PvPanel extends JPanel {
     private void onPeriodeChange(ActionEvent e) {
         JComboBox<?> combo = (JComboBox<?>) e.getSource();
         boolean isPersonnalisee = "Personnalisée".equals(combo.getSelectedItem());
-        
+
         // Afficher/masquer les sélecteurs de date
         Container parent = dateDebutPicker.getParent();
         if (parent != null) {
@@ -469,7 +481,7 @@ public class PvPanel extends JPanel {
             parent.getParent().revalidate();
             parent.getParent().repaint();
         }
-        
+
         if (!isPersonnalisee) {
             filterPvData();
         }
@@ -479,27 +491,27 @@ public class PvPanel extends JPanel {
         pvTableModel.setRowCount(0);
         for (PvRecord record : pvRecords) {
             Object[] row = {
-                record.clientNom,
-                record.clientCode,
-                record.typeClient,
-                record.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                record.pvGagne,
-                String.format("%,.0f FCFA", record.montant),
-                "Validé"
+                    record.clientNom,
+                    record.clientCode,
+                    record.typeClient,
+                    record.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    record.pvGagne,
+                    String.format("%,.0f FCFA", record.montant),
+                    "Validé"
             };
             pvTableModel.addRow(row);
         }
-        
+
         // Charger aussi les commissions
         commissionsTableModel.setRowCount(0);
         for (CommissionRecord record : commissionRecords) {
             Object[] row = {
-                record.beneficiaire,
-                record.typeCommission,
-                record.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                record.pvBase,
-                String.format("%,.0f FCFA", record.montant),
-                "Payée"
+                    record.beneficiaire,
+                    record.typeCommission,
+                    record.date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    record.pvBase,
+                    String.format("%,.0f FCFA", record.montant),
+                    "Payée"
             };
             commissionsTableModel.addRow(row);
         }
@@ -514,33 +526,75 @@ public class PvPanel extends JPanel {
         BigDecimal totalPv = pvRecords.stream()
                 .map(r -> r.pvGagne)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         BigDecimal totalCommissions = commissionRecords.stream()
                 .map(r -> r.montant)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         totalPvLabel.setText(totalPv.toString());
         totalCommissionsLabel.setText(String.format("%,.0f FCFA", totalCommissions));
-        
+
         statsLabel.setText(String.format("Total PV: %s • Commissions: %,.0f FCFA • Partenaires actifs: %d",
                 totalPv, totalCommissions, pvRecords.size()));
     }
 
     private void calculateCommissions() {
-        JOptionPane.showMessageDialog(this, "Calcul des commissions effectué avec succès!", 
+        JOptionPane.showMessageDialog(this, "Calcul des commissions effectué avec succès!",
                 "Succès", JOptionPane.INFORMATION_MESSAGE);
         updateStatistics();
     }
 
     private void exportPvData() {
-        JOptionPane.showMessageDialog(this, "Export des données PV en cours de développement", 
-                "Information", JOptionPane.INFORMATION_MESSAGE);
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter les données PV");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".csv")) {
+                file = new File(file.getAbsolutePath() + ".csv");
+            }
+
+            try (FileWriter writer = new FileWriter(file)) {
+                // Écrire les en-têtes
+                for (int i = 0; i < pvTableModel.getColumnCount(); i++) {
+                    writer.append(pvTableModel.getColumnName(i));
+                    if (i < pvTableModel.getColumnCount() - 1) {
+                        writer.append(',');
+                    }
+                }
+                writer.append('\n');
+
+                // Écrire les données
+                for (int row = 0; row < pvTableModel.getRowCount(); row++) {
+                    for (int col = 0; col < pvTableModel.getColumnCount(); col++) {
+                        Object value = pvTableModel.getValueAt(row, col);
+                        String cell = value != null ? value.toString().replace("\"", "\"\"") : "";
+                        writer.append('"').append(cell).append('"');
+                        if (col < pvTableModel.getColumnCount() - 1) {
+                            writer.append(',');
+                        }
+                    }
+                    writer.append('\n');
+                }
+
+                JOptionPane.showMessageDialog(this,
+                        "Données PV exportées vers " + file.getAbsolutePath(),
+                        "Export réussi", JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this,
+                        "Erreur lors de l'export des données: " + e.getMessage(),
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
     }
 
     private void refreshData() {
         loadPvData();
         updateStatistics();
-        JOptionPane.showMessageDialog(this, "Données actualisées", 
+        JOptionPane.showMessageDialog(this, "Données actualisées",
                 "Succès", JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -548,7 +602,7 @@ public class PvPanel extends JPanel {
         try {
             BigDecimal montant = new BigDecimal(montantField.getText().trim());
             String typeClient = (String) typeClientCombo.getSelectedItem();
-            
+
             // Simulation simple basée sur le type de client
             BigDecimal commission = switch (typeClient) {
                 case "Partenaire" -> montant.multiply(new BigDecimal("0.10"));
@@ -556,13 +610,15 @@ public class PvPanel extends JPanel {
                 case "Semi-grossiste" -> montant.multiply(new BigDecimal("0.08"));
                 default -> montant.multiply(new BigDecimal("0.05"));
             };
-            
-            JOptionPane.showMessageDialog(this, 
-                    String.format("Commission simulée pour %s:\n\nMontant: %,.0f FCFA\nCommission: %,.0f FCFA (%.0f%%)", 
-                            typeClient, montant, commission, commission.divide(montant, 4, java.math.RoundingMode.HALF_UP).multiply(new BigDecimal("100"))),
+
+            JOptionPane.showMessageDialog(this,
+                    String.format("Commission simulée pour %s:\n\nMontant: %,.0f FCFA\nCommission: %,.0f FCFA (%.0f%%)",
+                            typeClient, montant, commission,
+                            commission.divide(montant, 4, java.math.RoundingMode.HALF_UP)
+                                    .multiply(new BigDecimal("100"))),
                     "Résultat de la simulation", JOptionPane.INFORMATION_MESSAGE);
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Veuillez saisir un montant valide", 
+            JOptionPane.showMessageDialog(this, "Veuillez saisir un montant valide",
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -572,8 +628,9 @@ public class PvPanel extends JPanel {
         String clientCode, clientNom, typeClient;
         LocalDate date;
         BigDecimal pvGagne, montant;
-        
-        PvRecord(String clientCode, String clientNom, String typeClient, LocalDate date, BigDecimal pvGagne, BigDecimal montant) {
+
+        PvRecord(String clientCode, String clientNom, String typeClient, LocalDate date, BigDecimal pvGagne,
+                BigDecimal montant) {
             this.clientCode = clientCode;
             this.clientNom = clientNom;
             this.typeClient = typeClient;
@@ -587,8 +644,9 @@ public class PvPanel extends JPanel {
         String beneficiaire, typeCommission;
         LocalDate date;
         BigDecimal pvBase, montant;
-        
-        CommissionRecord(String beneficiaire, String typeCommission, LocalDate date, BigDecimal pvBase, BigDecimal montant) {
+
+        CommissionRecord(String beneficiaire, String typeCommission, LocalDate date, BigDecimal pvBase,
+                BigDecimal montant) {
             this.beneficiaire = beneficiaire;
             this.typeCommission = typeCommission;
             this.date = date;

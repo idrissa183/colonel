@@ -26,7 +26,7 @@ public final class ComponentFactory {
     private static final Color BORDER_COLOR = new Color(229, 231, 235);
     private static final Color TEXT_PRIMARY = new Color(17, 24, 39);
     private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
-    private static final Color HOVER_COLOR = new Color(243, 244, 246);
+    // private static final Color HOVER_COLOR = new Color(243, 244, 246);
 
     private ComponentFactory() {}
 

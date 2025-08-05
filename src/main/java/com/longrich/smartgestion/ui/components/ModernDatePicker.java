@@ -120,7 +120,7 @@ public class ModernDatePicker extends JPanel {
         calendarPopup.pack();
         
         // Positionner le popup
-        Point location = dateField.getLocationOnScreen();
+        // Point location = dateField.getLocationOnScreen();
         calendarPopup.show(this, 0, getHeight());
     }
 

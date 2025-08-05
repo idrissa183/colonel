@@ -23,6 +23,10 @@ import javax.swing.table.JTableHeader;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 // import java.time.format.DateTimeFormatter;
@@ -135,7 +139,8 @@ public class CommandePanel extends JPanel {
         panel.setBackground(BACKGROUND_COLOR);
 
         // JButton newCommandeButton = ButtonFactory.createActionButton(
-        //         FontAwesomeSolid.PLUS, "Nouvelle commande", SUCCESS_COLOR, e -> showNewCommandeDialog());
+        // FontAwesomeSolid.PLUS, "Nouvelle commande", SUCCESS_COLOR, e ->
+        // showNewCommandeDialog());
         JButton exportButton = ButtonFactory.createActionButton(
                 FontAwesomeSolid.FILE_EXPORT, "Exporter", INFO_COLOR, e -> exportCommandes());
         JButton refreshButton = ButtonFactory.createActionButton(
@@ -406,7 +411,7 @@ public class CommandePanel extends JPanel {
                 FontAwesomeSolid.PLUS, "Ajouter", ComponentFactory.getSuccessColor(), e -> addLigneCommande());
         addButton.setPreferredSize(new Dimension(100, 38));
         buttonPanel.add(addButton);
-        
+
         gbc.gridx = 3;
         gbc.weightx = 0.15;
         gbc.insets = new Insets(0, 0, 0, 0);
@@ -828,7 +833,7 @@ public class CommandePanel extends JPanel {
 
             // Vider les champs avec réinitialisation propre
             clearLigneFields();
-            
+
             // Animation de succès subtile
             showSuccessMessage("✓ Produit ajouté à la commande");
 
@@ -862,7 +867,8 @@ public class CommandePanel extends JPanel {
     private void saveCommande() {
         // Validation complète avec gestion d'erreurs moderne
         if (!validateCommandeFields()) {
-            // showWarningMessage("Veuillez corriger les erreurs dans les informations de la commande");
+            // showWarningMessage("Veuillez corriger les erreurs dans les informations de la
+            // commande");
             return;
         }
 
@@ -875,18 +881,18 @@ public class CommandePanel extends JPanel {
         BigDecimal total = lignesCommande.stream()
                 .map(LigneCommandeTemp::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
+
         int option = JOptionPane.showConfirmDialog(
                 this,
                 String.format("Confirmer la sauvegarde de la commande ?\n\n" +
-                             "Client: %s\n" +
-                             "Date: %s\n" +
-                             "Produits: %d\n" +
-                             "Total: %,.0f FCFA",
-                             clientCombo.getSelectedItem(),
-                             dateCommandePicker.getDateText(),
-                             lignesCommande.size(),
-                             total),
+                        "Client: %s\n" +
+                        "Date: %s\n" +
+                        "Produits: %d\n" +
+                        "Total: %,.0f FCFA",
+                        clientCombo.getSelectedItem(),
+                        dateCommandePicker.getDateText(),
+                        lignesCommande.size(),
+                        total),
                 "Confirmation de sauvegarde",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
@@ -896,16 +902,16 @@ public class CommandePanel extends JPanel {
                 // Simulation de sauvegarde avec progress
                 showInfoMessage("Sauvegarde en cours...");
                 // TODO: Implémenter la sauvegarde réelle
-                
-                showSuccessMessage("✓ Commande sauvegardée avec succès (N° CMD-" + 
-                                  String.format("%04d", System.currentTimeMillis() % 10000) + ")");
-                
+
+                showSuccessMessage("✓ Commande sauvegardée avec succès (N° CMD-" +
+                        String.format("%04d", System.currentTimeMillis() % 10000) + ")");
+
                 clearCommande();
                 loadCommandes();
-                
+
                 // Basculer vers l'onglet liste
                 switchToListTab();
-                
+
             } catch (Exception e) {
                 showErrorMessage("Erreur lors de la sauvegarde: " + e.getMessage());
             }
@@ -928,11 +934,11 @@ public class CommandePanel extends JPanel {
             int option = JOptionPane.showConfirmDialog(
                     this,
                     "Êtes-vous sûr de vouloir vider tous les champs ?\n" +
-                    "Toutes les données non sauvegardées seront perdues.",
+                            "Toutes les données non sauvegardées seront perdues.",
                     "Confirmation",
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.WARNING_MESSAGE);
-            
+
             if (option != JOptionPane.YES_OPTION) {
                 return;
             }
@@ -949,7 +955,7 @@ public class CommandePanel extends JPanel {
         lignesTableModel.setRowCount(0);
         updateTotalCommande();
         clearAllErrors();
-        
+
         // showInfoMessage("Formulaire vidé");
     }
 
@@ -976,7 +982,43 @@ public class CommandePanel extends JPanel {
     }
 
     private void exportCommandes() {
-        showInfoMessage("Fonctionnalité d'export en cours de développement");
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter les commandes");
+        fileChooser.setSelectedFile(new File("commandes.csv"));
+
+        if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = fileChooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".csv")) {
+            file = new File(file.getParentFile(), file.getName() + ".csv");
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+            // Écriture de l'en-tête
+            writer.println("\"N° Commande\",\"Client\",\"Date\",\"Statut\",\"Total\"");
+
+            int rowCount = commandesTableModel.getRowCount();
+            int columnCount = commandesTableModel.getColumnCount() - 1; // Ignorer la colonne Actions
+            for (int i = 0; i < rowCount; i++) {
+                StringBuilder line = new StringBuilder();
+                for (int j = 0; j < columnCount; j++) {
+                    Object value = commandesTableModel.getValueAt(i, j);
+                    String text = value != null ? value.toString() : "";
+                    text = text.replace("\"", "\"\"");
+                    line.append('"').append(text).append('"');
+                    if (j < columnCount - 1) {
+                        line.append(',');
+                    }
+                }
+                writer.println(line);
+            }
+
+            showSuccessMessage("Commandes exportées vers " + file.getAbsolutePath());
+        } catch (IOException e) {
+            showErrorMessage("Erreur lors de l'export: " + e.getMessage());
+        }
     }
 
     private void refreshData() {

@@ -6,6 +6,10 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -24,6 +29,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
@@ -915,7 +921,50 @@ public class ClientPanel extends JPanel {
     }
 
     private void exportClients() {
-        showInfoMessage("Fonctionnalité d'export en cours de développement");
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Exporter les clients");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+        fileChooser.setSelectedFile(new File("clients.csv"));
+
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            if (!file.getName().toLowerCase().endsWith(".csv")) {
+                file = new File(file.getParentFile(), file.getName() + ".csv");
+            }
+
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                int columnCount = tableModel.getColumnCount();
+
+                for (int i = 0; i < columnCount; i++) {
+                    writer.print(tableModel.getColumnName(i));
+                    if (i < columnCount - 1) {
+                        writer.print(",");
+                    }
+                }
+                writer.println();
+
+                int rowCount = tableModel.getRowCount();
+                for (int r = 0; r < rowCount; r++) {
+                    for (int c = 0; c < columnCount; c++) {
+                        Object value = tableModel.getValueAt(r, c);
+                        String cell = value != null ? value.toString() : "";
+                        cell = cell.replace("\"", "\"\"");
+                        if (cell.contains(",") || cell.contains("\"") || cell.contains("\n")) {
+                            cell = "\"" + cell + "\"";
+                        }
+                        writer.print(cell);
+                        if (c < columnCount - 1) {
+                            writer.print(",");
+                        }
+                    }
+                    writer.println();
+                }
+
+                showSuccessMessage("Clients exportés vers " + file.getAbsolutePath());
+            } catch (IOException ex) {
+                showErrorMessage("Erreur lors de l'exportation: " + ex.getMessage());
+            }
+        }
     }
 
     private void importClients() {
