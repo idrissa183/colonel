@@ -1,7 +1,9 @@
 package com.longrich.smartgestion.ui.panel;
 
 import com.longrich.smartgestion.dto.ProduitDto;
+import com.longrich.smartgestion.dto.FamilleProduitDTO;
 import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.service.FamilleProduitService;
 import com.longrich.smartgestion.ui.components.ButtonFactory;
 
 import lombok.RequiredArgsConstructor;
@@ -26,9 +28,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.HashMap;
-// import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -52,11 +54,12 @@ public class ProduitPanel extends JPanel {
     private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
 
     private final ProduitService produitService;
+    private final FamilleProduitService familleProduitService;
 
     // Composants UI
     private JTextField libelleField;
     private JTextArea descriptionArea;
-    private JTextField datePeremptionField;
+    private JSpinner datePeremptionSpinner;
     private JTextField prixAchatField;
     private JTextField prixReventeField;
     private JTextField pvField;
@@ -231,11 +234,10 @@ public class ProduitPanel extends JPanel {
         // Section Stock et Dates
         formPanel.add(createSectionTitle("Stock et Dates"));
         stockMinimumField = createStyledTextField();
-        datePeremptionField = createStyledTextField();
-        datePeremptionField.setToolTipText("Format: YYYY-MM-DD (ex: 2024-12-31)");
+        datePeremptionSpinner = createDateSpinner();
 
         formPanel.add(createFieldPanel("Stock minimum:", stockMinimumField));
-        formPanel.add(createFieldPanel("Date péremption:", datePeremptionField));
+        formPanel.add(createFieldPanel("Date péremption:", datePeremptionSpinner));
 
         // Checkbox
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
@@ -320,6 +322,31 @@ public class ProduitPanel extends JPanel {
         checkBox.setForeground(TEXT_PRIMARY);
         checkBox.setFocusPainted(false);
         return checkBox;
+    }
+
+    private JSpinner createDateSpinner() {
+        // Utiliser la date actuelle + 1 an comme valeur par défaut
+        Date defaultDate = new Date();
+        Date minDate = defaultDate;
+        Date maxDate = Date.from(LocalDate.now().plusYears(10).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        
+        SpinnerDateModel dateModel = new SpinnerDateModel(defaultDate, minDate, maxDate, java.util.Calendar.DAY_OF_MONTH);
+        JSpinner dateSpinner = new JSpinner(dateModel);
+        
+        // Format d'affichage
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy");
+        dateSpinner.setEditor(dateEditor);
+        
+        // Style
+        dateSpinner.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        dateSpinner.setBackground(Color.WHITE);
+        dateSpinner.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        dateSpinner.setPreferredSize(new Dimension(0, 36));
+        dateSpinner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        
+        return dateSpinner;
     }
 
     private JPanel createFieldPanel(String labelText, JComponent field) {
@@ -417,7 +444,7 @@ public class ProduitPanel extends JPanel {
         tablePanel.add(tableHeaderPanel, BorderLayout.NORTH);
 
         // Modèle de table
-        String[] columns = { "ID", "Libellé", "Prix Achat", "Prix Revente", "PV", "Stock", "Statut" };
+        String[] columns = { "ID", "Libellé", "Prix Achat", "Prix Revente", "PV", "Statut" };
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -487,7 +514,7 @@ public class ProduitPanel extends JPanel {
                 setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
                 // Status column special formatting
-                if (column == 6 && value != null) {
+                if (column == 5 && value != null) {
                     boolean isActive = Boolean.parseBoolean(value.toString());
                     setText(isActive ? "Actif" : "Inactif");
                     setForeground(isActive ? SUCCESS_COLOR : DANGER_COLOR);
@@ -504,14 +531,13 @@ public class ProduitPanel extends JPanel {
         }
 
         // Column widths
-        if (table.getColumnCount() >= 7) {
-            table.getColumnModel().getColumn(0).setPreferredWidth(100); // Code
+        if (table.getColumnCount() >= 6) {
+            table.getColumnModel().getColumn(0).setPreferredWidth(100); // ID
             table.getColumnModel().getColumn(1).setPreferredWidth(200); // Libellé
             table.getColumnModel().getColumn(2).setPreferredWidth(100); // Prix Achat
             table.getColumnModel().getColumn(3).setPreferredWidth(100); // Prix Revente
             table.getColumnModel().getColumn(4).setPreferredWidth(80); // PV
-            table.getColumnModel().getColumn(5).setPreferredWidth(80); // Stock
-            table.getColumnModel().getColumn(6).setPreferredWidth(80); // Statut
+            table.getColumnModel().getColumn(5).setPreferredWidth(80); // Statut
         }
     }
 
@@ -643,14 +669,23 @@ public class ProduitPanel extends JPanel {
     }
 
     private void loadFamilles() {
-        // Charger les familles de produits
-        familleCombo.removeAllItems();
-        // familleCombo.addItem("Beauté");
-        familleCombo.addItem("Nutrition");
-        familleCombo.addItem("Soins");
-        familleCombo.addItem("Cosmétique");
-        familleCombo.addItem("Hygiène");
-        familleCombo.addItem("Autre");
+        try {
+            List<FamilleProduitDTO> familles = familleProduitService.getAllFamilles();
+            familleCombo.removeAllItems();
+            for (FamilleProduitDTO famille : familles) {
+                familleCombo.addItem(famille.getLibelleFamille());
+            }
+        } catch (Exception e) {
+            // En cas d'erreur, charger des valeurs par défaut
+            familleCombo.removeAllItems();
+            familleCombo.addItem("Soins Quotidiens");
+            familleCombo.addItem("Produits Artémisia");
+            familleCombo.addItem("Soins Bébé");
+            familleCombo.addItem("Produits Sanitaires");
+            familleCombo.addItem("Produits Énergétiques");
+            familleCombo.addItem("Produits de Santé");
+            familleCombo.addItem("NutriV-Rich");
+        }
     }
 
     private void loadProduits() {
@@ -665,7 +700,6 @@ public class ProduitPanel extends JPanel {
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
                         produit.getPv() != null ? produit.getPv().toString() : "-",
-                        produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
                         produit.getActive() != null ? produit.getActive().toString() : "true"
                 };
                 tableModel.addRow(row);
@@ -695,7 +729,6 @@ public class ProduitPanel extends JPanel {
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
                         produit.getPv() != null ? produit.getPv().toString() : "-",
-                        produit.getQuantiteStock() != null ? produit.getQuantiteStock().toString() : "0",
                         produit.getActive() != null ? produit.getActive().toString() : "true"
                 };
                 tableModel.addRow(row);
@@ -729,7 +762,15 @@ public class ProduitPanel extends JPanel {
         // Code barre supprimé - utilisation de l'ID auto-généré
         libelleField.setText(produit.getLibelle());
         descriptionArea.setText(produit.getDescription());
-        datePeremptionField.setText(produit.getDatePeremption() != null ? produit.getDatePeremption().toString() : "");
+        
+        // Date de péremption
+        if (produit.getDatePeremption() != null) {
+            Date date = Date.from(produit.getDatePeremption().atStartOfDay(ZoneId.systemDefault()).toInstant());
+            datePeremptionSpinner.setValue(date);
+        } else {
+            datePeremptionSpinner.setValue(new Date());
+        }
+        
         prixAchatField.setText(produit.getPrixAchat() != null ? produit.getPrixAchat().toString() : "");
         prixReventeField.setText(produit.getPrixRevente() != null ? produit.getPrixRevente().toString() : "");
         pvField.setText(produit.getPv() != null ? produit.getPv().toString() : "");
@@ -879,17 +920,29 @@ public class ProduitPanel extends JPanel {
                 // Code barre supprimé
                 .libelle(libelleField.getText().trim())
                 .description(descriptionArea.getText().trim())
-                .familleName((String) familleCombo.getSelectedItem())
                 .active(activeCheckBox.isSelected());
+        
+        // Gestion de la famille
+        String selectedFamille = (String) familleCombo.getSelectedItem();
+        if (selectedFamille != null) {
+            builder.familleName(selectedFamille);
+            // Trouver l'ID de la famille par son libellé
+            try {
+                List<FamilleProduitDTO> familles = familleProduitService.getAllFamilles();
+                familles.stream()
+                    .filter(f -> f.getLibelleFamille().equals(selectedFamille))
+                    .findFirst()
+                    .ifPresent(famille -> builder.familleId(famille.getId()));
+            } catch (Exception e) {
+                // Log de l'erreur mais continuer sans familleId
+            }
+        }
 
         // Date de péremption
-        String dateStr = datePeremptionField.getText().trim();
-        if (!dateStr.isEmpty()) {
-            try {
-                builder.datePeremption(LocalDate.parse(dateStr));
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Format de date invalide. Utilisez YYYY-MM-DD");
-            }
+        Date selectedDate = (Date) datePeremptionSpinner.getValue();
+        if (selectedDate != null) {
+            LocalDate localDate = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            builder.datePeremption(localDate);
         }
 
         // Prix d'achat
@@ -945,14 +998,12 @@ public class ProduitPanel extends JPanel {
             valid = false;
         }
 
-        // Validation de la date de péremption (optionnelle mais format requis si
-        // renseignée)
-        String dateStr = datePeremptionField.getText().trim();
-        if (!dateStr.isEmpty()) {
-            try {
-                LocalDate.parse(dateStr);
-            } catch (DateTimeParseException e) {
-                setFieldError(datePeremptionField, "Format de date invalide (YYYY-MM-DD)");
+        // Validation de la date de péremption (optionnelle)
+        Date selectedDate = (Date) datePeremptionSpinner.getValue();
+        if (selectedDate != null) {
+            LocalDate datePeremption = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            if (datePeremption.isBefore(LocalDate.now())) {
+                setFieldError(datePeremptionSpinner, "La date de péremption ne peut pas être dans le passé");
                 valid = false;
             }
         }
@@ -1034,7 +1085,7 @@ public class ProduitPanel extends JPanel {
         // Code barre field supprimé
         libelleField.setText("");
         descriptionArea.setText("");
-        datePeremptionField.setText("");
+        datePeremptionSpinner.setValue(new Date());
         prixAchatField.setText("");
         prixReventeField.setText("");
         pvField.setText("");

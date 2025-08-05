@@ -1,6 +1,11 @@
 package com.longrich.smartgestion.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -14,10 +19,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class FamilleProduit extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
 
     @NotBlank(message = "Le libellé famille est obligatoire")
     @Column(name = "libelle_famille", nullable = false, length = 100)
