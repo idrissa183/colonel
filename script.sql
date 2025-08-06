@@ -55,24 +55,24 @@ INSERT IGNORE INTO provinces (province) VALUES
 ('Zoundwéogo');
 
 -- Familles de produits Longrich
-INSERT IGNORE INTO familles_produit (libelle, description, active) VALUES 
-('Beauté', 'Produits de beauté et cosmétiques', true),
-('Soins', 'Produits de soins corporels', true),
-('Santé', 'Compléments alimentaires et produits de santé', true),
-('Hygiène', 'Produits d\'hygiène personnelle', true),
-('Accessoires', 'Accessoires et équipements', true);
+INSERT IGNORE INTO familles_produit (libelle_famille, description, active, created_at, updated_at, version) VALUES 
+('Beauté', 'Produits de beauté et cosmétiques', true, NOW(), NOW(), 0),
+('Soins', 'Produits de soins corporels', true, NOW(), NOW(), 0),
+('Santé', 'Compléments alimentaires et produits de santé', true, NOW(), NOW(), 0),
+('Hygiène', 'Produits d\'hygiène personnelle', true, NOW(), NOW(), 0),
+('Accessoires', 'Accessoires et équipements', true, NOW(), NOW(), 0);
 
 -- Utilisateur administrateur par défaut
-INSERT IGNORE INTO users (username, password, email, nom, prenom, role, active, created_at, updated_at) VALUES 
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lbdxIo0jshRLrMO2q', 'admin@smartgestion.com', 'Administrateur', 'Système', 'ADMIN', true, NOW(), NOW(), true);
+INSERT IGNORE INTO users (username, password, email, nom, prenom, role, active, created_at, updated_at, version) VALUES 
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lbdxIo0jshRLrMO2q', 'admin@smartgestion.com', 'Administrateur', 'Système', 'ADMIN', true, NOW(), NOW(), 0);
 
 -- Quelques produits Longrich de base
-INSERT IGNORE INTO produits (code_barre, libelle, description, prix_achat, prix_revente, pv, famille_id, active, stock_minimum, created_at, updated_at) VALUES 
-('LR001', 'ANTIMOUSTIQUE (195ml)', 'Spray antimoustique efficace', 3600.00, 4500.00, 3.5, 1, true, 10, NOW(), NOW(), true),
-('LR002', 'ANTI TRANSPIRANT (50ml)', 'Déodorant anti-transpirant longue durée', 3300.00, 4000.00, 3.5, 1, true, 15, NOW(), NOW(), true),
-('LR003', 'CALCIUM', 'Complément alimentaire au calcium', 11000.00, 13000.00, 11.0, 3, true, 5, NOW(), NOW(), true),
-('LR004', 'GEL DE DOUCHE THE BLANC (300ml)', 'Gel de douche au thé blanc', 6600.00, 7500.00, 6.0, 2, true, 20, NOW(), NOW(), true),
-('LR005', 'PATE DENTIFRICE THE BLANC (100g)', 'Dentifrice au thé blanc', 2000.00, 2500.00, 1.2, 2, true, 25, NOW(), NOW(), true);
+INSERT IGNORE INTO produits (libelle, description, prix_achat, prix_revente, pv, famille_produit_id, active, stock_minimum, created_at, updated_at, version) VALUES 
+('ANTIMOUSTIQUE (195ml)', 'Spray antimoustique efficace', 3600.00, 4500.00, 3.5, 1, true, 10, NOW(), NOW(), 0),
+('ANTI TRANSPIRANT (50ml)', 'Déodorant anti-transpirant longue durée', 3300.00, 4000.00, 3.5, 1, true, 15, NOW(), NOW(), 0),
+('CALCIUM', 'Complément alimentaire au calcium', 11000.00, 13000.00, 11.0, 3, true, 5, NOW(), NOW(), 0),
+('GEL DE DOUCHE THE BLANC (300ml)', 'Gel de douche au thé blanc', 6600.00, 7500.00, 6.0, 2, true, 20, NOW(), NOW(), 0),
+('PATE DENTIFRICE THE BLANC (100g)', 'Dentifrice au thé blanc', 2000.00, 2500.00, 1.2, 2, true, 25, NOW(), NOW(), 0);
 
 
 

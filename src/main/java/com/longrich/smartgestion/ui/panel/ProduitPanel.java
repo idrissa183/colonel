@@ -331,7 +331,6 @@ public class ProduitPanel extends JPanel {
         return checkBox;
     }
 
-
     private JPanel createFieldPanel(String labelText, JComponent field) {
         JPanel panel = new JPanel(new BorderLayout(0, 5));
 
@@ -676,9 +675,10 @@ public class ProduitPanel extends JPanel {
             List<ProduitDto> produits = produitService.getAllProduits();
             tableModel.setRowCount(0);
 
+            // CORRECTION : Stocker l'ID réel du produit dans la première colonne
             for (ProduitDto produit : produits) {
                 Object[] row = {
-                        produit.getId(),
+                        produit.getId(), // ID RÉEL du produit (pas l'index de la boucle)
                         produit.getLibelle(),
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
@@ -705,9 +705,10 @@ public class ProduitPanel extends JPanel {
             List<ProduitDto> produits = produitService.searchProduits(searchText);
             tableModel.setRowCount(0);
 
+            // CORRECTION : Stocker l'ID réel du produit dans la première colonne
             for (ProduitDto produit : produits) {
                 Object[] row = {
-                        produit.getId(),
+                        produit.getId(), // ID RÉEL du produit (pas l'index de la boucle)
                         produit.getLibelle(),
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
@@ -726,6 +727,7 @@ public class ProduitPanel extends JPanel {
         int selectedRow = produitTable.getSelectedRow();
         if (selectedRow >= 0) {
             try {
+                // Récupération de l'ID RÉEL du produit depuis la colonne 0
                 Long produitId = (Long) tableModel.getValueAt(selectedRow, 0);
                 produitService.getProduitById(produitId).ifPresent(produit -> {
                     currentProduit = produit;
