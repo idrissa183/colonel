@@ -5,11 +5,15 @@ import com.longrich.smartgestion.dto.FamilleProduitDTO;
 import com.longrich.smartgestion.service.ProduitService;
 import com.longrich.smartgestion.service.FamilleProduitService;
 import com.longrich.smartgestion.ui.components.ButtonFactory;
+import com.longrich.smartgestion.ui.components.ModernDatePicker;
 
 import lombok.RequiredArgsConstructor;
 
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.springframework.context.annotation.Profile;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.TransactionSystemException;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -28,8 +32,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +61,7 @@ public class ProduitPanel extends JPanel {
     // Composants UI
     private JTextField libelleField;
     private JTextArea descriptionArea;
-    private JSpinner datePeremptionSpinner;
+    private ModernDatePicker datePeremptionPicker;
     private JTextField prixAchatField;
     private JTextField prixReventeField;
     private JTextField pvField;
@@ -75,15 +77,18 @@ public class ProduitPanel extends JPanel {
     private ProduitDto currentProduit;
 
     private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
-    
+
     // Boutons d'action
     private JButton saveButton;
     private JButton updateButton;
     private JButton deleteButton;
     private JButton clearButton;
-    
+
     // Mode actuel (ajout, modification, suppression)
-    private enum FormMode { ADD, EDIT, DELETE }
+    private enum FormMode {
+        ADD, EDIT, DELETE
+    }
+
     private FormMode currentMode = FormMode.ADD;
 
     @PostConstruct
@@ -215,6 +220,8 @@ public class ProduitPanel extends JPanel {
         // Section Famille
         formPanel.add(createSectionTitle("Catégorie"));
         familleCombo = new JComboBox<>();
+        familleCombo.setEditable(true);
+        AutoCompleteDecorator.decorate(familleCombo);
         styleComboBox(familleCombo);
         loadFamilles();
         formPanel.add(createFieldPanel("Famille *:", familleCombo));
@@ -234,10 +241,10 @@ public class ProduitPanel extends JPanel {
         // Section Stock et Dates
         formPanel.add(createSectionTitle("Stock et Dates"));
         stockMinimumField = createStyledTextField();
-        datePeremptionSpinner = createDateSpinner();
+        datePeremptionPicker = new ModernDatePicker(LocalDate.now());
 
         formPanel.add(createFieldPanel("Stock minimum:", stockMinimumField));
-        formPanel.add(createFieldPanel("Date péremption:", datePeremptionSpinner));
+        formPanel.add(createFieldPanel("Date péremption:", datePeremptionPicker));
 
         // Checkbox
         JPanel checkboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
@@ -324,30 +331,6 @@ public class ProduitPanel extends JPanel {
         return checkBox;
     }
 
-    private JSpinner createDateSpinner() {
-        // Utiliser la date actuelle + 1 an comme valeur par défaut
-        Date defaultDate = new Date();
-        Date minDate = defaultDate;
-        Date maxDate = Date.from(LocalDate.now().plusYears(10).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        
-        SpinnerDateModel dateModel = new SpinnerDateModel(defaultDate, minDate, maxDate, java.util.Calendar.DAY_OF_MONTH);
-        JSpinner dateSpinner = new JSpinner(dateModel);
-        
-        // Format d'affichage
-        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy");
-        dateSpinner.setEditor(dateEditor);
-        
-        // Style
-        dateSpinner.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        dateSpinner.setBackground(Color.WHITE);
-        dateSpinner.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(BORDER_COLOR, 1),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-        dateSpinner.setPreferredSize(new Dimension(0, 36));
-        dateSpinner.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        
-        return dateSpinner;
-    }
 
     private JPanel createFieldPanel(String labelText, JComponent field) {
         JPanel panel = new JPanel(new BorderLayout(0, 5));
@@ -558,12 +541,12 @@ public class ProduitPanel extends JPanel {
         buttonPanel.add(updateButton);
         buttonPanel.add(deleteButton);
         buttonPanel.add(clearButton);
-        
+
         updateButtonVisibility();
 
         return buttonPanel;
     }
-    
+
     /**
      * Met à jour la visibilité des boutons selon le mode actuel
      */
@@ -588,14 +571,14 @@ public class ProduitPanel extends JPanel {
                 clearButton.setVisible(true);
                 break;
         }
-        
+
         // Forcer le rafraîchissement du layout
         if (saveButton.getParent() != null) {
             saveButton.getParent().revalidate();
             saveButton.getParent().repaint();
         }
     }
-    
+
     /**
      * Change le mode du formulaire
      */
@@ -743,13 +726,11 @@ public class ProduitPanel extends JPanel {
         int selectedRow = produitTable.getSelectedRow();
         if (selectedRow >= 0) {
             try {
-                // L'ID du produit est dans la colonne 0
                 Long produitId = (Long) tableModel.getValueAt(selectedRow, 0);
-                
                 produitService.getProduitById(produitId).ifPresent(produit -> {
                     currentProduit = produit;
                     populateFields(produit);
-                    setFormMode(FormMode.EDIT); // Passer en mode édition
+                    setFormMode(FormMode.EDIT);
                 });
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this, "Erreur lors du chargement du produit: " + e.getMessage(),
@@ -762,15 +743,14 @@ public class ProduitPanel extends JPanel {
         // Code barre supprimé - utilisation de l'ID auto-généré
         libelleField.setText(produit.getLibelle());
         descriptionArea.setText(produit.getDescription());
-        
+
         // Date de péremption
         if (produit.getDatePeremption() != null) {
-            Date date = Date.from(produit.getDatePeremption().atStartOfDay(ZoneId.systemDefault()).toInstant());
-            datePeremptionSpinner.setValue(date);
+            datePeremptionPicker.setSelectedDate(produit.getDatePeremption());
         } else {
-            datePeremptionSpinner.setValue(new Date());
+            datePeremptionPicker.setSelectedDate(LocalDate.now());
         }
-        
+
         prixAchatField.setText(produit.getPrixAchat() != null ? produit.getPrixAchat().toString() : "");
         prixReventeField.setText(produit.getPrixRevente() != null ? produit.getPrixRevente().toString() : "");
         pvField.setText(produit.getPv() != null ? produit.getPv().toString() : "");
@@ -846,7 +826,7 @@ public class ProduitPanel extends JPanel {
     }
 
     private void updateProduit() {
-        if (currentProduit == null) {
+        if (currentProduit == null || currentProduit.getId() == null) {
             JOptionPane.showMessageDialog(this,
                     "⚠️ Veuillez sélectionner un produit à modifier",
                     "Avertissement", JOptionPane.WARNING_MESSAGE);
@@ -869,6 +849,10 @@ public class ProduitPanel extends JPanel {
             loadProduits();
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, "Erreur: " + e.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+        } catch (TransactionSystemException | DataIntegrityViolationException e) {
+            JOptionPane.showMessageDialog(this,
+                    "❌ Erreur lors de la mise à jour: " + e.getMostSpecificCause().getMessage(),
+                    "Erreur", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                     "❌ Erreur lors de la mise à jour: " + e.getMessage(),
@@ -877,7 +861,7 @@ public class ProduitPanel extends JPanel {
     }
 
     private void deleteProduit() {
-        if (currentProduit == null) {
+        if (currentProduit == null || currentProduit.getId() == null) {
             JOptionPane.showMessageDialog(this,
                     "⚠️ Veuillez sélectionner un produit à supprimer",
                     "Avertissement", JOptionPane.WARNING_MESSAGE);
@@ -921,7 +905,7 @@ public class ProduitPanel extends JPanel {
                 .libelle(libelleField.getText().trim())
                 .description(descriptionArea.getText().trim())
                 .active(activeCheckBox.isSelected());
-        
+
         // Gestion de la famille
         String selectedFamille = (String) familleCombo.getSelectedItem();
         if (selectedFamille != null) {
@@ -930,19 +914,19 @@ public class ProduitPanel extends JPanel {
             try {
                 List<FamilleProduitDTO> familles = familleProduitService.getAllFamilles();
                 familles.stream()
-                    .filter(f -> f.getLibelleFamille().equals(selectedFamille))
-                    .findFirst()
-                    .ifPresent(famille -> builder.familleId(famille.getId()));
+                        .filter(f -> f.getLibelleFamille().equals(selectedFamille))
+                        .findFirst()
+                        .ifPresent(famille -> builder.familleId(famille.getId()));
             } catch (Exception e) {
                 // Log de l'erreur mais continuer sans familleId
             }
         }
 
         // Date de péremption
-        Date selectedDate = (Date) datePeremptionSpinner.getValue();
+        LocalDate selectedDate = datePeremptionPicker.getSelectedDate();
         if (selectedDate != null) {
-            LocalDate localDate = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            builder.datePeremption(localDate);
+            builder.datePeremption(selectedDate);
+
         }
 
         // Prix d'achat
@@ -999,11 +983,10 @@ public class ProduitPanel extends JPanel {
         }
 
         // Validation de la date de péremption (optionnelle)
-        Date selectedDate = (Date) datePeremptionSpinner.getValue();
+        LocalDate selectedDate = datePeremptionPicker.getSelectedDate();
         if (selectedDate != null) {
-            LocalDate datePeremption = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            if (datePeremption.isBefore(LocalDate.now())) {
-                setFieldError(datePeremptionSpinner, "La date de péremption ne peut pas être dans le passé");
+            if (selectedDate.isBefore(LocalDate.now())) {
+                setFieldError(datePeremptionPicker, "La date de péremption ne peut pas être dans le passé");
                 valid = false;
             }
         }
@@ -1085,7 +1068,7 @@ public class ProduitPanel extends JPanel {
         // Code barre field supprimé
         libelleField.setText("");
         descriptionArea.setText("");
-        datePeremptionSpinner.setValue(new Date());
+        datePeremptionPicker.setSelectedDate(LocalDate.now());
         prixAchatField.setText("");
         prixReventeField.setText("");
         pvField.setText("");
