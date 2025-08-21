@@ -9,6 +9,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,31 +28,37 @@ import lombok.Setter;
 public class User extends BaseEntity {
 
     @NotBlank(message = "Le nom d'utilisateur est obligatoire")
-    @Size(min = 3, max = 50, message = "Le nom d'utilisateur doit contenir entre 3 et 50 caractères")
+    @Size(min = 4, max = 50, message = "Le nom d'utilisateur doit contenir entre 4 et 50 caractères")
     @Column(name = "username", unique = true, nullable = false)
     private String username;
 
     @NotBlank(message = "Le mot de passe est obligatoire")
-    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
+    @Size(min = 8, message = "Le mot de passe doit contenir au moins 8 caractères")
     @Column(name = "password", nullable = false)
     private String password;
 
     @NotBlank(message = "L'email est obligatoire")
+    @Pattern(regexp = "^(\\+226[02567]\\d{7}|[02567]\\d{7})$", message = "Numéro de téléphone burkinabè invalide")
     @Email(message = "Format d'email invalide")
     @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 2, max = 50, message = "Le nom doit contenir entre 2 et 50 caractères")
     @Column(name = "nom", nullable = false)
     private String nom;
 
     @NotBlank(message = "Le prénom est obligatoire")
+    @Size(min = 2, max = 50, message = "Le prénom d'utilisateur doit contenir entre 2 et 50 caractères")
     @Column(name = "prenom", nullable = false)
     private String prenom;
 
     @Column(name = "telephone")
+    @Pattern(regexp = "^(B\\d{8})?$", message = "Le numéro de la CNIB doit respecter le format B suivi de 8 chiffres")
     private String telephone;
 
+
+    @NotNull(message = "Le rôle est obligatoire")
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private UserRole role;

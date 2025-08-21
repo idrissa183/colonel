@@ -1,6 +1,7 @@
 package com.longrich.smartgestion.dto;
 
 import com.longrich.smartgestion.enums.TypeClient;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
