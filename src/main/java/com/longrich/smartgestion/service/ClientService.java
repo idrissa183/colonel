@@ -163,11 +163,11 @@ public class ClientService {
     }
 
     public List<ClientDTO> getClientsEnAttentePartenaire() {
-        return clientMapper.toDTOList(clientRepository.findByTypeClient(TypeClient.EN_ATTENTE_PARTENAIRE));
+        return clientMapper.toDTOList(clientRepository.findByTypeClient(TypeClient.NON_PARTENAIRE));
     }
 
     public List<ClientDTO> getClientsPouvantDevenirPartenaire() {
-        return clientRepository.findByTypeClient(TypeClient.EN_ATTENTE_PARTENAIRE)
+        return clientRepository.findByTypeClient(TypeClient.NON_PARTENAIRE)
                 .stream()
                 .filter(Client::peutDeveniPartenaire)
                 .map(clientMapper::toDTO)

@@ -110,7 +110,7 @@ public class Client extends BaseEntity {
     }
 
     public boolean peutDeveniPartenaire() {
-        return typeClient == TypeClient.EN_ATTENTE_PARTENAIRE && totalPv >= 50000;
+        return typeClient == TypeClient.NON_PARTENAIRE && totalPv >= 50000;
     }
 
     public void genererCodePartenaire() {
