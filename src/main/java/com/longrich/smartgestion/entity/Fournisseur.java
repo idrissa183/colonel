@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,6 +43,7 @@ public class Fournisseur extends BaseEntity {
     private TypeStockiste typeStockiste;
 
     @NotBlank(message = "Le code stockiste est obligatoire")
+    @Pattern(regexp = "^[A-Z]{2}\\d{4}$", message = "Le code stockiste doit respecter le format ISO2 suivi de 4 chiffres (ex: BF1234)")
     @Column(name = "code_stockiste", unique = true, nullable = false)
     private String codeStockiste;
 
@@ -55,6 +57,7 @@ public class Fournisseur extends BaseEntity {
     @Column(name = "adresse")
     private String adresse;
 
+    @Pattern(regexp = "^(\\+226[02567]\\d{7}|[02567]\\d{7})?$", message = "Numéro de téléphone burkinabè invalide")
     @Column(name = "telephone")
     private String telephone;
 

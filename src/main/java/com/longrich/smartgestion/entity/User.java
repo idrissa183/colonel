@@ -38,7 +38,6 @@ public class User extends BaseEntity {
     private String password;
 
     @NotBlank(message = "L'email est obligatoire")
-    @Pattern(regexp = "^(\\+226[02567]\\d{7}|[02567]\\d{7})$", message = "Numéro de téléphone burkinabè invalide")
     @Email(message = "Format d'email invalide")
     @Column(name = "email", unique = true, nullable = false)
     private String email;
@@ -53,8 +52,8 @@ public class User extends BaseEntity {
     @Column(name = "prenom", nullable = false)
     private String prenom;
 
+    @Pattern(regexp = "^(\\+226[02567]\\d{7}|[02567]\\d{7})?$", message = "Numéro de téléphone burkinabè invalide")
     @Column(name = "telephone")
-    @Pattern(regexp = "^(B\\d{8})?$", message = "Le numéro de la CNIB doit respecter le format B suivi de 8 chiffres")
     private String telephone;
 
 
