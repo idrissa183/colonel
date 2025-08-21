@@ -35,10 +35,10 @@ public class ProduitService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<ProduitDto> getProduitById(Long id) {
-        return produitRepository.findById(id)
-                .map(this::convertToDto);
-    }
+    // public Optional<ProduitDto> getProduitById(Long id) {
+    // return produitRepository.findById(id)
+    // .map(this::convertToDto);
+    // }
 
     // Méthode de recherche par code barre supprimée - utilisation de l'ID
 
@@ -166,6 +166,51 @@ public class ProduitService {
             FamilleProduit famille = familleProduitRepository.findById(dto.getFamilleId())
                     .orElseThrow(() -> new IllegalArgumentException("Famille de produit non trouvée"));
             produit.setFamilleProduit(famille);
+        }
+    }
+
+    public Optional<ProduitDto> getProduitById(Long id) {
+        log.debug("Recherche du produit avec ID: {}", id);
+
+        if (id == null) {
+            log.warn("Tentative de recherche avec ID null");
+            return Optional.empty();
+        }
+
+        try {
+            Optional<Produit> produitOpt = produitRepository.findById(id);
+            if (produitOpt.isPresent()) {
+                Produit produit = produitOpt.get();
+                log.debug("Produit trouvé: {} avec ID réel: {}", produit.getLibelle(), produit.getId());
+                return Optional.of(convertToDto(produit));
+            } else {
+                log.warn("Aucun produit trouvé avec l'ID: {}", id);
+                return Optional.empty();
+            }
+        } catch (Exception e) {
+            log.error("Erreur lors de la recherche du produit avec ID {}: {}", id, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    // Méthode utilitaire pour vérifier les données
+    public void verifierProduitsAvecIdNull() {
+        try {
+            List<Produit> produits = produitRepository.findAll();
+            long produitsAvecIdNull = produits.stream()
+                    .filter(p -> p.getId() == null)
+                    .count();
+
+            if (produitsAvecIdNull > 0) {
+                log.error("ATTENTION: {} produits ont un ID null dans la base de données!", produitsAvecIdNull);
+
+                // Lister les produits problématiques
+                produits.stream()
+                        .filter(p -> p.getId() == null)
+                        .forEach(p -> log.error("Produit avec ID null: {}", p.getLibelle()));
+            }
+        } catch (Exception e) {
+            log.error("Erreur lors de la vérification des IDs: {}", e.getMessage());
         }
     }
 }

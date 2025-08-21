@@ -675,10 +675,16 @@ public class ProduitPanel extends JPanel {
             List<ProduitDto> produits = produitService.getAllProduits();
             tableModel.setRowCount(0);
 
-            // CORRECTION : Stocker l'ID réel du produit dans la première colonne
             for (ProduitDto produit : produits) {
+                // CORRECTION: S'assurer que l'ID n'est jamais null
+                Long id = produit.getId();
+                if (id == null) {
+                    System.err.println("Produit avec ID null trouvé: " + produit.getLibelle());
+                    continue; // Ignorer ce produit
+                }
+
                 Object[] row = {
-                        produit.getId(), // ID RÉEL du produit (pas l'index de la boucle)
+                        id, // ID RÉEL du produit (Long)
                         produit.getLibelle(),
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
@@ -689,7 +695,8 @@ public class ProduitPanel extends JPanel {
             }
             updateStats();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erreur lors du chargement des produits: " + e.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors du chargement des produits: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -705,10 +712,16 @@ public class ProduitPanel extends JPanel {
             List<ProduitDto> produits = produitService.searchProduits(searchText);
             tableModel.setRowCount(0);
 
-            // CORRECTION : Stocker l'ID réel du produit dans la première colonne
             for (ProduitDto produit : produits) {
+                // CORRECTION: Vérification de l'ID
+                Long id = produit.getId();
+                if (id == null) {
+                    System.err.println("Produit avec ID null dans recherche: " + produit.getLibelle());
+                    continue;
+                }
+
                 Object[] row = {
-                        produit.getId(), // ID RÉEL du produit (pas l'index de la boucle)
+                        id, // ID RÉEL du produit (Long)
                         produit.getLibelle(),
                         produit.getPrixAchat() != null ? produit.getPrixAchat() + " FCFA" : "-",
                         produit.getPrixRevente() != null ? produit.getPrixRevente() + " FCFA" : "-",
@@ -718,7 +731,8 @@ public class ProduitPanel extends JPanel {
                 tableModel.addRow(row);
             }
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erreur lors de la recherche: " + e.getMessage(),
+            JOptionPane.showMessageDialog(this,
+                    "Erreur lors de la recherche: " + e.getMessage(),
                     "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -727,15 +741,31 @@ public class ProduitPanel extends JPanel {
         int selectedRow = produitTable.getSelectedRow();
         if (selectedRow >= 0) {
             try {
-                // Récupération de l'ID RÉEL du produit depuis la colonne 0
-                Long produitId = (Long) tableModel.getValueAt(selectedRow, 0);
+                // CORRECTION: Vérification de null avant conversion
+                Object idValue = tableModel.getValueAt(selectedRow, 0);
+                if (idValue == null) {
+                    JOptionPane.showMessageDialog(this, "ID du produit invalide",
+                            "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                Long produitId;
+                if (idValue instanceof Long) {
+                    produitId = (Long) idValue;
+                } else if (idValue instanceof Integer) {
+                    produitId = ((Integer) idValue).longValue();
+                } else {
+                    produitId = Long.parseLong(idValue.toString());
+                }
+
                 produitService.getProduitById(produitId).ifPresent(produit -> {
                     currentProduit = produit;
                     populateFields(produit);
                     setFormMode(FormMode.EDIT);
                 });
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Erreur lors du chargement du produit: " + e.getMessage(),
+                JOptionPane.showMessageDialog(this,
+                        "Erreur lors du chargement du produit: " + e.getMessage(),
                         "Erreur", JOptionPane.ERROR_MESSAGE);
             }
         }
