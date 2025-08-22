@@ -14,6 +14,17 @@ public class ValidationUtils {
     public static final Color SUCCESS_COLOR = new Color(40, 167, 69);
     public static final Color DEFAULT_BORDER_COLOR = new Color(206, 212, 218);
     public static final Color WARNING_COLOR = new Color(255, 193, 7);
+    public static final Color PARTIAL_COLOR = new Color(255, 193, 7); // Orange pour validation partielle
+
+    /**
+     * Enum representing the different states of validation
+     */
+    public enum ValidationState {
+        NEUTRAL,   // Empty or initial state
+        PARTIAL,   // Partially valid (could become valid)
+        VALID,     // Completely valid
+        INVALID    // Invalid and cannot become valid with current input
+    }
 
     // Regex patterns for Burkina Faso context
     public static final String BURKINA_PHONE_REGEX = "^(\\+226[02567]\\d{7}|[02567]\\d{7})$";
@@ -82,6 +93,195 @@ public class ValidationUtils {
         return name != null && !name.trim().isEmpty() && NAME_PATTERN.matcher(name.trim()).matches();
     }
 
+    // ===== PROGRESSIVE VALIDATION METHODS =====
+
+    /**
+     * Validates phone progressively as user types
+     */
+    public static ValidationState validateBurkinaPhoneProgressive(String phone) {
+        if (phone == null || phone.trim().isEmpty()) {
+            return ValidationState.NEUTRAL;
+        }
+        
+        String trimmed = phone.trim();
+        
+        // Check if it matches the complete pattern
+        if (BURKINA_PHONE_PATTERN.matcher(trimmed).matches()) {
+            return ValidationState.VALID;
+        }
+        
+        // Check if it could potentially be valid (progressive validation)
+        if (isProgressivelyValidPhone(trimmed)) {
+            return ValidationState.PARTIAL;
+        }
+        
+        return ValidationState.INVALID;
+    }
+
+    /**
+     * Validates CNIB progressively as user types
+     */
+    public static ValidationState validateCNIBProgressive(String cnib) {
+        if (cnib == null || cnib.trim().isEmpty()) {
+            return ValidationState.NEUTRAL;
+        }
+        
+        String trimmed = cnib.trim();
+        
+        // Check if it matches the complete pattern
+        if (CNIB_PATTERN.matcher(trimmed).matches()) {
+            return ValidationState.VALID;
+        }
+        
+        // Check if it could potentially be valid
+        if (isProgressivelyValidCNIB(trimmed)) {
+            return ValidationState.PARTIAL;
+        }
+        
+        return ValidationState.INVALID;
+    }
+
+    /**
+     * Validates code partenaire progressively as user types
+     */
+    public static ValidationState validateCodePartenaireProgressive(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return ValidationState.NEUTRAL;
+        }
+        
+        String trimmed = code.trim();
+        
+        // Check if it matches the complete pattern
+        if (CODE_PARTENAIRE_PATTERN.matcher(trimmed).matches()) {
+            return ValidationState.VALID;
+        }
+        
+        // Check if it could potentially be valid
+        if (isProgressivelyValidCodePartenaire(trimmed)) {
+            return ValidationState.PARTIAL;
+        }
+        
+        return ValidationState.INVALID;
+    }
+
+    /**
+     * Validates code stockiste progressively as user types
+     */
+    public static ValidationState validateCodeStockisteProgressive(String code) {
+        if (code == null || code.trim().isEmpty()) {
+            return ValidationState.NEUTRAL;
+        }
+        
+        String trimmed = code.trim();
+        
+        // Check if it matches the complete pattern
+        if (CODE_STOCKISTE_PATTERN.matcher(trimmed).matches()) {
+            return ValidationState.VALID;
+        }
+        
+        // Check if it could potentially be valid
+        if (isProgressivelyValidCodeStockiste(trimmed)) {
+            return ValidationState.PARTIAL;
+        }
+        
+        return ValidationState.INVALID;
+    }
+
+    /**
+     * Validates email progressively as user types
+     */
+    public static ValidationState validateEmailProgressive(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return ValidationState.NEUTRAL;
+        }
+        
+        String trimmed = email.trim();
+        
+        // Check if it matches the complete pattern
+        if (EMAIL_PATTERN.matcher(trimmed).matches()) {
+            return ValidationState.VALID;
+        }
+        
+        // Check if it could potentially be valid
+        if (isProgressivelyValidEmail(trimmed)) {
+            return ValidationState.PARTIAL;
+        }
+        
+        return ValidationState.INVALID;
+    }
+
+    // ===== PROGRESSIVE VALIDATION HELPERS =====
+
+    private static boolean isProgressivelyValidPhone(String phone) {
+        // Valid starting patterns for Burkina phone
+        if (phone.startsWith("+226")) {
+            if (phone.length() <= 4) return true; // "+226"
+            String afterCode = phone.substring(4);
+            if (afterCode.length() > 8) return false; // Too long
+            if (afterCode.isEmpty()) return true;
+            char firstDigit = afterCode.charAt(0);
+            if (firstDigit == '0' || firstDigit == '2' || firstDigit == '5' || firstDigit == '6' || firstDigit == '7') {
+                return afterCode.matches("\\d*"); // Only digits after valid first digit
+            }
+            return false;
+        } else if (phone.length() <= 8) {
+            if (phone.isEmpty()) return true;
+            char firstChar = phone.charAt(0);
+            if (firstChar == '0' || firstChar == '2' || firstChar == '5' || firstChar == '6' || firstChar == '7') {
+                return phone.matches("\\d*"); // Only digits
+            }
+            return false;
+        }
+        return false;
+    }
+
+    private static boolean isProgressivelyValidCNIB(String cnib) {
+        if (cnib.length() > 9) return false; // Too long
+        if (cnib.startsWith("B")) {
+            String digits = cnib.substring(1);
+            return digits.matches("\\d*") && digits.length() <= 8;
+        } else if (cnib.length() == 1 && cnib.equals("B")) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isProgressivelyValidCodePartenaire(String code) {
+        if (code.length() > 10) return false; // Too long (2 letters + 8 digits)
+        
+        if (code.length() <= 2) {
+            return code.matches("[A-Z]*"); // Only uppercase letters
+        } else {
+            String letters = code.substring(0, 2);
+            String digits = code.substring(2);
+            return letters.matches("[A-Z]{2}") && digits.matches("\\d*") && digits.length() <= 8;
+        }
+    }
+
+    private static boolean isProgressivelyValidCodeStockiste(String code) {
+        if (code.length() > 6) return false; // Too long (2 letters + 4 digits)
+        
+        if (code.length() <= 2) {
+            return code.matches("[A-Z]*"); // Only uppercase letters
+        } else {
+            String letters = code.substring(0, 2);
+            String digits = code.substring(2);
+            return letters.matches("[A-Z]{2}") && digits.matches("\\d*") && digits.length() <= 4;
+        }
+    }
+
+    private static boolean isProgressivelyValidEmail(String email) {
+        // Basic progressive email validation
+        if (email.contains("@")) {
+            String[] parts = email.split("@");
+            if (parts.length > 2) return false; // Too many @
+            if (parts.length == 2) {
+                return parts[0].length() > 0 && parts[1].matches("[a-zA-Z0-9.-]*");
+            }
+        }
+        return email.matches("[a-zA-Z0-9.+_-]*");
+    }
+
     /**
      * Checks if a field is required and not empty
      */
@@ -144,6 +344,35 @@ public class ValidationUtils {
     }
 
     /**
+     * Sets partial border on a component (orange for in-progress validation)
+     */
+    public static void setPartialBorder(JComponent component) {
+        component.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(PARTIAL_COLOR, 1),
+                new EmptyBorder(8, 12, 8, 12)));
+    }
+
+    /**
+     * Sets border based on validation state
+     */
+    public static void setBorderByState(JComponent component, ValidationState state) {
+        switch (state) {
+            case NEUTRAL:
+                setDefaultBorder(component);
+                break;
+            case PARTIAL:
+                setPartialBorder(component);
+                break;
+            case VALID:
+                setSuccessBorder(component);
+                break;
+            case INVALID:
+                setErrorBorder(component);
+                break;
+        }
+    }
+
+    /**
      * Adds real-time validation to a text field
      */
     public static void addFieldValidator(JTextField field, JLabel errorLabel, 
@@ -182,6 +411,109 @@ public class ValidationUtils {
                 }
             }
         });
+    }
+
+    /**
+     * Adds progressive real-time validation to a text field with specific validation function
+     */
+    public static void addProgressiveFieldValidator(JTextField field, JLabel errorLabel, 
+                                                   String errorMessage, 
+                                                   java.util.function.Function<String, ValidationState> progressiveValidator,
+                                                   boolean required) {
+        field.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) { validateField(); }
+            public void removeUpdate(DocumentEvent e) { validateField(); }
+            public void insertUpdate(DocumentEvent e) { validateField(); }
+
+            private void validateField() {
+                String text = field.getText();
+                boolean isEmpty = text.trim().isEmpty();
+                
+                if (required && isEmpty) {
+                    showFieldError(errorLabel, "Ce champ est obligatoire");
+                    setErrorBorder(field);
+                    return;
+                }
+                
+                if (isEmpty) {
+                    hideFieldError(errorLabel);
+                    setDefaultBorder(field);
+                    return;
+                }
+                
+                ValidationState state = progressiveValidator.apply(text);
+                setBorderByState(field, state);
+                
+                switch (state) {
+                    case INVALID:
+                        showFieldError(errorLabel, errorMessage);
+                        break;
+                    case PARTIAL:
+                        showFieldError(errorLabel, "En cours de saisie...");
+                        errorLabel.setForeground(PARTIAL_COLOR);
+                        break;
+                    case VALID:
+                        hideFieldError(errorLabel);
+                        break;
+                    case NEUTRAL:
+                    default:
+                        hideFieldError(errorLabel);
+                        break;
+                }
+            }
+        });
+    }
+
+    // ===== CONVENIENCE METHODS FOR SPECIFIC FIELD TYPES =====
+
+    /**
+     * Adds progressive validation for Burkina phone number field
+     */
+    public static void addBurkinaPhoneValidator(JTextField field, JLabel errorLabel, boolean required) {
+        addProgressiveFieldValidator(field, errorLabel, 
+                ErrorMessages.INVALID_PHONE, 
+                ValidationUtils::validateBurkinaPhoneProgressive, 
+                required);
+    }
+
+    /**
+     * Adds progressive validation for CNIB field
+     */
+    public static void addCNIBValidator(JTextField field, JLabel errorLabel, boolean required) {
+        addProgressiveFieldValidator(field, errorLabel, 
+                ErrorMessages.INVALID_CNIB, 
+                ValidationUtils::validateCNIBProgressive, 
+                required);
+    }
+
+    /**
+     * Adds progressive validation for code partenaire field
+     */
+    public static void addCodePartenaireValidator(JTextField field, JLabel errorLabel, boolean required) {
+        addProgressiveFieldValidator(field, errorLabel, 
+                ErrorMessages.INVALID_CODE_PARTENAIRE, 
+                ValidationUtils::validateCodePartenaireProgressive, 
+                required);
+    }
+
+    /**
+     * Adds progressive validation for code stockiste field
+     */
+    public static void addCodeStockisteValidator(JTextField field, JLabel errorLabel, boolean required) {
+        addProgressiveFieldValidator(field, errorLabel, 
+                ErrorMessages.INVALID_CODE_STOCKISTE, 
+                ValidationUtils::validateCodeStockisteProgressive, 
+                required);
+    }
+
+    /**
+     * Adds progressive validation for email field
+     */
+    public static void addEmailValidator(JTextField field, JLabel errorLabel, boolean required) {
+        addProgressiveFieldValidator(field, errorLabel, 
+                ErrorMessages.INVALID_EMAIL, 
+                ValidationUtils::validateEmailProgressive, 
+                required);
     }
 
     /**

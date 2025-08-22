@@ -190,7 +190,7 @@ public class ClientFormDialog extends JDialog {
     }
 
     private void setupValidation() {
-        // Setup real-time validation for each field
+        // Setup progressive real-time validation for each field
         nomValidation = new ValidationField(nomField, nomErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_NAME, 
                 ValidationUtils::isValidName, true);
@@ -205,33 +205,26 @@ public class ClientFormDialog extends JDialog {
                 ValidationUtils.ErrorMessages.INVALID_NAME, 
                 ValidationUtils::isValidName, true);
 
+        // Progressive validation for fields with regex patterns
         emailValidation = new ValidationField(emailField, emailErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_EMAIL, 
                 ValidationUtils::isValidEmail, false);
-        ValidationUtils.addFieldValidator(emailField, emailErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_EMAIL, 
-                text -> text.trim().isEmpty() || ValidationUtils.isValidEmail(text), false);
+        ValidationUtils.addEmailValidator(emailField, emailErrorLabel, false);
 
         telephoneValidation = new ValidationField(telephoneField, telephoneErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_PHONE, 
                 ValidationUtils::isValidBurkinaPhone, false);
-        ValidationUtils.addFieldValidator(telephoneField, telephoneErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_PHONE, 
-                ValidationUtils::isValidBurkinaPhone, false);
+        ValidationUtils.addBurkinaPhoneValidator(telephoneField, telephoneErrorLabel, false);
 
         cnibValidation = new ValidationField(cnibField, cnibErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_CNIB, 
                 ValidationUtils::isValidCNIB, false);
-        ValidationUtils.addFieldValidator(cnibField, cnibErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_CNIB, 
-                ValidationUtils::isValidCNIB, false);
+        ValidationUtils.addCNIBValidator(cnibField, cnibErrorLabel, false);
 
         codePartenaireValidation = new ValidationField(codePartenaireField, codePartenaireErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_CODE_PARTENAIRE, 
                 ValidationUtils::isValidCodePartenaire, false);
-        ValidationUtils.addFieldValidator(codePartenaireField, codePartenaireErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_CODE_PARTENAIRE, 
-                ValidationUtils::isValidCodePartenaire, false);
+        ValidationUtils.addCodePartenaireValidator(codePartenaireField, codePartenaireErrorLabel, false);
 
         // Type client validation
         typeClientCombo.addActionListener(e -> {

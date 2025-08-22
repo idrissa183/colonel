@@ -156,7 +156,7 @@ public class FournisseurFormDialog extends JDialog {
     }
 
     private void setupValidation() {
-        // Setup real-time validation for each field
+        // Setup progressive real-time validation for each field
         nomValidation = new ValidationField(nomField, nomErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_NAME, 
                 ValidationUtils::isValidName, true);
@@ -171,26 +171,21 @@ public class FournisseurFormDialog extends JDialog {
                 ValidationUtils.ErrorMessages.INVALID_NAME, 
                 ValidationUtils::isValidName, false);
 
+        // Progressive validation for fields with regex patterns
         emailValidation = new ValidationField(emailField, emailErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_EMAIL, 
                 ValidationUtils::isValidEmail, false);
-        ValidationUtils.addFieldValidator(emailField, emailErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_EMAIL, 
-                text -> text.trim().isEmpty() || ValidationUtils.isValidEmail(text), false);
+        ValidationUtils.addEmailValidator(emailField, emailErrorLabel, false);
 
         telephoneValidation = new ValidationField(telephoneField, telephoneErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_PHONE, 
                 ValidationUtils::isValidBurkinaPhone, false);
-        ValidationUtils.addFieldValidator(telephoneField, telephoneErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_PHONE, 
-                ValidationUtils::isValidBurkinaPhone, false);
+        ValidationUtils.addBurkinaPhoneValidator(telephoneField, telephoneErrorLabel, false);
 
         codeStockisteValidation = new ValidationField(codeStockisteField, codeStockisteErrorLabel, 
                 ValidationUtils.ErrorMessages.INVALID_CODE_STOCKISTE, 
                 ValidationUtils::isValidCodeStockiste, true);
-        ValidationUtils.addFieldValidator(codeStockisteField, codeStockisteErrorLabel, 
-                ValidationUtils.ErrorMessages.INVALID_CODE_STOCKISTE, 
-                ValidationUtils::isValidCodeStockiste, true);
+        ValidationUtils.addCodeStockisteValidator(codeStockisteField, codeStockisteErrorLabel, true);
 
         // Type stockiste validation
         typeStockisteCombo.addActionListener(e -> {
