@@ -23,7 +23,7 @@ import com.longrich.smartgestion.ui.panel.CommandePanel;
 import com.longrich.smartgestion.ui.panel.DashboardPanel;
 import com.longrich.smartgestion.ui.panel.FacturePanel;
 import com.longrich.smartgestion.ui.panel.FournisseurPanel;
-import com.longrich.smartgestion.ui.panel.ProduitPanel;
+import com.longrich.smartgestion.ui.panel.ProduitContainerPanel;
 import com.longrich.smartgestion.ui.panel.PvPanel;
 import com.longrich.smartgestion.ui.panel.SettingsPanel;
 import com.longrich.smartgestion.ui.panel.StockPanel;
@@ -42,7 +42,7 @@ public class MainFrame extends JFrame {
     private final Navbar navbar;
     private final DashboardPanel dashboardPanel;
     private final ClientPanel clientPanel;
-    private final ProduitPanel produitPanel;
+    private final ProduitContainerPanel produitContainerPanel;
     private final StockPanel stockPanel;
     private final CommandePanel commandePanel;
     private final FournisseurPanel fournisseurPanel;
@@ -87,7 +87,7 @@ public class MainFrame extends JFrame {
         // Ajouter les panneaux au CardLayout
         contentPanel.add(dashboardPanel, "dashboard");
         contentPanel.add(clientPanel, "clients");
-        contentPanel.add(produitPanel, "produits");
+        contentPanel.add(produitContainerPanel, "produits");
         contentPanel.add(stockPanel, "stock");
         contentPanel.add(commandePanel, "commandes");
         contentPanel.add(fournisseurPanel, "fournisseurs");

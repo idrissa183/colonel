@@ -95,7 +95,7 @@ public class ProduitPanel extends JPanel {
     public void initializeUI() {
         setLayout(new BorderLayout(10, 10));
         setBackground(BACKGROUND_COLOR);
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         createHeaderPanel();
         createMainContent();
