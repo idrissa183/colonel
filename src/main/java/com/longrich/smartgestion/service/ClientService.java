@@ -8,6 +8,7 @@ import com.longrich.smartgestion.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@Validated
 public class ClientService {
 
     private final ClientRepository clientRepository;
@@ -55,7 +57,7 @@ public class ClientService {
                 .toList();
     }
 
-    public ClientDTO saveClient(ClientDTO clientDTO) {
+    public ClientDTO saveClient(@jakarta.validation.Valid ClientDTO clientDTO) {
         if (clientDTO.getId() == null && clientDTO.getCodePartenaire() != null && 
             clientRepository.existsByCodePartenaire(clientDTO.getCodePartenaire())) {
             throw new IllegalArgumentException("Un client avec ce code partenaire existe déjà");
@@ -103,7 +105,7 @@ public class ClientService {
         return clientMapper.toDTO(savedClient);
     }
 
-    public ClientDTO updateClient(Long id, ClientDTO clientDTO) {
+    public ClientDTO updateClient(Long id, @jakarta.validation.Valid ClientDTO clientDTO) {
         Client existingClient = clientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
 

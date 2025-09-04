@@ -19,7 +19,7 @@ public class ClientDTO {
 
     private Long id;
 
-    @Pattern(regexp = "^(BF\\d{8})?$", message = "Le code partenaire doit respecter le format BF suivi de 8 chiffres")
+    @Pattern(regexp = "^([A-Z]{2}\\d{8})?$", message = "Le code partenaire doit respecter le format ISO2 suivi de 8 chiffres (ex: BF12345678)")
     private String codePartenaire;
 
     @NotBlank(message = "Le nom est obligatoire")
@@ -29,7 +29,10 @@ public class ClientDTO {
     private String prenom;
 
     private String province;
+    @Pattern(regexp = "^(B\\d{8})?$", message = "Le numéro de la CNIB doit respecter le format B suivi de 8 chiffres")
     private String cnib;
+
+    @Pattern(regexp = "^(\\+226[02567]\\d{7}|[02567]\\d{7})?$", message = "Numéro de téléphone burkinabè invalide")
     private String telephone;
 
     @Email(message = "Format d'email invalide")

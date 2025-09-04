@@ -33,6 +33,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.util.regex.Pattern;
 
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
@@ -82,6 +85,12 @@ public class ClientPanel extends JPanel {
     private JCheckBox codeDefinitifCheckBox;
     private JPanel formPanel;
     private JPanel longrichSection;
+
+    // Patterns alignés avec les contraintes Bean Validation
+    private static final Pattern P_CODE_PARTENAIRE = Pattern.compile("^[A-Z]{2}\\d{8}$");
+    private static final Pattern P_CNIB = Pattern.compile("^B\\d{8}$");
+    private static final Pattern P_TEL_BF = Pattern.compile("^(\\+226[02567]\\d{7}|[02567]\\d{7})$");
+    private static final Pattern P_EMAIL = Pattern.compile("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$");
 
     private JTable clientTable;
     private DefaultTableModel tableModel;
@@ -256,6 +265,9 @@ public class ClientPanel extends JPanel {
         longrichSection = createLongrichSection();
         formPanel.add(longrichSection);
 
+        // Valide en temps réel les champs saisis
+        attachRealtimeValidation();
+
         // Checkbox Client actif (hors section Longrich)
         JPanel generalCheckboxPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 10));
         generalCheckboxPanel.setBackground(CARD_COLOR);
@@ -344,6 +356,89 @@ public class ClientPanel extends JPanel {
         errorLabels.put(field, errorLabel);
 
         return panel;
+    }
+
+    private void attachRealtimeValidation() {
+        addDocListener(telephoneField, this::validateTelephoneRealtime);
+        addDocListener(cnibField, this::validateCnibRealtime);
+        addDocListener(emailField, this::validateEmailRealtime);
+        addDocListener(codePartenaireField, this::validateCodePartenaireRealtime);
+        addDocListener(totalPvField, this::validateTotalPvRealtime);
+    }
+
+    private void addDocListener(JTextField field, Runnable validator) {
+        if (field == null) return;
+        field.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { validator.run(); updateActionButtonsEnabled(); }
+            public void removeUpdate(DocumentEvent e) { validator.run(); updateActionButtonsEnabled(); }
+            public void changedUpdate(DocumentEvent e) { validator.run(); updateActionButtonsEnabled(); }
+        });
+    }
+
+    private void validateTelephoneRealtime() {
+        String v = telephoneField.getText().trim();
+        clearFieldError(telephoneField);
+        if (!v.isEmpty() && !P_TEL_BF.matcher(v).matches()) {
+            setFieldError(telephoneField, "Numéro de téléphone burkinabè invalide");
+        }
+    }
+
+    private void validateCnibRealtime() {
+        String v = cnibField.getText().trim();
+        clearFieldError(cnibField);
+        if (!v.isEmpty() && !P_CNIB.matcher(v).matches()) {
+            setFieldError(cnibField, "Le numéro de la CNIB doit respecter le format B suivi de 8 chiffres");
+        }
+    }
+
+    private void validateEmailRealtime() {
+        String v = emailField.getText().trim();
+        clearFieldError(emailField);
+        if (!v.isEmpty() && !P_EMAIL.matcher(v).matches()) {
+            setFieldError(emailField, "Email invalide");
+        }
+    }
+
+    private void validateCodePartenaireRealtime() {
+        clearFieldError(codePartenaireField);
+        TypeClient type = (TypeClient) typeClientCombo.getSelectedItem();
+        String v = codePartenaireField.getText().trim();
+        if (type == TypeClient.PARTENAIRE && !v.isEmpty()) {
+            if (!P_CODE_PARTENAIRE.matcher(v).matches()) {
+                setFieldError(codePartenaireField, "Le code partenaire doit respecter le format ISO2 suivi de 8 chiffres (ex: BF12345678)");
+            }
+        }
+    }
+
+    private void validateTotalPvRealtime() {
+        clearFieldError(totalPvField);
+        TypeClient type = (TypeClient) typeClientCombo.getSelectedItem();
+        String v = totalPvField.getText().trim();
+        if (type == TypeClient.PARTENAIRE && !v.isEmpty()) {
+            try {
+                int total = Integer.parseInt(v);
+                if (total <= 0) {
+                    setFieldError(totalPvField, "Le total PV doit être supérieur à 0 pour les partenaires");
+                }
+            } catch (NumberFormatException ex) {
+                setFieldError(totalPvField, "Le total PV doit être un nombre entier valide");
+            }
+        }
+    }
+
+    private void validateAllRealtime() {
+        validateTelephoneRealtime();
+        validateCnibRealtime();
+        validateEmailRealtime();
+        validateCodePartenaireRealtime();
+        validateTotalPvRealtime();
+        updateActionButtonsEnabled();
+    }
+
+    private void updateActionButtonsEnabled() {
+        // Ne plus désactiver les boutons - la validation se fait au clic
+        if (saveButton != null) saveButton.setEnabled(true);
+        if (updateButton != null) updateButton.setEnabled(true);
     }
 
     private JTextField createStyledTextField() {
@@ -746,6 +841,7 @@ public class ClientPanel extends JPanel {
                         BorderFactory.createEmptyBorder(8, 12, 8, 12)));
             }
         });
+        updateActionButtonsEnabled();
     }
 
     private void setFieldError(JComponent field, String message) {
@@ -765,39 +861,75 @@ public class ClientPanel extends JPanel {
         }
     }
 
+    private void clearFieldError(JComponent field) {
+        JLabel label = errorLabels.get(field);
+        if (label != null) {
+            label.setVisible(false);
+            label.setText("");
+        }
+        if (field instanceof JComboBox) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        } else {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        }
+    }
+
     private boolean validateFields() {
         clearErrors();
         boolean valid = true;
 
-        // Validation du code supprimée - ID auto-généré
+        // Validation des champs obligatoires
         if (nomField.getText().trim().isEmpty()) {
-            setFieldError(nomField, "Nom requis");
+            setFieldError(nomField, "Ce champ est requis");
             valid = false;
         }
         if (prenomField.getText().trim().isEmpty()) {
-            setFieldError(prenomField, "Prénom requis");
+            setFieldError(prenomField, "Ce champ est requis");
             valid = false;
         }
-        // if (telephoneField.getText().trim().isEmpty()) {
-        // setFieldError(telephoneField, "Téléphone requis");
-        // valid = false;
-        // }
+        if (provinceCombo.getSelectedItem() == null) {
+            setFieldError(provinceCombo, "Ce champ est requis");
+            valid = false;
+        }
+
+        // Validation des formats regex (si champs non vides)
+        String telephone = telephoneField.getText().trim();
+        if (!telephone.isEmpty() && !P_TEL_BF.matcher(telephone).matches()) {
+            setFieldError(telephoneField, "Numéro de téléphone burkinabè invalide");
+            valid = false;
+        }
+
+        String cnib = cnibField.getText().trim();
+        if (!cnib.isEmpty() && !P_CNIB.matcher(cnib).matches()) {
+            setFieldError(cnibField, "Le numéro de la CNIB doit respecter le format B suivi de 8 chiffres");
+            valid = false;
+        }
+
         String email = emailField.getText().trim();
-        if (!email.isEmpty() && !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
+        if (!email.isEmpty() && !P_EMAIL.matcher(email).matches()) {
             setFieldError(emailField, "Email invalide");
             valid = false;
         }
 
+        // Validation spécifique pour les partenaires
         TypeClient type = (TypeClient) typeClientCombo.getSelectedItem();
-        if (type == TypeClient.PARTENAIRE && codePartenaireField.getText().trim().isEmpty()) {
-            setFieldError(codePartenaireField, "Code partenaire requis");
-            valid = false;
-        }
-        // Validation spécifique pour les partenaires : Total PV obligatoire
         if (type == TypeClient.PARTENAIRE) {
+            String cp = codePartenaireField.getText().trim();
+            if (cp.isEmpty()) {
+                setFieldError(codePartenaireField, "Ce champ est requis");
+                valid = false;
+            } else if (!P_CODE_PARTENAIRE.matcher(cp).matches()) {
+                setFieldError(codePartenaireField, "Le code partenaire doit respecter le format ISO2 suivi de 8 chiffres (ex: BF12345678)");
+                valid = false;
+            }
+
             String totalPvText = totalPvField.getText().trim();
             if (totalPvText.isEmpty()) {
-                setFieldError(totalPvField, "Le total PV est obligatoire pour les partenaires");
+                setFieldError(totalPvField, "Ce champ est requis");
                 valid = false;
             } else {
                 try {
@@ -970,6 +1102,9 @@ public class ClientPanel extends JPanel {
 
         formPanel.revalidate();
         formPanel.repaint();
+
+        // Revalider après changement de type
+        validateAllRealtime();
     }
 
     private void exportClients() {
