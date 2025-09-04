@@ -51,6 +51,7 @@ public class StockService {
             .numeroCommande(dto.getNumeroCommande())
             .numeroFacture(dto.getNumeroFacture())
             .commentaire(dto.getCommentaire())
+            .fichierReference(dto.getFichierReference())
             .statut(Approvisionnement.StatutApprovisionnement.RECU_COMPLET)
             .build();
 
@@ -86,6 +87,7 @@ public class StockService {
             .numeroCommande(dto.getNumeroCommande())
             .numeroFacture(dto.getNumeroFacture())
             .commentaire(dto.getCommentaire())
+            .fichierReference(dto.getFichierReference())
             .statut(resolveStatutFromDto(dto))
             .build();
 
@@ -248,6 +250,14 @@ public class StockService {
     @Transactional(readOnly = true)
     public List<ApprovisionnementDTO> getHistoriqueApprovisionnements(Long produitId) {
         return approvisionnementRepository.findHistoriqueByProduitId(produitId)
+            .stream()
+            .map(this::convertirApprovisionnementToDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApprovisionnementDTO> filtrerApprovisionnements(Long familleProduitId, LocalDate dateDebut, LocalDate dateFin) {
+        return approvisionnementRepository.findByFamilleAndPeriode(familleProduitId, dateDebut, dateFin)
             .stream()
             .map(this::convertirApprovisionnementToDTO)
             .collect(Collectors.toList());

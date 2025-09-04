@@ -5,6 +5,8 @@ import com.longrich.smartgestion.enums.MotifSortie;
 import com.longrich.smartgestion.service.StockService;
 import com.longrich.smartgestion.service.ProduitService;
 import com.longrich.smartgestion.service.FournisseurService;
+import com.longrich.smartgestion.service.FamilleProduitService;
+import com.longrich.smartgestion.dto.FamilleProduitDTO;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,7 @@ public class ModernStockPanel extends JPanel {
     private final StockService stockService;
     private final ProduitService produitService;
     private final FournisseurService fournisseurService;
+    private final FamilleProduitService familleProduitService;
 
     // Composants principaux
     private JTabbedPane tabbedPane;
@@ -565,10 +568,14 @@ public class ModernStockPanel extends JPanel {
             BorderFactory.createLineBorder(BORDER_COLOR),
             new EmptyBorder(20, 20, 20, 20)));
 
-        // Titre
+        // Titre + filtres
         JLabel titre = new JLabel("📉 Historique des Sorties");
         titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titre.setForeground(TEXT_PRIMARY);
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(CARD_COLOR);
+        header.add(titre, BorderLayout.WEST);
+        header.add(creerFiltresHistoriqueSorties(), BorderLayout.EAST);
 
         // Tableau
         String[] colonnes = {"Date", "Produit", "Quantité", "Motif", "Commentaire"};
@@ -585,11 +592,45 @@ public class ModernStockPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(sortieHistoriqueTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        panel.add(titre, BorderLayout.NORTH);
-        panel.add(Box.createVerticalStrut(15), BorderLayout.NORTH);
+        panel.add(header, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         return panel;
+    }
+
+    private JPanel creerFiltresHistoriqueSorties() {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        p.setBackground(CARD_COLOR);
+
+        // Famille de produit
+        p.add(new JLabel("Famille:"));
+        JComboBox<String> fam = new JComboBox<>(new String[]{"Toutes", "Nutrition", "Soins", "Cosmétiques", "Hygiène"});
+        stylerComboBox(fam);
+        fam.setPreferredSize(new Dimension(140, 32));
+        p.add(fam);
+
+        // Emplacement
+        p.add(new JLabel("Emplacement:"));
+        JComboBox<String> emp = new JComboBox<>(new String[]{"Tous", "SALLE_VENTE", "MAGASIN"});
+        stylerComboBox(emp);
+        emp.setPreferredSize(new Dimension(120, 32));
+        p.add(emp);
+
+        // Dates
+        p.add(new JLabel("Du:"));
+        JTextField dd = creerChampTexte("yyyy-mm-dd");
+        dd.setPreferredSize(new Dimension(110, 32));
+        p.add(dd);
+
+        p.add(new JLabel("Au:"));
+        JTextField df = creerChampTexte("yyyy-mm-dd");
+        df.setPreferredSize(new Dimension(110, 32));
+        p.add(df);
+
+        JButton appliquer = creerBouton("Filtrer", PRIMARY_COLOR, e -> afficherMessage("Filtre sorties (démo)", "Information", JOptionPane.INFORMATION_MESSAGE));
+        p.add(appliquer);
+
+        return p;
     }
 
     private JPanel creerOngletInventaire() {
@@ -629,7 +670,20 @@ public class ModernStockPanel extends JPanel {
         boutonPanel.add(exportButton);
         boutonPanel.add(actualiserButton);
 
-        panel.add(titre, BorderLayout.WEST);
+        // Rappel lundi inventaire SALLE_VENTE
+        JLabel rappel = new JLabel();
+        rappel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        rappel.setForeground(TEXT_SECONDARY);
+        java.time.DayOfWeek dw = java.time.LocalDate.now().getDayOfWeek();
+        boolean isMonday = dw == java.time.DayOfWeek.MONDAY;
+        rappel.setText(isMonday ? "Aujourd'hui: Inventaire SALLE_VENTE" : "Rappel: inventaire SALLE_VENTE chaque lundi");
+
+        JPanel left = new JPanel(new BorderLayout());
+        left.setOpaque(false);
+        left.add(titre, BorderLayout.NORTH);
+        left.add(rappel, BorderLayout.SOUTH);
+
+        panel.add(left, BorderLayout.WEST);
         panel.add(boutonPanel, BorderLayout.EAST);
 
         return panel;
@@ -831,9 +885,17 @@ public class ModernStockPanel extends JPanel {
 
         // Famille de produit
         p.add(new JLabel("Famille:"));
-        entreeFiltreFamilleCombo = new JComboBox<>(new String[]{"Toutes", "Nutrition", "Soins", "Cosmétiques", "Hygiène"});
+        entreeFiltreFamilleCombo = new JComboBox<>();
         stylerComboBox(entreeFiltreFamilleCombo);
-        entreeFiltreFamilleCombo.setPreferredSize(new Dimension(140, 32));
+        entreeFiltreFamilleCombo.setPreferredSize(new Dimension(160, 32));
+        // Charger dynamiquement les familles
+        entreeFiltreFamilleCombo.addItem("Toutes");
+        try {
+            java.util.List<FamilleProduitDTO> familles = familleProduitService.getAllFamilles();
+            for (FamilleProduitDTO f : familles) {
+                entreeFiltreFamilleCombo.addItem(f.getLibelleFamille() + " (ID:" + f.getId() + ")");
+            }
+        } catch (Exception ignored) {}
         p.add(entreeFiltreFamilleCombo);
 
         // Magasin / Surface
@@ -866,8 +928,41 @@ public class ModernStockPanel extends JPanel {
     }
 
     private void filtrerHistoriqueEntrees() {
-        // TODO: brancher aux services de filtrage
-        afficherMessage("Filtre appliqué (démo)", "Information", JOptionPane.INFORMATION_MESSAGE);
+        try {
+            // FamilleId depuis le libellé (si sélection > 0)
+            Long familleId = null;
+            int idx = entreeFiltreFamilleCombo.getSelectedIndex();
+            if (idx > 0) {
+                String item = (String) entreeFiltreFamilleCombo.getSelectedItem();
+                if (item != null && item.contains("(ID:")) {
+                    String idStr = item.substring(item.indexOf("(ID:") + 4, item.indexOf(")"));
+                    familleId = Long.parseLong(idStr);
+                }
+            }
+
+            java.time.LocalDate d1 = null, d2 = null;
+            String s1 = entreeFiltreDateDebutField.getText().trim();
+            String s2 = entreeFiltreDateFinField.getText().trim();
+            if (!s1.isEmpty()) d1 = java.time.LocalDate.parse(s1);
+            if (!s2.isEmpty()) d2 = java.time.LocalDate.parse(s2);
+
+            java.util.List<com.longrich.smartgestion.dto.ApprovisionnementDTO> list =
+                stockService.filtrerApprovisionnements(familleId, d1, d2);
+
+            // Alimente le tableau (Date, Produit, Fournisseur, Quantité, Prix Total)
+            entreeHistoriqueTableModel.setRowCount(0);
+            for (var a : list) {
+                entreeHistoriqueTableModel.addRow(new Object[] {
+                    a.getDateApprovisionnement() != null ? a.getDateApprovisionnement().toString() : "",
+                    a.getProduitLibelle(),
+                    a.getFournisseurNom(),
+                    a.getQuantite(),
+                    a.getPrixTotal() != null ? String.format("%,.0f", a.getPrixTotal()) : ""
+                });
+            }
+        } catch (Exception ex) {
+            afficherMessage("Erreur filtre: " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void enregistrerEntreeStock() {

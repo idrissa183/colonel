@@ -51,6 +51,9 @@ public class Approvisionnement extends BaseEntity {
     @Column(name = "commentaire", columnDefinition = "TEXT")
     private String commentaire;
 
+    @Column(name = "fichier_reference")
+    private String fichierReference;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", length = 20)
     @Builder.Default

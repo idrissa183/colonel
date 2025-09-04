@@ -73,4 +73,16 @@ public interface ApprovisionnementRepository extends JpaRepository<Approvisionne
            "FROM Approvisionnement a WHERE a.statut = 'RECU_COMPLET' " +
            "GROUP BY a.fournisseur ORDER BY totalQuantite DESC")
     List<Object[]> getTopFournisseursByVolume();
+
+    // Filtrer par famille produit et période
+    @Query("SELECT a FROM Approvisionnement a " +
+           "JOIN a.produit p LEFT JOIN p.familleProduit f " +
+           "WHERE (:familleId IS NULL OR f.id = :familleId) " +
+           "AND (:dateDebut IS NULL OR a.dateApprovisionnement >= :dateDebut) " +
+           "AND (:dateFin IS NULL OR a.dateApprovisionnement <= :dateFin) " +
+           "ORDER BY a.dateApprovisionnement DESC")
+    List<Approvisionnement> findByFamilleAndPeriode(
+            @Param("familleId") Long familleId,
+            @Param("dateDebut") LocalDate dateDebut,
+            @Param("dateFin") LocalDate dateFin);
 }

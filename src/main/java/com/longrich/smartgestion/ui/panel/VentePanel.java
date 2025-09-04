@@ -191,24 +191,56 @@ public class VentePanel extends JPanel {
         panel.add(statsPanel, BorderLayout.NORTH);
 
         // Contenu principal
-        JPanel contentPanel = new JPanel(new GridLayout(2, 2, 15, 15));
+        JPanel contentPanel = new JPanel(new BorderLayout(15, 15));
         contentPanel.setBackground(ComponentFactory.getBackgroundColor());
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
 
-        // Graphique des ventes du mois
-        contentPanel.add(createSalesChartCard());
+        // Bandeau promotions de la semaine
+        JPanel promoBanner = createWeeklyPromotionsBanner();
+        contentPanel.add(promoBanner, BorderLayout.NORTH);
 
-        // Top clients
-        contentPanel.add(createTopClientsCard());
-
-        // Produits les plus vendus
-        contentPanel.add(createTopProductsCard());
-
-        // Objectifs de vente
-        contentPanel.add(createSalesTargetsCard());
+        // Grille des cartes
+        JPanel grid = new JPanel(new GridLayout(2, 2, 15, 15));
+        grid.setBackground(ComponentFactory.getBackgroundColor());
+        grid.add(createSalesChartCard());
+        grid.add(createTopClientsCard());
+        grid.add(createTopProductsCard());
+        grid.add(createSalesTargetsCard());
+        contentPanel.add(grid, BorderLayout.CENTER);
 
         panel.add(contentPanel, BorderLayout.CENTER);
         return panel;
+    }
+
+    private JPanel createWeeklyPromotionsBanner() {
+        JPanel banner = ComponentFactory.createCardPanel();
+        banner.setLayout(new BorderLayout());
+        JLabel title = ComponentFactory.createSectionTitle("Promotions en cours cette semaine");
+        banner.add(title, BorderLayout.NORTH);
+
+        JPanel list = new JPanel();
+        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+        list.setBackground(ComponentFactory.getCardColor());
+
+        try {
+            var promos = venteService.getPromotionsActives();
+            if (promos.isEmpty()) {
+                list.add(new JLabel("Aucune promotion active"));
+            } else {
+                for (var pp : promos) {
+                    String line = "• " + pp.getProduit().getLibelle() + " → Bonus: " + pp.getProduitBonus().getLibelle() +
+                            " (seuil: " + pp.getQuantiteMinimum() + ", bonus: " + pp.getQuantiteBonus() + ")";
+                    JLabel lbl = new JLabel(line);
+                    lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                    list.add(lbl);
+                }
+            }
+        } catch (Exception ignored) {
+            list.add(new JLabel("Promotions indisponibles"));
+        }
+
+        banner.add(list, BorderLayout.CENTER);
+        return banner;
     }
 
     private JPanel createStatisticsPanel() {

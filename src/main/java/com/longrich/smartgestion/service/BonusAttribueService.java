@@ -1,7 +1,6 @@
 package com.longrich.smartgestion.service;
 
 import com.longrich.smartgestion.entity.BonusAttribue;
-import com.longrich.smartgestion.entity.ProduitPromotionnel;
 import com.longrich.smartgestion.repository.BonusAttribueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
