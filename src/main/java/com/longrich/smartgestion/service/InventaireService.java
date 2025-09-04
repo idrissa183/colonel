@@ -27,7 +27,7 @@ public class InventaireService {
     private final ProduitRepository produitRepository;
     private final MouvementStockRepository mouvementStockRepository;
     
-    private static final String TYPE_SURFACE_VENTE = "SURFACE_VENTE";
+    private static final String TYPE_SURFACE_VENTE = "SALLE_VENTE";
     private static final String TYPE_MAGASIN = "MAGASIN";
     
     // === GESTION INVENTAIRE SURFACE DE VENTE ===

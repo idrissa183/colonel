@@ -24,7 +24,7 @@ public class VenteService {
     private final BonusAttribueRepository bonusAttribueRepository;
     private final ClientRepository clientRepository;
     
-    private static final String TYPE_SURFACE_VENTE = "SURFACE_VENTE";
+    private static final String TYPE_SURFACE_VENTE = "SALLE_VENTE";
     
     // === VENTES AVEC GESTION DES PROMOTIONS ===
     

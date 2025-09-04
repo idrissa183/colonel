@@ -86,7 +86,7 @@ public class StockService {
             .numeroCommande(dto.getNumeroCommande())
             .numeroFacture(dto.getNumeroFacture())
             .commentaire(dto.getCommentaire())
-            .statut(Approvisionnement.StatutApprovisionnement.RECU_COMPLET)
+            .statut(resolveStatutFromDto(dto))
             .build();
 
         approvisionnement = approvisionnementRepository.save(approvisionnement);
@@ -103,6 +103,15 @@ public class StockService {
             "Approvisionnement " + typeInventaire + " - " + dto.getCommentaire());
 
         return convertirApprovisionnementToDTO(approvisionnement);
+    }
+
+    private Approvisionnement.StatutApprovisionnement resolveStatutFromDto(ApprovisionnementDTO dto) {
+        if (dto.getStatut() == null) return Approvisionnement.StatutApprovisionnement.RECU_COMPLET;
+        try {
+            return Approvisionnement.StatutApprovisionnement.valueOf(dto.getStatut());
+        } catch (Exception e) {
+            return Approvisionnement.StatutApprovisionnement.RECU_COMPLET;
+        }
     }
 
     @Transactional(readOnly = true)

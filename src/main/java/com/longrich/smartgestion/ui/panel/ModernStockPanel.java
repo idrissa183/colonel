@@ -5,6 +5,7 @@ import com.longrich.smartgestion.enums.MotifSortie;
 import com.longrich.smartgestion.service.StockService;
 import com.longrich.smartgestion.service.ProduitService;
 import com.longrich.smartgestion.service.FournisseurService;
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
@@ -67,8 +68,20 @@ public class ModernStockPanel extends JPanel {
     private JTextField entreePrixUnitaireField;
     private JTextField entreeDateField;
     private JTextArea entreeCommentaireArea;
+    private JTextField entreeNumeroCommandeField;
+    private JTextField entreeNumeroFactureField;
+    private JComboBox<String> entreeStatutCombo; // EN_ATTENTE, COMMANDE, RECU_PARTIEL, RECU_COMPLET, ANNULE
+    private JComboBox<String> entreeTypeInventaireCombo; // SALLE_VENTE / MAGASIN
+    private JRadioButton entreeHistoriserRadio;
+    private JRadioButton entreeCumulRadio;
+    private JTextField entreeFichierRefField;
+    private JButton entreeChoisirFichierButton;
     private JTable entreeHistoriqueTable;
     private DefaultTableModel entreeHistoriqueTableModel;
+    private JComboBox<String> entreeFiltreFamilleCombo;
+    private JComboBox<String> entreeFiltreMagasinCombo;
+    private JTextField entreeFiltreDateDebutField;
+    private JTextField entreeFiltreDateFinField;
     
     // Onglet Sorties
     private JComboBox<String> sortieProduitCombo;
@@ -77,6 +90,7 @@ public class ModernStockPanel extends JPanel {
     private JComboBox<String> sortieMotifCombo;
     private JTextField sortieDateField;
     private JTextArea sortieCommentaireArea;
+    private JComboBox<String> sortieTypeInventaireCombo; // SALLE_VENTE / MAGASIN
     private JTable sortieHistoriqueTable;
     private DefaultTableModel sortieHistoriqueTableModel;
     
@@ -279,13 +293,17 @@ public class ModernStockPanel extends JPanel {
         panel.setBackground(BACKGROUND_COLOR);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Panneau gauche - Formulaire
+        // Panneau gauche - Formulaire (avec scroll)
         JPanel formulairePanel = creerFormulaireEntrees();
+        JScrollPane formulaireScroll = new JScrollPane(formulairePanel);
+        formulaireScroll.setBorder(BorderFactory.createEmptyBorder());
+        formulaireScroll.getViewport().setBackground(CARD_COLOR);
+        formulaireScroll.getVerticalScrollBar().setUnitIncrement(16);
         
         // Panneau droit - Historique
         JPanel historiquePanel = creerHistoriqueEntrees();
         
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, formulairePanel, historiquePanel);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, formulaireScroll, historiquePanel);
         splitPane.setDividerLocation(400);
         splitPane.setResizeWeight(0.4);
         
@@ -309,12 +327,53 @@ public class ModernStockPanel extends JPanel {
 
         // Formulaire
         entreeProduitCombo = creerComboBoxProduits();
+        entreeProduitCombo.setEditable(true);
+        AutoCompleteDecorator.decorate(entreeProduitCombo);
         entreeFournisseurCombo = creerComboBoxFournisseurs();
+        entreeFournisseurCombo.setEditable(true);
+        AutoCompleteDecorator.decorate(entreeFournisseurCombo);
         entreeQuantiteField = creerChampTexte("Quantité");
         entreePrixUnitaireField = creerChampTexte("Prix unitaire");
         entreeDateField = creerChampTexte("Date (yyyy-mm-dd)");
         entreeDateField.setText(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         entreeCommentaireArea = creerZoneTexte("Commentaire");
+        entreeNumeroCommandeField = creerChampTexte("N° Commande");
+        entreeNumeroFactureField = creerChampTexte("N° Facture");
+        entreeStatutCombo = new JComboBox<>(new String[]{
+            "EN_ATTENTE", "COMMANDE", "RECU_PARTIEL", "RECU_COMPLET", "ANNULE"
+        });
+        stylerComboBox(entreeStatutCombo);
+
+        // Type inventaire (Surface de vente / Magasin)
+        entreeTypeInventaireCombo = new JComboBox<>(new String[]{"SALLE_VENTE", "MAGASIN"});
+        stylerComboBox(entreeTypeInventaireCombo);
+        entreeTypeInventaireCombo.setSelectedIndex(0);
+
+        // Options d'entrée: Historiser vs Cumul global
+        ButtonGroup entreeOptionsGroup = new ButtonGroup();
+        entreeHistoriserRadio = new JRadioButton("Historiser");
+        entreeCumulRadio = new JRadioButton("Cumul global", true);
+        for (JRadioButton rb : new JRadioButton[]{entreeHistoriserRadio, entreeCumulRadio}) {
+            rb.setBackground(CARD_COLOR);
+            rb.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            rb.setForeground(TEXT_SECONDARY);
+        }
+        entreeOptionsGroup.add(entreeHistoriserRadio);
+        entreeOptionsGroup.add(entreeCumulRadio);
+        JPanel entreeOptionsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        entreeOptionsPanel.setBackground(CARD_COLOR);
+        entreeOptionsPanel.add(entreeHistoriserRadio);
+        entreeOptionsPanel.add(entreeCumulRadio);
+
+        // Fichier de référence
+        entreeFichierRefField = creerChampTexte("Fichier de référence (PDF/IMG)");
+        entreeFichierRefField.setEditable(false);
+        entreeChoisirFichierButton = creerBouton("📎 Joindre...", INFO_COLOR, e -> choisirFichierReference());
+        JPanel fichierPanel = new JPanel(new BorderLayout(10, 0));
+        fichierPanel.setBackground(CARD_COLOR);
+        entreeFichierRefField.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+        fichierPanel.add(entreeFichierRefField, BorderLayout.CENTER);
+        fichierPanel.add(entreeChoisirFichierButton, BorderLayout.EAST);
 
         // Boutons
         JPanel boutonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
@@ -342,6 +401,18 @@ public class ModernStockPanel extends JPanel {
         panel.add(Box.createVerticalStrut(10));
         panel.add(creerChampAvecLabel("Date:", entreeDateField));
         panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("N° Commande:", entreeNumeroCommandeField));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("N° Facture:", entreeNumeroFactureField));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("Statut réception:", entreeStatutCombo));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("Type d'inventaire:", entreeTypeInventaireCombo));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("Option d'entrée:", entreeOptionsPanel));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("Fichier de référence:", fichierPanel));
+        panel.add(Box.createVerticalStrut(10));
         panel.add(creerChampAvecLabel("Commentaire:", entreeCommentaireArea));
         panel.add(Box.createVerticalStrut(20));
         panel.add(boutonPanel);
@@ -356,10 +427,14 @@ public class ModernStockPanel extends JPanel {
             BorderFactory.createLineBorder(BORDER_COLOR),
             new EmptyBorder(20, 20, 20, 20)));
 
-        // Titre
+        // Titre + filtres
         JLabel titre = new JLabel("📈 Historique des Entrées");
         titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titre.setForeground(TEXT_PRIMARY);
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(CARD_COLOR);
+        header.add(titre, BorderLayout.WEST);
+        header.add(creerFiltresHistoriqueEntrees(), BorderLayout.EAST);
 
         // Tableau
         String[] colonnes = {"Date", "Produit", "Fournisseur", "Quantité", "Prix Total"};
@@ -376,8 +451,7 @@ public class ModernStockPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(entreeHistoriqueTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
-        panel.add(titre, BorderLayout.NORTH);
-        panel.add(Box.createVerticalStrut(15), BorderLayout.NORTH);
+        panel.add(header, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         return panel;
@@ -388,13 +462,17 @@ public class ModernStockPanel extends JPanel {
         panel.setBackground(BACKGROUND_COLOR);
         panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Panneau gauche - Formulaire
+        // Panneau gauche - Formulaire (avec scroll)
         JPanel formulairePanel = creerFormulaireSorties();
+        JScrollPane formulaireScroll = new JScrollPane(formulairePanel);
+        formulaireScroll.setBorder(BorderFactory.createEmptyBorder());
+        formulaireScroll.getViewport().setBackground(CARD_COLOR);
+        formulaireScroll.getVerticalScrollBar().setUnitIncrement(16);
         
         // Panneau droit - Historique
         JPanel historiquePanel = creerHistoriqueSorties();
         
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, formulairePanel, historiquePanel);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, formulaireScroll, historiquePanel);
         splitPane.setDividerLocation(400);
         splitPane.setResizeWeight(0.4);
         
@@ -419,6 +497,8 @@ public class ModernStockPanel extends JPanel {
         // Formulaire
         sortieProduitCombo = creerComboBoxProduits();
         sortieProduitCombo.addActionListener(e -> mettreAJourStockDisponible());
+        sortieProduitCombo.setEditable(true);
+        AutoCompleteDecorator.decorate(sortieProduitCombo);
         
         sortieStockDisponibleLabel = new JLabel("Sélectionnez d'abord un produit");
         sortieStockDisponibleLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
@@ -437,6 +517,11 @@ public class ModernStockPanel extends JPanel {
         sortieDateField = creerChampTexte("Date (yyyy-mm-dd)");
         sortieDateField.setText(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         sortieCommentaireArea = creerZoneTexte("Commentaire");
+
+        // Type inventaire (Surface de vente / Magasin)
+        sortieTypeInventaireCombo = new JComboBox<>(new String[]{"SALLE_VENTE", "MAGASIN"});
+        stylerComboBox(sortieTypeInventaireCombo);
+        sortieTypeInventaireCombo.setSelectedIndex(0);
 
         // Boutons
         JPanel boutonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 0));
@@ -461,6 +546,8 @@ public class ModernStockPanel extends JPanel {
         panel.add(creerChampAvecLabel("Quantité:", sortieQuantiteField));
         panel.add(Box.createVerticalStrut(10));
         panel.add(creerChampAvecLabel("Motif:", sortieMotifCombo));
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("Type d'inventaire:", sortieTypeInventaireCombo));
         panel.add(Box.createVerticalStrut(10));
         panel.add(creerChampAvecLabel("Date:", sortieDateField));
         panel.add(Box.createVerticalStrut(10));
@@ -738,9 +825,49 @@ public class ModernStockPanel extends JPanel {
 
     // === MÉTHODES D'ACTION ===
 
+    private JPanel creerFiltresHistoriqueEntrees() {
+        JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        p.setBackground(CARD_COLOR);
+
+        // Famille de produit
+        p.add(new JLabel("Famille:"));
+        entreeFiltreFamilleCombo = new JComboBox<>(new String[]{"Toutes", "Nutrition", "Soins", "Cosmétiques", "Hygiène"});
+        stylerComboBox(entreeFiltreFamilleCombo);
+        entreeFiltreFamilleCombo.setPreferredSize(new Dimension(140, 32));
+        p.add(entreeFiltreFamilleCombo);
+
+        // Magasin / Surface
+        p.add(new JLabel("Emplacement:"));
+        entreeFiltreMagasinCombo = new JComboBox<>(new String[]{"Tous", "SALLE_VENTE", "MAGASIN"});
+        stylerComboBox(entreeFiltreMagasinCombo);
+        entreeFiltreMagasinCombo.setPreferredSize(new Dimension(120, 32));
+        p.add(entreeFiltreMagasinCombo);
+
+        // Date de ... à ...
+        p.add(new JLabel("Du:"));
+        entreeFiltreDateDebutField = creerChampTexte("yyyy-mm-dd");
+        entreeFiltreDateDebutField.setPreferredSize(new Dimension(110, 32));
+        p.add(entreeFiltreDateDebutField);
+
+        p.add(new JLabel("Au:"));
+        entreeFiltreDateFinField = creerChampTexte("yyyy-mm-dd");
+        entreeFiltreDateFinField.setPreferredSize(new Dimension(110, 32));
+        p.add(entreeFiltreDateFinField);
+
+        JButton appliquer = creerBouton("Filtrer", PRIMARY_COLOR, e -> filtrerHistoriqueEntrees());
+        p.add(appliquer);
+
+        return p;
+    }
+
     private void filtrerVueEnsemble() {
         // TODO: Implémenter le filtrage
         afficherMessage("Filtrage en cours de développement", "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void filtrerHistoriqueEntrees() {
+        // TODO: brancher aux services de filtrage
+        afficherMessage("Filtre appliqué (démo)", "Information", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void enregistrerEntreeStock() {
@@ -771,6 +898,9 @@ public class ModernStockPanel extends JPanel {
                 .quantite(quantite)
                 .commentaire(entreeCommentaireArea.getText().trim())
                 .dateApprovisionnement(LocalDate.parse(entreeDateField.getText().trim()))
+                .numeroCommande(entreeNumeroCommandeField.getText().trim())
+                .numeroFacture(entreeNumeroFactureField.getText().trim())
+                .statut((String) entreeStatutCombo.getSelectedItem())
                 .build();
 
             // Si prix unitaire renseigné
@@ -779,8 +909,15 @@ public class ModernStockPanel extends JPanel {
                 dto.setPrixUnitaire(new java.math.BigDecimal(prixText));
             }
 
-            // Enregistrement
-            stockService.creerEntreeStock(dto);
+            // Fichier de référence
+            if (entreeFichierRefField.getText() != null && !entreeFichierRefField.getText().isBlank()) {
+                dto.setFichierReference(entreeFichierRefField.getText().trim());
+            }
+
+            // Enregistrement avec options Historiser/Cumul + emplacement
+            boolean historiser = entreeHistoriserRadio.isSelected();
+            String typeInventaire = (String) entreeTypeInventaireCombo.getSelectedItem();
+            stockService.creerEntreeStockAvecOptions(dto, typeInventaire, historiser);
             
             afficherMessage("Entrée de stock enregistrée avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
             viderFormulaireEntrees();
@@ -801,6 +938,12 @@ public class ModernStockPanel extends JPanel {
         entreePrixUnitaireField.setText("");
         entreeDateField.setText(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         entreeCommentaireArea.setText("");
+        entreeFichierRefField.setText("");
+        entreeTypeInventaireCombo.setSelectedIndex(0);
+        entreeCumulRadio.setSelected(true);
+        entreeNumeroCommandeField.setText("");
+        entreeNumeroFactureField.setText("");
+        entreeStatutCombo.setSelectedItem("RECU_COMPLET");
     }
 
     private void enregistrerSortieStock() {
@@ -877,5 +1020,13 @@ public class ModernStockPanel extends JPanel {
 
     private void afficherMessage(String message, String titre, int type) {
         JOptionPane.showMessageDialog(this, message, titre, type);
+    }
+
+    private void choisirFichierReference() {
+        JFileChooser chooser = new JFileChooser();
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile() != null) {
+            entreeFichierRefField.setText(chooser.getSelectedFile().getAbsolutePath());
+        }
     }
 }

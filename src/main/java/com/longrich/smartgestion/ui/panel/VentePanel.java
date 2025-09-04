@@ -29,6 +29,9 @@ import com.longrich.smartgestion.entity.Facture;
 // import com.longrich.smartgestion.enums.StatutCommande;
 // import com.longrich.smartgestion.enums.TypeClient;
 import com.longrich.smartgestion.service.ClientService;
+import com.longrich.smartgestion.service.VenteService;
+import com.longrich.smartgestion.service.BonusAttribueService;
+import com.longrich.smartgestion.service.ProduitService;
 import com.longrich.smartgestion.ui.components.ButtonFactory;
 import com.longrich.smartgestion.ui.components.ComponentFactory;
 import com.longrich.smartgestion.ui.components.ModernDatePicker;
@@ -42,6 +45,9 @@ import lombok.RequiredArgsConstructor;
 public class VentePanel extends JPanel {
 
     private final ClientService clientService;
+    private final VenteService venteService;
+    private final BonusAttribueService bonusAttribueService;
+    private final ProduitService produitService;
 
     // Composants UI
     private JTextField searchField;
@@ -56,6 +62,16 @@ public class VentePanel extends JPanel {
     private JLabel caMoisLabel;
     private JLabel commandesEnCoursLabel;
     private JTabbedPane tabbedPane;
+    // Promo tab components
+    private JTable promosTable;
+    private DefaultTableModel promosModel;
+    private JTable bonusNonDistribuesTable;
+    private DefaultTableModel bonusNonDistribuesModel;
+    private JTable bonusRapportTable;
+    private DefaultTableModel bonusRapportModel;
+    private ModernDatePicker bonusDateDebutPicker;
+    private ModernDatePicker bonusDateFinPicker;
+    private JComboBox<String> bonusProduitCombo;
 
     // Données simulées
     private List<VenteRecord> ventes;
@@ -159,6 +175,9 @@ public class VentePanel extends JPanel {
 
         // Onglet Rapports
         tabbedPane.addTab("📈 Rapports", createReportsPanel());
+
+        // Onglet Ventes promotionnelles
+        tabbedPane.addTab("⭐ Promo", createPromotionsPanel());
 
         add(tabbedPane, BorderLayout.CENTER);
     }
@@ -672,8 +691,69 @@ public class VentePanel extends JPanel {
     }
 
     private void createNewSale() {
-        JOptionPane.showMessageDialog(this, "Création d'une nouvelle vente en cours de développement",
-                "Information", JOptionPane.INFORMATION_MESSAGE);
+        JDialog d = new JDialog(SwingUtilities.getWindowAncestor(this), "Nouvelle vente", Dialog.ModalityType.APPLICATION_MODAL);
+        JPanel p = ComponentFactory.createCardPanel();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+
+        JComboBox<String> clientCombo = ComponentFactory.createStyledComboBox();
+        JComboBox<String> produitCombo = ComponentFactory.createStyledComboBox();
+        JTextField quantiteField = ComponentFactory.createStyledTextField();
+
+        // Charger données
+        List<com.longrich.smartgestion.dto.ClientDTO> clients;
+        List<com.longrich.smartgestion.dto.ProduitDto> produits;
+        try {
+            clients = clientService.getAllClients();
+            produits = produitService.getActiveProduits();
+        } catch (Exception ex) { clients = List.of(); produits = List.of(); }
+
+        for (var c : clients) clientCombo.addItem((c.getNom() + " " + c.getPrenom()) + " (ID:" + c.getId() + ")");
+        for (var pr : produits) produitCombo.addItem(pr.getLibelle() + " (ID:" + pr.getId() + ")");
+
+        p.add(ComponentFactory.createFieldPanel("Client", clientCombo));
+        p.add(ComponentFactory.createFieldPanel("Produit", produitCombo));
+        p.add(ComponentFactory.createFieldPanel("Quantité", quantiteField));
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actions.setBackground(ComponentFactory.getCardColor());
+        JButton cancel = ButtonFactory.createActionButton(FontAwesomeSolid.TIMES, "Annuler", ComponentFactory.getSecondaryColor(), e -> d.dispose());
+        final java.util.List<com.longrich.smartgestion.dto.ClientDTO> clientsFinal = clients;
+        final java.util.List<com.longrich.smartgestion.dto.ProduitDto> produitsFinal = produits;
+        JButton save = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Valider", ComponentFactory.getSuccessColor(), e -> {
+            try {
+                int ci = clientCombo.getSelectedIndex();
+                int pi = produitCombo.getSelectedIndex();
+                if (ci < 0 || pi < 0) {
+                    JOptionPane.showMessageDialog(d, "Sélectionnez un client et un produit", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                int q = Integer.parseInt(quantiteField.getText().trim());
+                if (q <= 0) throw new NumberFormatException();
+                Long clientId = clientsFinal.get(ci).getId();
+                Long produitId = produitsFinal.get(pi).getId();
+                venteService.effectuerVente(clientId, produitId, q);
+                JOptionPane.showMessageDialog(d, "Vente enregistrée (SALLE_VENTE)", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                d.dispose();
+                loadVentesData();
+                updateStatistics();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(d, "Quantité invalide", "Erreur", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(d, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        actions.add(cancel);
+        actions.add(save);
+
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(ComponentFactory.getBackgroundColor());
+        container.add(p, BorderLayout.CENTER);
+        container.add(actions, BorderLayout.SOUTH);
+
+        d.setContentPane(container);
+        d.pack();
+        d.setLocationRelativeTo(this);
+        d.setVisible(true);
     }
 
     private void refreshData() {
@@ -739,6 +819,220 @@ public class VentePanel extends JPanel {
     private void generateReport() {
         JOptionPane.showMessageDialog(this, "Génération de rapport en cours de développement",
                 "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // === Promotions ===
+    private JPanel createPromotionsPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(ComponentFactory.getBackgroundColor());
+
+        JTabbedPane promosTabs = new JTabbedPane();
+        promosTabs.addTab("🎯 Actives", createActivePromosTab());
+        promosTabs.addTab("🎁 Bonus à distribuer", createBonusDistributionTab());
+        promosTabs.addTab("📊 Rapport Bonus", createBonusReportTab());
+
+        panel.add(promosTabs, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JPanel createActivePromosTab() {
+        JPanel panel = ComponentFactory.createCardPanel();
+        panel.setLayout(new BorderLayout());
+        JLabel title = ComponentFactory.createSectionTitle("Promotions actives");
+        panel.add(title, BorderLayout.NORTH);
+
+        String[] cols = {"Promotion", "Période", "Produit", "Bonus", "Seuil", "Qté Bonus"};
+        promosModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        promosTable = new JTable(promosModel);
+        styleTable(promosTable);
+        panel.add(new JScrollPane(promosTable), BorderLayout.CENTER);
+
+        loadActivePromotions();
+        return panel;
+    }
+
+    private JPanel createBonusDistributionTab() {
+        JPanel panel = ComponentFactory.createCardPanel();
+        panel.setLayout(new BorderLayout());
+        JLabel title = ComponentFactory.createSectionTitle("Bonus à distribuer");
+        panel.add(title, BorderLayout.NORTH);
+
+        String[] cols = {"ID Bonus", "Client", "Produit Bonus", "Quantité", "Attribué le", "Action"};
+        bonusNonDistribuesModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return c == 5; }
+        };
+        bonusNonDistribuesTable = new JTable(bonusNonDistribuesModel);
+        styleTable(bonusNonDistribuesTable);
+        panel.add(new JScrollPane(bonusNonDistribuesTable), BorderLayout.CENTER);
+
+        JButton refresh = ButtonFactory.createActionButton(FontAwesomeSolid.SYNC_ALT, "Actualiser",
+                ComponentFactory.getSecondaryColor(), e -> loadNonDistributedBonus());
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actions.setBackground(ComponentFactory.getCardColor());
+        actions.add(refresh);
+        panel.add(actions, BorderLayout.SOUTH);
+
+        loadNonDistributedBonus();
+        return panel;
+    }
+
+    private JPanel createBonusReportTab() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(ComponentFactory.getBackgroundColor());
+
+        JPanel filters = ComponentFactory.createCardPanel();
+        filters.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        filters.add(ComponentFactory.createLabel("Produit:"));
+        bonusProduitCombo = ComponentFactory.createStyledComboBox();
+        populateBonusProductCombo();
+        filters.add(bonusProduitCombo);
+        filters.add(ComponentFactory.createLabel("Du:"));
+        bonusDateDebutPicker = new ModernDatePicker(LocalDateTime.now().minusMonths(1).toLocalDate());
+        filters.add(bonusDateDebutPicker);
+        filters.add(ComponentFactory.createLabel("Au:"));
+        bonusDateFinPicker = new ModernDatePicker(LocalDateTime.now().toLocalDate());
+        filters.add(bonusDateFinPicker);
+        JButton apply = ButtonFactory.createActionButton(FontAwesomeSolid.FILTER, "Filtrer",
+                ComponentFactory.getPrimaryColor(), e -> loadBonusReport());
+        filters.add(apply);
+
+        panel.add(filters, BorderLayout.NORTH);
+
+        String[] cols = {"Date", "Client", "Produit Bonus", "Quantité", "Observation"};
+        bonusRapportModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        bonusRapportTable = new JTable(bonusRapportModel);
+        styleTable(bonusRapportTable);
+        panel.add(new JScrollPane(bonusRapportTable), BorderLayout.CENTER);
+
+        JPanel bottom = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottom.setBackground(ComponentFactory.getBackgroundColor());
+        JButton export = ButtonFactory.createActionButton(FontAwesomeSolid.FILE_EXPORT, "Exporter CSV",
+                ComponentFactory.getSuccessColor(), e -> exportBonusReport());
+        bottom.add(export);
+        panel.add(bottom, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void loadActivePromotions() {
+        promosModel.setRowCount(0);
+        // Minimal: pull from repository via service if available later; here placeholder to keep UI responsive
+        try {
+            var promos = venteService.getPromotionsActives();
+            DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            for (var pp : promos) {
+                String periode = pp.getVentePromotionnelle().getDateDebut().format(f) + " → " + pp.getVentePromotionnelle().getDateFin().format(f);
+                promosModel.addRow(new Object[]{
+                        pp.getVentePromotionnelle().getNom(),
+                        periode,
+                        pp.getProduit().getLibelle(),
+                        pp.getProduitBonus().getLibelle(),
+                        pp.getQuantiteMinimum(),
+                        pp.getQuantiteBonus()
+                });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void loadNonDistributedBonus() {
+        bonusNonDistribuesModel.setRowCount(0);
+        try {
+            var list = venteService.getBonusNonDistribues();
+            DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            for (var b : list) {
+                bonusNonDistribuesModel.addRow(new Object[]{
+                        b.getId(),
+                        b.getClient().getNomComplet(),
+                        b.getProduitPromotionnel().getProduitBonus().getLibelle(),
+                        b.getQuantiteBonus(),
+                        b.getDateAttribution().format(f),
+                        "Distribuer"
+                });
+            }
+
+            // Simple action-on-click to distribuer
+            bonusNonDistribuesTable.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                    int row = bonusNonDistribuesTable.rowAtPoint(e.getPoint());
+                    int col = bonusNonDistribuesTable.columnAtPoint(e.getPoint());
+                    if (row >= 0 && col == 5) {
+                        Long id = Long.valueOf(bonusNonDistribuesModel.getValueAt(row, 0).toString());
+                        try {
+                            venteService.distribuerBonus(id);
+                            JOptionPane.showMessageDialog(VentePanel.this, "Bonus distribué", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                            loadNonDistributedBonus();
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(VentePanel.this, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+                        }
+                    }
+                }
+            });
+        } catch (Exception ignored) {}
+    }
+
+    private void populateBonusProductCombo() {
+        try {
+            var produits = produitService.getActiveProduits();
+            bonusProduitCombo.removeAllItems();
+            for (var p : produits) bonusProduitCombo.addItem(p.getLibelle() + " (ID:" + p.getId() + ")");
+            if (bonusProduitCombo.getItemCount() > 0) bonusProduitCombo.setSelectedIndex(0);
+        } catch (Exception ignored) {}
+    }
+
+    private void loadBonusReport() {
+        bonusRapportModel.setRowCount(0);
+        try {
+            int idx = bonusProduitCombo.getSelectedIndex();
+            if (idx < 0) return;
+            var produits = produitService.getActiveProduits();
+            Long produitId = produits.get(idx).getId();
+            java.time.LocalDate sd = bonusDateDebutPicker.getSelectedDate() != null
+                ? bonusDateDebutPicker.getSelectedDate() : java.time.LocalDate.now().minusMonths(1);
+            java.time.LocalDate ed = bonusDateFinPicker.getSelectedDate() != null
+                ? bonusDateFinPicker.getSelectedDate() : java.time.LocalDate.now();
+            var start = sd.atStartOfDay();
+            var end = ed.atTime(23,59,59);
+            var list = bonusAttribueService.getBonusSortiesByProduitAndPeriod(produitId, start, end);
+            DateTimeFormatter f = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            for (var b : list) {
+                bonusRapportModel.addRow(new Object[]{
+                        b.getDateAttribution().format(f),
+                        b.getClient().getNomComplet(),
+                        b.getProduitPromotionnel().getProduitBonus().getLibelle(),
+                        b.getQuantiteBonus(),
+                        b.getObservation()
+                });
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void exportBonusReport() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setSelectedFile(new File("bonus_report.csv"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File file = chooser.getSelectedFile();
+        try (FileWriter fw = new FileWriter(file)) {
+            for (int c=0;c<bonusRapportTable.getColumnCount();c++) {
+                fw.append(bonusRapportTable.getColumnName(c));
+                if (c<bonusRapportTable.getColumnCount()-1) fw.append(',');
+            }
+            fw.append('\n');
+            for (int r=0;r<bonusRapportTable.getRowCount();r++) {
+                for (int c=0;c<bonusRapportTable.getColumnCount();c++) {
+                    Object v = bonusRapportTable.getValueAt(r,c);
+                    fw.append(v==null?"":v.toString());
+                    if (c<bonusRapportTable.getColumnCount()-1) fw.append(',');
+                }
+                fw.append('\n');
+            }
+            JOptionPane.showMessageDialog(this, "Export réussi", "Succès", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     // Classe interne pour les données de vente
