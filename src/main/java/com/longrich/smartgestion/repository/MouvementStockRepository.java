@@ -27,4 +27,12 @@ public interface MouvementStockRepository extends JpaRepository<MouvementStock, 
     List<MouvementStock> findByProduitAndDateBetween(@Param("produitId") Long produitId,
             @Param("debut") LocalDateTime debut,
             @Param("fin") LocalDateTime fin);
+
+    // Comptage des mouvements du jour
+    @Query("SELECT COUNT(m) FROM MouvementStock m WHERE DATE(m.dateMouvement) = CURRENT_DATE")
+    Long countByDateMouvementToday();
+
+    // Comptage par type et date du jour
+    @Query("SELECT COUNT(m) FROM MouvementStock m WHERE m.typeMouvement = :type AND DATE(m.dateMouvement) = CURRENT_DATE")
+    Long countByTypeMouvementAndDateToday(@Param("type") TypeMouvement type);
 }

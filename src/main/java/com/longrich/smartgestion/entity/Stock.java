@@ -46,6 +46,12 @@ public class Stock extends BaseEntity {
 
     @Column(name = "type_stock", length = 20)
     private String typeStock; // ENTREPOT, MAGASIN, SALLE_VENTE
+    
+    @Column(name = "date_entree")
+    private java.time.LocalDate dateEntree;
+    
+    @Column(name = "fichier_reference")
+    private String fichierReference;
 
     // Méthodes utilitaires
     public Integer getQuantiteDisponible() {

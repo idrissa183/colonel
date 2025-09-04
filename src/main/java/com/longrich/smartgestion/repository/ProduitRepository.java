@@ -29,4 +29,7 @@ public interface ProduitRepository extends JpaRepository<Produit, Long> {
        @Query("SELECT p FROM Produit p JOIN p.stocks s WHERE " +
                      "s.quantite - s.quantiteReservee > 0 AND p.active = true")
        List<Produit> findProduitsEnStock();
+       
+       // Autocomplétion pour les produits
+       List<Produit> findByLibelleContainingIgnoreCase(String libelle);
 }

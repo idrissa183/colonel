@@ -78,6 +78,9 @@ public class Commande extends BaseEntity {
 
     @Column(name = "observations", columnDefinition = "TEXT")
     private String observations;
+    
+    @Column(name = "fichier_reference")
+    private String fichierReference;
 
     // Relations
     @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -26,7 +26,7 @@ import com.longrich.smartgestion.ui.panel.FournisseurPanel;
 import com.longrich.smartgestion.ui.panel.ProduitContainerPanel;
 import com.longrich.smartgestion.ui.panel.PvPanel;
 import com.longrich.smartgestion.ui.panel.SettingsPanel;
-import com.longrich.smartgestion.ui.panel.StockPanel;
+import com.longrich.smartgestion.ui.panel.ModernStockPanel;
 import com.longrich.smartgestion.ui.panel.UserPanel;
 import com.longrich.smartgestion.ui.panel.VentePanel;
 
@@ -43,7 +43,7 @@ public class MainFrame extends JFrame {
     private final DashboardPanel dashboardPanel;
     private final ClientPanel clientPanel;
     private final ProduitContainerPanel produitContainerPanel;
-    private final StockPanel stockPanel;
+    private final ModernStockPanel stockPanel;
     private final CommandePanel commandePanel;
     private final FournisseurPanel fournisseurPanel;
     private final AnalyticsPanel analyticsPanel;
@@ -84,6 +84,9 @@ public class MainFrame extends JFrame {
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
+        // Initialiser le nouveau panneau de stock
+        stockPanel.initializeUI();
+        
         // Ajouter les panneaux au CardLayout
         contentPanel.add(dashboardPanel, "dashboard");
         contentPanel.add(clientPanel, "clients");
