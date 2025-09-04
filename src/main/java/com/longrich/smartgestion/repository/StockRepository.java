@@ -121,4 +121,14 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
                                      @Param("magasin") String magasin,
                                      @Param("dateDebut") java.time.LocalDate dateDebut,
                                      @Param("dateFin") java.time.LocalDate dateFin);
+
+    // Entrées historisées par typeStock et période (rapport par emplacement)
+    @Query("SELECT s FROM Stock s JOIN s.produit p WHERE " +
+           "(:typeStock IS NULL OR s.typeStock = :typeStock) AND " +
+           "(:dateDebut IS NULL OR s.dateEntree >= :dateDebut) AND " +
+           "(:dateFin IS NULL OR s.dateEntree <= :dateFin) " +
+           "ORDER BY s.dateEntree DESC")
+    List<Stock> findHistorisedEntries(@Param("typeStock") String typeStock,
+                                      @Param("dateDebut") java.time.LocalDate dateDebut,
+                                      @Param("dateFin") java.time.LocalDate dateFin);
 }

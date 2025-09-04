@@ -60,7 +60,22 @@ public class Navbar extends JPanel {
         setBackground(NAVBAR_BG);
         setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR));
 
+        createLeftSection();
         createRightSection();
+    }
+
+    private void createLeftSection() {
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 0));
+        leftPanel.setBackground(NAVBAR_BG);
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+
+        // Titre de la page
+        titleLabel = new JLabel("Dashboard");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(TEXT_PRIMARY);
+        leftPanel.add(titleLabel);
+
+        add(leftPanel, BorderLayout.WEST);
     }
 
     private void createRightSection() {

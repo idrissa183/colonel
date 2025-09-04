@@ -81,6 +81,12 @@ public class ModernStockPanel extends JPanel {
     private JButton entreeChoisirFichierButton;
     private JTable entreeHistoriqueTable;
     private DefaultTableModel entreeHistoriqueTableModel;
+    // Rapport Entrées par emplacement
+    private JTable entreesEmplacementTable;
+    private DefaultTableModel entreesEmplacementModel;
+    private JComboBox<String> entreesEmpTypeCombo;
+    private JTextField entreesEmpDateDebutField;
+    private JTextField entreesEmpDateFinField;
     private JComboBox<String> entreeFiltreFamilleCombo;
     private JComboBox<String> entreeFiltreMagasinCombo;
     private JTextField entreeFiltreDateDebutField;
@@ -424,13 +430,24 @@ public class ModernStockPanel extends JPanel {
     }
 
     private JPanel creerHistoriqueEntrees() {
+        // Onglets: Historique approvisionnements | Entrées par emplacement
+        JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("📈 Approvisionnements", creerTabApprovisionnements());
+        tabs.addTab("🏬 Entrées par emplacement", creerTabEntreesParEmplacement());
+
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBackground(CARD_COLOR);
+        container.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COLOR), new EmptyBorder(0,0,0,0)));
+        container.add(tabs, BorderLayout.CENTER);
+        return container;
+    }
+
+    private JPanel creerTabApprovisionnements() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(CARD_COLOR);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BORDER_COLOR),
-            new EmptyBorder(20, 20, 20, 20)));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Titre + filtres
         JLabel titre = new JLabel("📈 Historique des Entrées");
         titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titre.setForeground(TEXT_PRIMARY);
@@ -439,25 +456,84 @@ public class ModernStockPanel extends JPanel {
         header.add(titre, BorderLayout.WEST);
         header.add(creerFiltresHistoriqueEntrees(), BorderLayout.EAST);
 
-        // Tableau
         String[] colonnes = {"Date", "Produit", "Fournisseur", "Quantité", "Prix Total"};
         entreeHistoriqueTableModel = new DefaultTableModel(colonnes, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-
         entreeHistoriqueTable = new JTable(entreeHistoriqueTableModel);
         stylerTableau(entreeHistoriqueTable);
-
         JScrollPane scrollPane = new JScrollPane(entreeHistoriqueTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
 
         panel.add(header, BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
-
         return panel;
+    }
+
+    private JPanel creerTabEntreesParEmplacement() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // Filtres
+        JPanel filtres = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        filtres.setBackground(CARD_COLOR);
+        filtres.add(new JLabel("Emplacement:"));
+        entreesEmpTypeCombo = new JComboBox<>(new String[]{"Tous", "SALLE_VENTE", "MAGASIN"});
+        stylerComboBox(entreesEmpTypeCombo);
+        entreesEmpTypeCombo.setPreferredSize(new Dimension(140, 32));
+        filtres.add(entreesEmpTypeCombo);
+        filtres.add(new JLabel("Du:"));
+        entreesEmpDateDebutField = creerChampTexte("yyyy-mm-dd");
+        entreesEmpDateDebutField.setPreferredSize(new Dimension(110, 32));
+        filtres.add(entreesEmpDateDebutField);
+        filtres.add(new JLabel("Au:"));
+        entreesEmpDateFinField = creerChampTexte("yyyy-mm-dd");
+        entreesEmpDateFinField.setPreferredSize(new Dimension(110, 32));
+        filtres.add(entreesEmpDateFinField);
+        JButton go = creerBouton("Filtrer", PRIMARY_COLOR, e -> filtrerEntreesParEmplacement());
+        filtres.add(go);
+
+        // Tableau
+        String[] cols = {"Date entrée", "Emplacement", "Produit", "Quantité", "Fichier Réf"};
+        entreesEmplacementModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        entreesEmplacementTable = new JTable(entreesEmplacementModel);
+        stylerTableau(entreesEmplacementTable);
+        JScrollPane scr = new JScrollPane(entreesEmplacementTable);
+        scr.setBorder(BorderFactory.createEmptyBorder());
+
+        panel.add(filtres, BorderLayout.NORTH);
+        panel.add(scr, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void filtrerEntreesParEmplacement() {
+        try {
+            String type = null;
+            int idx = entreesEmpTypeCombo.getSelectedIndex();
+            if (idx == 1) type = "SALLE_VENTE"; else if (idx == 2) type = "MAGASIN";
+            java.time.LocalDate d1 = null, d2 = null;
+            String s1 = entreesEmpDateDebutField.getText().trim();
+            String s2 = entreesEmpDateFinField.getText().trim();
+            if (!s1.isEmpty()) d1 = java.time.LocalDate.parse(s1);
+            if (!s2.isEmpty()) d2 = java.time.LocalDate.parse(s2);
+
+            java.util.List<com.longrich.smartgestion.entity.Stock> list = stockService.getEntreesParEmplacement(type, d1, d2);
+            entreesEmplacementModel.setRowCount(0);
+            for (var s : list) {
+                entreesEmplacementModel.addRow(new Object[]{
+                    s.getDateEntree() != null ? s.getDateEntree().toString() : "",
+                    s.getTypeStock(),
+                    s.getProduit() != null ? s.getProduit().getLibelle() : "",
+                    s.getQuantite(),
+                    s.getFichierReference() != null ? s.getFichierReference() : ""
+                });
+            }
+        } catch (Exception ex) {
+            afficherMessage("Erreur filtre emplacement: " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private JPanel creerOngletSorties() {

@@ -271,6 +271,11 @@ public class StockService {
             .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<Stock> getEntreesParEmplacement(String typeStock, LocalDate dateDebut, LocalDate dateFin) {
+        return stockRepository.findHistorisedEntries(typeStock, dateDebut, dateFin);
+    }
+
     // === MÉTHODES PRIVÉES ===
 
     private void mettreAJourStockApresEntree(Produit produit, Integer quantite) {

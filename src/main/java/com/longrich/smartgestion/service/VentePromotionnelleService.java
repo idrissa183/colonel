@@ -1,8 +1,12 @@
 package com.longrich.smartgestion.service;
 
 import com.longrich.smartgestion.dto.VentePromotionnelleDTO;
+import com.longrich.smartgestion.dto.ProduitPromotionnelDTO;
 import com.longrich.smartgestion.entity.VentePromotionnelle;
+import com.longrich.smartgestion.entity.ProduitPromotionnel;
+import com.longrich.smartgestion.entity.Produit;
 import com.longrich.smartgestion.repository.VentePromotionnelleRepository;
+import com.longrich.smartgestion.repository.ProduitRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +21,7 @@ import java.util.Optional;
 public class VentePromotionnelleService {
     
     private final VentePromotionnelleRepository ventePromotionnelleRepository;
+    private final ProduitRepository produitRepository;
     
     public List<VentePromotionnelle> getAllActivePromotions() {
         return ventePromotionnelleRepository.findByActiveTrue();
@@ -48,5 +53,34 @@ public class VentePromotionnelleService {
     
     public List<VentePromotionnelle> findByPeriod(LocalDate startDate, LocalDate endDate) {
         return ventePromotionnelleRepository.findByDateDebutBetween(startDate, endDate);
+    }
+
+    public VentePromotionnelle createPromotion(VentePromotionnelleDTO dto, java.util.List<ProduitPromotionnelDTO> lignes) {
+        VentePromotionnelle vp = VentePromotionnelle.builder()
+                .nom(dto.getNom())
+                .description(dto.getDescription())
+                .dateDebut(dto.getDateDebut())
+                .dateFin(dto.getDateFin())
+                .active(Boolean.TRUE.equals(dto.getActive()))
+                .build();
+
+        java.util.Set<ProduitPromotionnel> set = new java.util.HashSet<>();
+        for (ProduitPromotionnelDTO l : lignes) {
+            Produit produit = produitRepository.findById(l.getProduitId())
+                    .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé: " + l.getProduitId()));
+            Produit bonus = produitRepository.findById(l.getProduitBonusId())
+                    .orElseThrow(() -> new IllegalArgumentException("Produit bonus non trouvé: " + l.getProduitBonusId()));
+            ProduitPromotionnel pp = ProduitPromotionnel.builder()
+                    .ventePromotionnelle(vp)
+                    .produit(produit)
+                    .produitBonus(bonus)
+                    .quantiteMinimum(l.getQuantiteMinimum())
+                    .quantiteBonus(l.getQuantiteBonus())
+                    .description(l.getDescription())
+                    .build();
+            set.add(pp);
+        }
+        vp.setProduitsPromotionnels(set);
+        return ventePromotionnelleRepository.save(vp);
     }
 }

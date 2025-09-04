@@ -81,6 +81,11 @@ public class ClientService {
 
         Client client = clientMapper.toEntity(clientDTO);
         
+        // Initialiser totalPv pour les clients non-partenaires si null
+        if (client.getTypeClient() != TypeClient.PARTENAIRE && client.getTotalPv() == null) {
+            client.setTotalPv(0);
+        }
+        
         // Gérer la province
         if (clientDTO.getProvince() != null) {
             provinceService.findByNom(clientDTO.getProvince())
@@ -195,7 +200,8 @@ public class ClientService {
         Client client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new IllegalArgumentException("Client non trouvé"));
 
-        client.setTotalPv(client.getTotalPv() + pv);
+        Integer totalActuel = client.getTotalPv() != null ? client.getTotalPv() : 0;
+        client.setTotalPv(totalActuel + pv);
         clientRepository.save(client);
         log.info("PV ajoutés au client {}: +{} (Total: {})", client.getId(), pv, client.getTotalPv());
     }

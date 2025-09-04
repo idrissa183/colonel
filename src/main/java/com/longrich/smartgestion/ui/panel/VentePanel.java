@@ -32,6 +32,7 @@ import com.longrich.smartgestion.service.ClientService;
 import com.longrich.smartgestion.service.VenteService;
 import com.longrich.smartgestion.service.BonusAttribueService;
 import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.service.VentePromotionnelleService;
 import com.longrich.smartgestion.ui.components.ButtonFactory;
 import com.longrich.smartgestion.ui.components.ComponentFactory;
 import com.longrich.smartgestion.ui.components.ModernDatePicker;
@@ -48,6 +49,7 @@ public class VentePanel extends JPanel {
     private final VenteService venteService;
     private final BonusAttribueService bonusAttribueService;
     private final ProduitService produitService;
+    private final VentePromotionnelleService ventePromotionnelleService;
 
     // Composants UI
     private JTextField searchField;
@@ -862,9 +864,127 @@ public class VentePanel extends JPanel {
         promosTabs.addTab("🎯 Actives", createActivePromosTab());
         promosTabs.addTab("🎁 Bonus à distribuer", createBonusDistributionTab());
         promosTabs.addTab("📊 Rapport Bonus", createBonusReportTab());
+        promosTabs.addTab("⚙ Administration", createPromoAdminTab());
 
         panel.add(promosTabs, BorderLayout.CENTER);
         return panel;
+    }
+
+    private JPanel createPromoAdminTab() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(ComponentFactory.getBackgroundColor());
+
+        JPanel form = ComponentFactory.createCardPanel();
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+
+        JTextField nomField = ComponentFactory.createStyledTextField();
+        JTextArea descArea = ComponentFactory.createStyledTextArea(3);
+        ModernDatePicker dDebut = new ModernDatePicker(LocalDateTime.now().toLocalDate());
+        ModernDatePicker dFin = new ModernDatePicker(LocalDateTime.now().plusWeeks(1).toLocalDate());
+        JCheckBox activeBox = new JCheckBox("Active");
+        activeBox.setSelected(true);
+
+        form.add(ComponentFactory.createFieldPanel("Nom", nomField));
+        form.add(ComponentFactory.createFieldPanel("Description", new JScrollPane(descArea)));
+        form.add(ComponentFactory.createFieldPanel("Date début", dDebut));
+        form.add(ComponentFactory.createFieldPanel("Date fin", dFin));
+        JPanel activePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        activePanel.setBackground(ComponentFactory.getCardColor());
+        activePanel.add(activeBox);
+        form.add(ComponentFactory.createFieldPanel("Statut", activePanel));
+
+        // Lignes produits
+        JPanel linesPanel = new JPanel();
+        linesPanel.setLayout(new BoxLayout(linesPanel, BoxLayout.Y_AXIS));
+        linesPanel.setBackground(ComponentFactory.getCardColor());
+
+        JButton addLine = ButtonFactory.createActionButton(FontAwesomeSolid.PLUS, "Ajouter produit", ComponentFactory.getPrimaryColor(), e -> {
+            linesPanel.add(createPromoLine());
+            linesPanel.revalidate();
+            linesPanel.repaint();
+        });
+        form.add(ComponentFactory.createSectionTitle("Produits en promotion"));
+        form.add(linesPanel);
+        JPanel lineActions = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        lineActions.setBackground(ComponentFactory.getCardColor());
+        lineActions.add(addLine);
+        form.add(lineActions);
+
+        // Boutons
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actions.setBackground(ComponentFactory.getBackgroundColor());
+        JButton save = ButtonFactory.createActionButton(FontAwesomeSolid.SAVE, "Enregistrer", ComponentFactory.getSuccessColor(), e -> {
+            try {
+                var dto = com.longrich.smartgestion.dto.VentePromotionnelleDTO.builder()
+                        .nom(nomField.getText().trim())
+                        .description(descArea.getText().trim())
+                        .dateDebut(dDebut.getSelectedDate())
+                        .dateFin(dFin.getSelectedDate())
+                        .active(activeBox.isSelected())
+                        .build();
+
+                java.util.List<com.longrich.smartgestion.dto.ProduitPromotionnelDTO> lignes = new java.util.ArrayList<>();
+                for (java.awt.Component c : linesPanel.getComponents()) {
+                    if (c instanceof JPanel pLine) {
+                        @SuppressWarnings("unchecked") JComboBox<String> prodCombo = (JComboBox<String>) pLine.getClientProperty("prod");
+                        @SuppressWarnings("unchecked") JComboBox<String> bonusCombo = (JComboBox<String>) pLine.getClientProperty("bonus");
+                        JTextField qMinField = (JTextField) pLine.getClientProperty("qmin");
+                        JTextField qBonusField = (JTextField) pLine.getClientProperty("qbonus");
+
+                        int pi = prodCombo.getSelectedIndex();
+                        int bi = bonusCombo.getSelectedIndex();
+                        if (pi < 0 || bi < 0) continue;
+                        var produits = produitService.getActiveProduits();
+                        Long produitId = produits.get(pi).getId();
+                        Long bonusId = produits.get(bi).getId();
+                        int qmin = Integer.parseInt(qMinField.getText().trim());
+                        int qbonus = Integer.parseInt(qBonusField.getText().trim());
+
+                        lignes.add(com.longrich.smartgestion.dto.ProduitPromotionnelDTO.builder()
+                                .produitId(produitId)
+                                .produitBonusId(bonusId)
+                                .quantiteMinimum(qmin)
+                                .quantiteBonus(qbonus)
+                                .build());
+                    }
+                }
+
+                if (lignes.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Ajoutez au moins un produit en promotion", "Information", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+
+                ventePromotionnelleService.createPromotion(dto, lignes);
+                JOptionPane.showMessageDialog(this, "Promotion enregistrée", "Succès", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        actions.add(save);
+
+        panel.add(form, BorderLayout.CENTER);
+        panel.add(actions, BorderLayout.SOUTH);
+        return panel;
+    }
+
+    private JPanel createPromoLine() {
+        JPanel line = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        line.setBackground(ComponentFactory.getCardColor());
+        var produits = produitService.getActiveProduits();
+        JComboBox<String> prodCombo = ComponentFactory.createStyledComboBox();
+        JComboBox<String> bonusCombo = ComponentFactory.createStyledComboBox();
+        for (var p : produits) { prodCombo.addItem(p.getLibelle() + " (ID:" + p.getId() + ")"); bonusCombo.addItem(p.getLibelle() + " (ID:" + p.getId() + ")"); }
+        JTextField qMin = ComponentFactory.createStyledTextField(); qMin.setPreferredSize(new Dimension(80, 38)); qMin.setText("1");
+        JTextField qBonus = ComponentFactory.createStyledTextField(); qBonus.setPreferredSize(new Dimension(80, 38)); qBonus.setText("1");
+        line.putClientProperty("prod", prodCombo);
+        line.putClientProperty("bonus", bonusCombo);
+        line.putClientProperty("qmin", qMin);
+        line.putClientProperty("qbonus", qBonus);
+        line.add(new JLabel("Produit:")); line.add(prodCombo);
+        line.add(new JLabel("Bonus:")); line.add(bonusCombo);
+        line.add(new JLabel("Seuil:")); line.add(qMin);
+        line.add(new JLabel("Bonus Qté:")); line.add(qBonus);
+        return line;
     }
 
     private JPanel createActivePromosTab() {
