@@ -994,110 +994,56 @@ public class CommandePanel extends JPanel {
             return;
         }
 
-        // Créer et afficher la barre de progression
-        JProgressBar progressBar = new JProgressBar(0, 100);
-        progressBar.setStringPainted(true);
-        progressBar.setString("Initialisation...");
-        
-        JDialog progressDialog = new JDialog((java.awt.Frame) SwingUtilities.getWindowAncestor(this), 
-            "Création de la commande", true);
-        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
-        progressDialog.setSize(400, 120);
-        progressDialog.setLocationRelativeTo(this);
-        
-        JPanel progressPanel = new JPanel(new BorderLayout(10, 10));
-        progressPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        progressPanel.add(new JLabel("Création de la commande fournisseur en cours..."), BorderLayout.NORTH);
-        progressPanel.add(progressBar, BorderLayout.CENTER);
-        progressDialog.add(progressPanel);
-        
-        // Traitement en arrière-plan
-        SwingWorker<CommandeFournisseur, Integer> worker = new SwingWorker<CommandeFournisseur, Integer>() {
-            @Override
-            protected CommandeFournisseur doInBackground() throws Exception {
-                // Étape 1: Préparation des données
-                publish(20);
-                setProgress("Préparation des données...");
-                Thread.sleep(200);
-                
-                FournisseurDTO selectedFournisseur = fournisseursList.get(fournisseurCombo.getSelectedIndex());
-                
-                CommandeFournisseurDTO commandeDTO = CommandeFournisseurDTO.builder()
-                    .fournisseurId(selectedFournisseur.getId())
-                    .dateCommande(dateCommandePicker.getSelectedDate().atStartOfDay())
-                    .dateLivraisonPrevue(dateLivraisonPrevuePicker.getSelectedDate() != null ? 
-                        dateLivraisonPrevuePicker.getSelectedDate().atStartOfDay() : null)
-                    .observations(observationsArea.getText())
-                    .build();
-                
-                // Étape 2: Création des lignes
-                publish(40);
-                setProgress("Traitement des produits...");
-                Thread.sleep(300);
-                
-                List<LigneCommandeFournisseurDTO> lignesDTO = new ArrayList<>();
-                for (LigneCommandeTemp ligne : lignesCommande) {
-                    ProduitDto produit = produitsList.stream()
-                        .filter(p -> p.getLibelle().equals(ligne.getProduitNom()))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException("Produit non trouvé: " + ligne.getProduitNom()));
-                    
-                    lignesDTO.add(LigneCommandeFournisseurDTO.builder()
-                        .produitId(produit.getId())
-                        .quantite(ligne.getQuantite())
-                        .prixUnitaire(ligne.getPrixUnitaire())
-                        .build());
-                }
-                commandeDTO.setLignes(lignesDTO);
-                
-                // Étape 3: Sauvegarde
-                publish(70);
-                setProgress("Enregistrement en base...");
-                Thread.sleep(400);
-                
-                CommandeFournisseur savedCommande = commandeFournisseurService.createCommande(commandeDTO);
-                
-                // Étape 4: Finalisation
-                publish(100);
-                setProgress("Finalisation...");
-                Thread.sleep(200);
-                
-                return savedCommande;
-            }
+        try {
+            // Créer la commande fournisseur directement
+            FournisseurDTO selectedFournisseur = fournisseursList.get(fournisseurCombo.getSelectedIndex());
             
-            @Override
-            protected void process(java.util.List<Integer> chunks) {
-                if (!chunks.isEmpty()) {
-                    progressBar.setValue(chunks.get(chunks.size() - 1));
-                }
-            }
+            CommandeFournisseurDTO commandeDTO = CommandeFournisseurDTO.builder()
+                .fournisseurId(selectedFournisseur.getId())
+                .dateCommande(dateCommandePicker.getSelectedDate().atStartOfDay())
+                .dateLivraisonPrevue(dateLivraisonPrevuePicker.getSelectedDate() != null ? 
+                    dateLivraisonPrevuePicker.getSelectedDate().atStartOfDay() : null)
+                .observations(observationsArea.getText())
+                .build();
             
-            private void setProgress(String message) {
-                SwingUtilities.invokeLater(() -> progressBar.setString(message));
+            // Créer les lignes de commande
+            List<LigneCommandeFournisseurDTO> lignesDTO = new ArrayList<>();
+            for (LigneCommandeTemp ligne : lignesCommande) {
+                ProduitDto produit = produitsList.stream()
+                    .filter(p -> p.getLibelle().equals(ligne.getProduitNom()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Produit non trouvé: " + ligne.getProduitNom()));
+                
+                lignesDTO.add(LigneCommandeFournisseurDTO.builder()
+                    .produitId(produit.getId())
+                    .quantite(ligne.getQuantite())
+                    .prixUnitaire(ligne.getPrixUnitaire())
+                    .build());
             }
+            commandeDTO.setLignes(lignesDTO);
             
-            @Override
-            protected void done() {
-                progressDialog.dispose();
-                try {
-                    CommandeFournisseur savedCommande = get();
-                    
-                    // Toast notification discrète
-                    showSuccessToast("Commande " + savedCommande.getNumeroCommande() + " créée avec succès");
-                    
-                    // Nettoyage automatique des champs et actualisation
-                    clearCommandeWithoutConfirmation();
-                    loadCommandes();
-                    switchToListTab();
-                    
-                } catch (Exception e) {
-                    showErrorMessage("Erreur lors de la création: " + e.getMessage());
-                }
-            }
-        };
-        
-        progressDialog.setVisible(true);
-        worker.execute();
+            // Sauvegarder
+            CommandeFournisseur savedCommande = commandeFournisseurService.createCommande(commandeDTO);
+            
+            // Dialogue de succès comme pour les clients
+            showSuccessDialog(
+                "Commande créée avec succès !",
+                "La commande " + savedCommande.getNumeroCommande() + 
+                " a été créée et est maintenant en cours de traitement."
+            );
+            
+            // Nettoyage automatique des champs
+            clearCommandeWithoutConfirmation();
+            loadCommandes();
+            switchToListTab();
+            
+        } catch (Exception e) {
+            String errorMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            showErrorDialog(
+                "Erreur lors de la création", 
+                "Impossible de créer la commande : " + errorMessage
+            );
+        }
     }
 
     private void switchToListTab() {
@@ -1231,6 +1177,110 @@ public class CommandePanel extends JPanel {
 
     private void showInfoMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showSuccessDialog(String title, String message) {
+        JDialog successDialog = new JDialog((java.awt.Frame) SwingUtilities.getWindowAncestor(this), 
+            title, true);
+        successDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        successDialog.setSize(400, 180);
+        successDialog.setLocationRelativeTo(this);
+        successDialog.setResizable(false);
+
+        JPanel dialogPanel = new JPanel(new BorderLayout(15, 15));
+        dialogPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        dialogPanel.setBackground(Color.WHITE);
+
+        // Icône de succès
+        JPanel iconPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        iconPanel.setBackground(Color.WHITE);
+        JLabel iconLabel = new JLabel(FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 48, SUCCESS_COLOR));
+        iconPanel.add(iconLabel);
+        dialogPanel.add(iconPanel, BorderLayout.WEST);
+
+        // Message
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titleLabel.setForeground(TEXT_PRIMARY);
+        messagePanel.add(titleLabel, BorderLayout.NORTH);
+
+        JTextArea messageArea = new JTextArea(message);
+        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        messageArea.setForeground(TEXT_SECONDARY);
+        messageArea.setEditable(false);
+        messageArea.setOpaque(false);
+        messageArea.setWrapStyleWord(true);
+        messageArea.setLineWrap(true);
+        messagePanel.add(messageArea, BorderLayout.CENTER);
+
+        dialogPanel.add(messagePanel, BorderLayout.CENTER);
+
+        // Bouton OK
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        JButton okButton = createModernButton("OK", FontAwesomeSolid.CHECK, SUCCESS_COLOR, 
+            e -> successDialog.dispose());
+        okButton.setPreferredSize(new Dimension(80, 35));
+        buttonPanel.add(okButton);
+        dialogPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        successDialog.add(dialogPanel);
+        successDialog.setVisible(true);
+    }
+
+    private void showErrorDialog(String title, String message) {
+        JDialog errorDialog = new JDialog((java.awt.Frame) SwingUtilities.getWindowAncestor(this), 
+            title, true);
+        errorDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        errorDialog.setSize(400, 180);
+        errorDialog.setLocationRelativeTo(this);
+        errorDialog.setResizable(false);
+
+        JPanel dialogPanel = new JPanel(new BorderLayout(15, 15));
+        dialogPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        dialogPanel.setBackground(Color.WHITE);
+
+        // Icône d'erreur
+        JPanel iconPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        iconPanel.setBackground(Color.WHITE);
+        JLabel iconLabel = new JLabel(FontIcon.of(FontAwesomeSolid.EXCLAMATION_TRIANGLE, 48, DANGER_COLOR));
+        iconPanel.add(iconLabel);
+        dialogPanel.add(iconPanel, BorderLayout.WEST);
+
+        // Message
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setBackground(Color.WHITE);
+        
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titleLabel.setForeground(TEXT_PRIMARY);
+        messagePanel.add(titleLabel, BorderLayout.NORTH);
+
+        JTextArea messageArea = new JTextArea(message);
+        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        messageArea.setForeground(TEXT_SECONDARY);
+        messageArea.setEditable(false);
+        messageArea.setOpaque(false);
+        messageArea.setWrapStyleWord(true);
+        messageArea.setLineWrap(true);
+        messagePanel.add(messageArea, BorderLayout.CENTER);
+
+        dialogPanel.add(messagePanel, BorderLayout.CENTER);
+
+        // Bouton OK
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        JButton okButton = createModernButton("OK", FontAwesomeSolid.TIMES, DANGER_COLOR, 
+            e -> errorDialog.dispose());
+        okButton.setPreferredSize(new Dimension(80, 35));
+        buttonPanel.add(okButton);
+        dialogPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        errorDialog.add(dialogPanel);
+        errorDialog.setVisible(true);
     }
 
     private void showSuccessToast(String message) {

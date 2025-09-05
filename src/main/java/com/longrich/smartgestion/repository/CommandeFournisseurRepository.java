@@ -18,28 +18,34 @@ import java.util.Optional;
 @Repository
 public interface CommandeFournisseurRepository extends JpaRepository<CommandeFournisseur, Long> {
 
-    Optional<CommandeFournisseur> findByNumeroCommande(String numeroCommande);
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.numeroCommande = :numeroCommande")
+    Optional<CommandeFournisseur> findByNumeroCommande(@Param("numeroCommande") String numeroCommande);
 
-    List<CommandeFournisseur> findByFournisseur(Fournisseur fournisseur);
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.fournisseur = :fournisseur")
+    List<CommandeFournisseur> findByFournisseur(@Param("fournisseur") Fournisseur fournisseur);
 
-    List<CommandeFournisseur> findByStatut(StatutCommande statut);
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.statut = :statut")
+    List<CommandeFournisseur> findByStatut(@Param("statut") StatutCommande statut);
 
-    List<CommandeFournisseur> findByFournisseurAndStatut(Fournisseur fournisseur, StatutCommande statut);
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.fournisseur = :fournisseur AND c.statut = :statut")
+    List<CommandeFournisseur> findByFournisseurAndStatut(@Param("fournisseur") Fournisseur fournisseur, @Param("statut") StatutCommande statut);
 
-    List<CommandeFournisseur> findByDateCommandeBetween(LocalDateTime debut, LocalDateTime fin);
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.dateCommande BETWEEN :debut AND :fin")
+    List<CommandeFournisseur> findByDateCommandeBetween(@Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 
-    List<CommandeFournisseur> findByDateCommandeBetweenOrderByDateCommandeDesc(LocalDateTime debut, LocalDateTime fin);
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.dateCommande BETWEEN :debut AND :fin ORDER BY c.dateCommande DESC")
+    List<CommandeFournisseur> findByDateCommandeBetweenOrderByDateCommandeDesc(@Param("debut") LocalDateTime debut, @Param("fin") LocalDateTime fin);
 
-    @Query("SELECT c FROM CommandeFournisseur c WHERE c.active = true AND " +
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.active = true AND " +
            "(LOWER(c.numeroCommande) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(c.fournisseur.nom) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
            "LOWER(c.fournisseur.prenom) LIKE LOWER(CONCAT('%', :search, '%')))")
     List<CommandeFournisseur> searchCommandes(@Param("search") String search);
 
-    @Query("SELECT c FROM CommandeFournisseur c WHERE c.active = true AND c.statut = :statut")
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.active = true AND c.statut = :statut")
     List<CommandeFournisseur> findActiveByStatut(@Param("statut") StatutCommande statut);
 
-    @Query("SELECT c FROM CommandeFournisseur c WHERE c.active = true ORDER BY c.dateCommande DESC")
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.active = true ORDER BY c.dateCommande DESC")
     List<CommandeFournisseur> findAllActiveOrderByDateDesc();
 
     Page<CommandeFournisseur> findByActiveTrue(Pageable pageable);
@@ -50,18 +56,18 @@ public interface CommandeFournisseurRepository extends JpaRepository<CommandeFou
     @Query("SELECT SUM(c.montantTotal) FROM CommandeFournisseur c WHERE c.active = true AND c.statut IN :statuts")
     BigDecimal sumMontantTotalByStatutIn(@Param("statuts") List<StatutCommande> statuts);
 
-    @Query("SELECT c FROM CommandeFournisseur c WHERE c.active = true AND " +
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.active = true AND " +
            "c.dateLivraisonPrevue IS NOT NULL AND c.dateLivraisonPrevue < :date AND " +
            "c.statut NOT IN ('LIVREE', 'ANNULEE')")
     List<CommandeFournisseur> findCommandesEnRetard(@Param("date") LocalDateTime date);
 
-    @Query("SELECT c FROM CommandeFournisseur c WHERE c.active = true AND " +
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.active = true AND " +
            "c.fournisseur.id = :fournisseurId AND c.statut = :statut")
     List<CommandeFournisseur> findByFournisseurIdAndStatut(
             @Param("fournisseurId") Long fournisseurId, 
             @Param("statut") StatutCommande statut);
 
-    @Query("SELECT c FROM CommandeFournisseur c WHERE c.active = true AND " +
+    @Query("SELECT c FROM CommandeFournisseur c JOIN FETCH c.fournisseur WHERE c.active = true AND " +
            "c.dateCommande BETWEEN :debut AND :fin AND c.statut = :statut")
     List<CommandeFournisseur> findByPeriodAndStatut(
             @Param("debut") LocalDateTime debut, 
