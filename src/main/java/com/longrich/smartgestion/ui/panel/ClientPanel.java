@@ -86,11 +86,12 @@ public class ClientPanel extends JPanel {
     private JPanel formPanel;
     private JPanel longrichSection;
 
-    // Patterns alignés avec les contraintes Bean Validation
+    // Patterns alignés avec les contraintes Bean Validation de l'entité Client
     private static final Pattern P_CODE_PARTENAIRE = Pattern.compile("^[A-Z]{2}\\d{8}$");
     private static final Pattern P_CNIB = Pattern.compile("^B\\d{8}$");
     private static final Pattern P_TEL_BF = Pattern.compile("^(\\+226[02567]\\d{7}|[02567]\\d{7})$");
-    private static final Pattern P_EMAIL = Pattern.compile("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$");
+    // Pattern email simplifié mais conforme aux standards
+    private static final Pattern P_EMAIL = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
     private JTable clientTable;
     private DefaultTableModel tableModel;
@@ -359,6 +360,8 @@ public class ClientPanel extends JPanel {
     }
 
     private void attachRealtimeValidation() {
+        addDocListener(nomField, this::validateNomRealtime);
+        addDocListener(prenomField, this::validatePrenomRealtime);
         addDocListener(telephoneField, this::validateTelephoneRealtime);
         addDocListener(cnibField, this::validateCnibRealtime);
         addDocListener(emailField, this::validateEmailRealtime);
@@ -369,10 +372,37 @@ public class ClientPanel extends JPanel {
     private void addDocListener(JTextField field, Runnable validator) {
         if (field == null) return;
         field.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { validator.run(); updateActionButtonsEnabled(); }
-            public void removeUpdate(DocumentEvent e) { validator.run(); updateActionButtonsEnabled(); }
-            public void changedUpdate(DocumentEvent e) { validator.run(); updateActionButtonsEnabled(); }
+            @Override
+            public void insertUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { validator.run(); }
         });
+    }
+
+    private void validateNomRealtime() {
+        String v = nomField.getText().trim();
+        clearFieldError(nomField);
+        if (!v.isEmpty()) {
+            if (v.length() < 2) {
+                setFieldError(nomField, "Le nom doit contenir au moins 2 caractères");
+            } else if (v.length() > 50) {
+                setFieldError(nomField, "Le nom ne peut pas dépasser 50 caractères");
+            }
+        }
+    }
+
+    private void validatePrenomRealtime() {
+        String v = prenomField.getText().trim();
+        clearFieldError(prenomField);
+        if (!v.isEmpty()) {
+            if (v.length() < 2) {
+                setFieldError(prenomField, "Le prénom doit contenir au moins 2 caractères");
+            } else if (v.length() > 50) {
+                setFieldError(prenomField, "Le prénom ne peut pas dépasser 50 caractères");
+            }
+        }
     }
 
     private void validateTelephoneRealtime() {
@@ -427,12 +457,13 @@ public class ClientPanel extends JPanel {
     }
 
     private void validateAllRealtime() {
+        validateNomRealtime();
+        validatePrenomRealtime();
         validateTelephoneRealtime();
         validateCnibRealtime();
         validateEmailRealtime();
         validateCodePartenaireRealtime();
         validateTotalPvRealtime();
-        updateActionButtonsEnabled();
     }
 
     private void updateActionButtonsEnabled() {
@@ -883,14 +914,36 @@ public class ClientPanel extends JPanel {
         boolean valid = true;
 
         // Validation des champs obligatoires
-        if (nomField.getText().trim().isEmpty()) {
+        String nom = nomField.getText().trim();
+        if (nom.isEmpty()) {
             setFieldError(nomField, "Ce champ est requis");
             valid = false;
+        } else {
+            // Valider aussi la longueur si le champ n'est pas vide
+            if (nom.length() < 2) {
+                setFieldError(nomField, "Le nom doit contenir au moins 2 caractères");
+                valid = false;
+            } else if (nom.length() > 50) {
+                setFieldError(nomField, "Le nom ne peut pas dépasser 50 caractères");
+                valid = false;
+            }
         }
-        if (prenomField.getText().trim().isEmpty()) {
+
+        String prenom = prenomField.getText().trim();
+        if (prenom.isEmpty()) {
             setFieldError(prenomField, "Ce champ est requis");
             valid = false;
+        } else {
+            // Valider aussi la longueur si le champ n'est pas vide
+            if (prenom.length() < 2) {
+                setFieldError(prenomField, "Le prénom doit contenir au moins 2 caractères");
+                valid = false;
+            } else if (prenom.length() > 50) {
+                setFieldError(prenomField, "Le prénom ne peut pas dépasser 50 caractères");
+                valid = false;
+            }
         }
+
         if (provinceCombo.getSelectedItem() == null) {
             setFieldError(provinceCombo, "Ce champ est requis");
             valid = false;

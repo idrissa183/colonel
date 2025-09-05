@@ -21,6 +21,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import java.awt.*;
 // import java.awt.event.ActionEvent;
@@ -258,6 +260,9 @@ public class ProduitPanel extends JPanel {
         formPanel.add(checkboxPanel);
         formPanel.add(Box.createVerticalGlue());
 
+        // Attacher la validation en temps réel
+        attachRealtimeValidation();
+
         return formPanel;
     }
 
@@ -358,6 +363,112 @@ public class ProduitPanel extends JPanel {
         errorLabels.put(field, errorLabel);
 
         return panel;
+    }
+
+    private void attachRealtimeValidation() {
+        addDocListener(libelleField, this::validateLibelleRealtime);
+        addDocListener(prixAchatField, this::validatePrixAchatRealtime);
+        addDocListener(prixReventeField, this::validatePrixReventeRealtime);
+        addDocListener(pvField, this::validatePvRealtime);
+        addDocListener(stockMinimumField, this::validateStockMinimumRealtime);
+    }
+
+    private void addDocListener(JTextField field, Runnable validator) {
+        if (field == null) return;
+        field.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { validator.run(); }
+        });
+    }
+
+    private void validateLibelleRealtime() {
+        String v = libelleField.getText().trim();
+        clearFieldError(libelleField);
+        if (!v.isEmpty()) {
+            // Le libellé est obligatoire selon l'entité, pas de validation de longueur spécifique
+            // mais on peut ajouter une validation basique
+            if (v.length() > 255) {
+                setFieldError(libelleField, "Le libellé ne peut pas dépasser 255 caractères");
+            }
+        }
+    }
+
+    private void validatePrixAchatRealtime() {
+        String v = prixAchatField.getText().trim();
+        clearFieldError(prixAchatField);
+        if (!v.isEmpty()) {
+            try {
+                BigDecimal prix = new BigDecimal(v);
+                if (prix.compareTo(BigDecimal.ZERO) <= 0) {
+                    setFieldError(prixAchatField, "Le prix d'achat doit être positif");
+                }
+            } catch (NumberFormatException e) {
+                setFieldError(prixAchatField, "Prix d'achat invalide");
+            }
+        }
+    }
+
+    private void validatePrixReventeRealtime() {
+        String v = prixReventeField.getText().trim();
+        clearFieldError(prixReventeField);
+        if (!v.isEmpty()) {
+            try {
+                BigDecimal prix = new BigDecimal(v);
+                if (prix.compareTo(BigDecimal.ZERO) <= 0) {
+                    setFieldError(prixReventeField, "Le prix de revente doit être positif");
+                }
+            } catch (NumberFormatException e) {
+                setFieldError(prixReventeField, "Prix de revente invalide");
+            }
+        }
+    }
+
+    private void validatePvRealtime() {
+        String v = pvField.getText().trim();
+        clearFieldError(pvField);
+        if (!v.isEmpty()) {
+            try {
+                BigDecimal pv = new BigDecimal(v);
+                if (pv.compareTo(BigDecimal.ZERO) < 0) {
+                    setFieldError(pvField, "Le nombre de PV doit être positif ou nul");
+                }
+            } catch (NumberFormatException e) {
+                setFieldError(pvField, "Nombre de PV invalide");
+            }
+        }
+    }
+
+    private void validateStockMinimumRealtime() {
+        String v = stockMinimumField.getText().trim();
+        clearFieldError(stockMinimumField);
+        if (!v.isEmpty()) {
+            try {
+                int stock = Integer.parseInt(v);
+                if (stock < 0) {
+                    setFieldError(stockMinimumField, "Le stock minimum doit être positif ou nul");
+                }
+            } catch (NumberFormatException e) {
+                setFieldError(stockMinimumField, "Stock minimum invalide");
+            }
+        }
+    }
+
+    private void clearFieldError(JComponent field) {
+        JLabel label = errorLabels.get(field);
+        if (label != null) {
+            label.setVisible(false);
+            label.setText("");
+        }
+        // Remettre le style normal du champ
+        if (field instanceof JTextField) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        }
     }
 
     private JPanel createTableContainer() {
@@ -1009,8 +1120,18 @@ public class ProduitPanel extends JPanel {
         boolean valid = true;
 
         // Validation du libellé (requis)
-        if (libelleField.getText().trim().isEmpty()) {
-            setFieldError(libelleField, "Libellé requis");
+        String libelle = libelleField.getText().trim();
+        if (libelle.isEmpty()) {
+            setFieldError(libelleField, "Ce champ est requis");
+            valid = false;
+        } else if (libelle.length() > 255) {
+            setFieldError(libelleField, "Le libellé ne peut pas dépasser 255 caractères");
+            valid = false;
+        }
+
+        // Validation de la famille (requise)
+        if (familleCombo.getSelectedItem() == null) {
+            setFieldError(familleCombo, "Ce champ est requis");
             valid = false;
         }
 
@@ -1026,7 +1147,7 @@ public class ProduitPanel extends JPanel {
         // Validation du prix d'achat (requis et positif)
         String prixAchatStr = prixAchatField.getText().trim();
         if (prixAchatStr.isEmpty()) {
-            setFieldError(prixAchatField, "Prix d'achat requis");
+            setFieldError(prixAchatField, "Ce champ est requis");
             valid = false;
         } else {
             try {
@@ -1044,7 +1165,7 @@ public class ProduitPanel extends JPanel {
         // Validation du prix de revente (requis et positif)
         String prixReventeStr = prixReventeField.getText().trim();
         if (prixReventeStr.isEmpty()) {
-            setFieldError(prixReventeField, "Prix de revente requis");
+            setFieldError(prixReventeField, "Ce champ est requis");
             valid = false;
         } else {
             try {
@@ -1062,7 +1183,7 @@ public class ProduitPanel extends JPanel {
         // Validation du nombre de PV (requis et positif ou nul)
         String pvStr = pvField.getText().trim();
         if (pvStr.isEmpty()) {
-            setFieldError(pvField, "Nombre de PV requis");
+            setFieldError(pvField, "Ce champ est requis");
             valid = false;
         } else {
             try {

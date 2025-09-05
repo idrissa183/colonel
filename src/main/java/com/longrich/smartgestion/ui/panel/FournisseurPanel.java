@@ -34,6 +34,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.util.regex.Pattern;
 
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.springframework.context.annotation.Profile;
@@ -64,6 +67,11 @@ public class FournisseurPanel extends JPanel {
     private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
 
     private final FournisseurService fournisseurService;
+
+    // Patterns alignés avec les contraintes Bean Validation de l'entité Fournisseur
+    private static final Pattern P_CODE_STOCKISTE = Pattern.compile("^[A-Z]{2}\\d{4}$");
+    private static final Pattern P_TEL_BF = Pattern.compile("^(\\+226[02567]\\d{7}|[02567]\\d{7})$");
+    private static final Pattern P_EMAIL = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
     // Composants UI
     private JComboBox<TypeStockiste> typeStockisteCombo;
@@ -254,6 +262,9 @@ public class FournisseurPanel extends JPanel {
         formPanel.add(checkboxPanel);
         formPanel.add(Box.createVerticalGlue());
 
+        // Attacher la validation en temps réel
+        attachRealtimeValidation();
+
         return formPanel;
     }
 
@@ -293,6 +304,84 @@ public class FournisseurPanel extends JPanel {
         errorLabels.put(field, errorLabel);
 
         return panel;
+    }
+
+    private void attachRealtimeValidation() {
+        addDocListener(codeStockisteField, this::validateCodeStockisteRealtime);
+        addDocListener(nomField, this::validateNomRealtime);
+        addDocListener(prenomField, this::validatePrenomRealtime);
+        addDocListener(telephoneField, this::validateTelephoneRealtime);
+        addDocListener(emailField, this::validateEmailRealtime);
+    }
+
+    private void addDocListener(JTextField field, Runnable validator) {
+        if (field == null) return;
+        field.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { validator.run(); }
+        });
+    }
+
+    private void validateCodeStockisteRealtime() {
+        String v = codeStockisteField.getText().trim();
+        clearFieldError(codeStockisteField);
+        if (!v.isEmpty()) {
+            if (!P_CODE_STOCKISTE.matcher(v).matches()) {
+                setFieldError(codeStockisteField, "Le code stockiste doit respecter le format ISO2 suivi de 4 chiffres (ex: BF1234)");
+            }
+        }
+    }
+
+    private void validateNomRealtime() {
+        String v = nomField.getText().trim();
+        clearFieldError(nomField);
+        if (!v.isEmpty()) {
+            if (v.length() < 2) {
+                setFieldError(nomField, "Le nom doit contenir au moins 2 caractères");
+            } else if (v.length() > 50) {
+                setFieldError(nomField, "Le nom ne peut pas dépasser 50 caractères");
+            }
+        }
+    }
+
+    private void validatePrenomRealtime() {
+        String v = prenomField.getText().trim();
+        clearFieldError(prenomField);
+        if (!v.isEmpty()) {
+            if (v.length() < 2) {
+                setFieldError(prenomField, "Le prénom doit contenir au moins 2 caractères");
+            } else if (v.length() > 50) {
+                setFieldError(prenomField, "Le prénom ne peut pas dépasser 50 caractères");
+            }
+        }
+    }
+
+    private void validateTelephoneRealtime() {
+        String v = telephoneField.getText().trim();
+        clearFieldError(telephoneField);
+        if (!v.isEmpty() && !P_TEL_BF.matcher(v).matches()) {
+            setFieldError(telephoneField, "Numéro de téléphone burkinabè invalide");
+        }
+    }
+
+    private void validateEmailRealtime() {
+        String v = emailField.getText().trim();
+        clearFieldError(emailField);
+        if (!v.isEmpty() && !P_EMAIL.matcher(v).matches()) {
+            setFieldError(emailField, "Email invalide");
+        }
+    }
+
+    private void validateAllRealtime() {
+        validateCodeStockisteRealtime();
+        validateNomRealtime();
+        validatePrenomRealtime();
+        validateTelephoneRealtime();
+        validateEmailRealtime();
     }
 
     private JTextField createStyledTextField() {
@@ -690,6 +779,23 @@ public class FournisseurPanel extends JPanel {
         });
     }
 
+    private void clearFieldError(JComponent field) {
+        JLabel label = errorLabels.get(field);
+        if (label != null) {
+            label.setVisible(false);
+            label.setText("");
+        }
+        if (field instanceof JComboBox) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        } else {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        }
+    }
+
     private void setFieldError(JComponent field, String message) {
         JLabel label = errorLabels.get(field);
         if (label != null) {
@@ -711,23 +817,57 @@ public class FournisseurPanel extends JPanel {
         clearErrors();
         boolean valid = true;
 
-        if (codeStockisteField.getText().trim().isEmpty()) {
-            setFieldError(codeStockisteField, "Code stockiste requis");
+        // Validation des champs obligatoires
+        String codeStockiste = codeStockisteField.getText().trim();
+        if (codeStockiste.isEmpty()) {
+            setFieldError(codeStockisteField, "Ce champ est requis");
             valid = false;
-        }
-        if (nomField.getText().trim().isEmpty()) {
-            setFieldError(nomField, "Nom requis");
+        } else if (!P_CODE_STOCKISTE.matcher(codeStockiste).matches()) {
+            setFieldError(codeStockisteField, "Le code stockiste doit respecter le format ISO2 suivi de 4 chiffres (ex: BF1234)");
             valid = false;
         }
 
+        String nom = nomField.getText().trim();
+        if (nom.isEmpty()) {
+            setFieldError(nomField, "Ce champ est requis");
+            valid = false;
+        } else {
+            if (nom.length() < 2) {
+                setFieldError(nomField, "Le nom doit contenir au moins 2 caractères");
+                valid = false;
+            } else if (nom.length() > 50) {
+                setFieldError(nomField, "Le nom ne peut pas dépasser 50 caractères");
+                valid = false;
+            }
+        }
+
+        // Validation du prénom selon le type de stockiste
         TypeStockiste type = (TypeStockiste) typeStockisteCombo.getSelectedItem();
-        if (type == TypeStockiste.PERSONNE_PHYSIQUE && prenomField.getText().trim().isEmpty()) {
-            setFieldError(prenomField, "Prénom requis pour une personne physique");
+        String prenom = prenomField.getText().trim();
+        if (type == TypeStockiste.PERSONNE_PHYSIQUE) {
+            if (prenom.isEmpty()) {
+                setFieldError(prenomField, "Ce champ est requis");
+                valid = false;
+            } else {
+                if (prenom.length() < 2) {
+                    setFieldError(prenomField, "Le prénom doit contenir au moins 2 caractères");
+                    valid = false;
+                } else if (prenom.length() > 50) {
+                    setFieldError(prenomField, "Le prénom ne peut pas dépasser 50 caractères");
+                    valid = false;
+                }
+            }
+        }
+
+        // Validation des champs optionnels avec format
+        String telephone = telephoneField.getText().trim();
+        if (!telephone.isEmpty() && !P_TEL_BF.matcher(telephone).matches()) {
+            setFieldError(telephoneField, "Numéro de téléphone burkinabè invalide");
             valid = false;
         }
 
         String email = emailField.getText().trim();
-        if (!email.isEmpty() && !email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
+        if (!email.isEmpty() && !P_EMAIL.matcher(email).matches()) {
             setFieldError(emailField, "Email invalide");
             valid = false;
         }
@@ -834,6 +974,8 @@ public class FournisseurPanel extends JPanel {
 
     private void onTypeStockisteChange(ActionEvent e) {
         updatePrenomFieldVisibility();
+        // Revalider le prénom selon le nouveau type
+        validatePrenomRealtime();
     }
 
     private void updatePrenomFieldVisibility() {

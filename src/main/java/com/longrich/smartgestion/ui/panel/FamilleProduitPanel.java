@@ -32,6 +32,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.springframework.context.annotation.Profile;
@@ -225,6 +227,9 @@ public class FamilleProduitPanel extends JPanel {
         formPanel.add(checkboxPanel);
         formPanel.add(Box.createVerticalGlue());
 
+        // Attacher la validation en temps réel
+        attachRealtimeValidation();
+
         return formPanel;
     }
 
@@ -264,6 +269,47 @@ public class FamilleProduitPanel extends JPanel {
         errorLabels.put(field, errorLabel);
 
         return panel;
+    }
+
+    private void attachRealtimeValidation() {
+        addDocListener(libelleFamilleField, this::validateLibelleFamilleRealtime);
+    }
+
+    private void addDocListener(JTextField field, Runnable validator) {
+        if (field == null) return;
+        field.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { validator.run(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { validator.run(); }
+        });
+    }
+
+    private void validateLibelleFamilleRealtime() {
+        String v = libelleFamilleField.getText().trim();
+        clearFieldError(libelleFamilleField);
+        if (!v.isEmpty()) {
+            // Validation basée sur l'entité (longueur max 100 selon @Column(length = 100))
+            if (v.length() > 100) {
+                setFieldError(libelleFamilleField, "Le libellé famille ne peut pas dépasser 100 caractères");
+            }
+        }
+    }
+
+    private void clearFieldError(JComponent field) {
+        JLabel label = errorLabels.get(field);
+        if (label != null) {
+            label.setVisible(false);
+            label.setText("");
+        }
+        // Remettre le style normal du champ
+        if (field instanceof JTextField) {
+            field.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                    BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        }
     }
 
     private JTextField createStyledTextField() {
@@ -643,8 +689,12 @@ public class FamilleProduitPanel extends JPanel {
         clearErrors();
         boolean valid = true;
 
-        if (libelleFamilleField.getText().trim().isEmpty()) {
-            setFieldError(libelleFamilleField, "Libellé famille requis");
+        String libelleFamille = libelleFamilleField.getText().trim();
+        if (libelleFamille.isEmpty()) {
+            setFieldError(libelleFamilleField, "Ce champ est requis");
+            valid = false;
+        } else if (libelleFamille.length() > 100) {
+            setFieldError(libelleFamilleField, "Le libellé famille ne peut pas dépasser 100 caractères");
             valid = false;
         }
 
