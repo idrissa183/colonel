@@ -125,9 +125,9 @@ public class DashboardPanel extends JPanel {
         
         mainPanel.add(centerContainer, BorderLayout.CENTER);
 
-        // Panneau inférieur - Alerts
-        JPanel alertsPanel = createAlertsPanel();
-        mainPanel.add(alertsPanel, BorderLayout.SOUTH);
+        // // Panneau inférieur - Alerts
+        // JPanel alertsPanel = createAlertsPanel();
+        // mainPanel.add(alertsPanel, BorderLayout.SOUTH);
 
         add(mainPanel, BorderLayout.CENTER);
     }
@@ -321,40 +321,40 @@ public class DashboardPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createAlertsPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(CARD_COLOR);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(WARNING_COLOR, 2),
-                BorderFactory.createEmptyBorder(15, 20, 15, 20)));
+    // private JPanel createAlertsPanel() {
+    //     JPanel panel = new JPanel(new BorderLayout());
+    //     panel.setBackground(CARD_COLOR);
+    //     panel.setBorder(BorderFactory.createCompoundBorder(
+    //             BorderFactory.createLineBorder(WARNING_COLOR, 2),
+    //             BorderFactory.createEmptyBorder(15, 20, 15, 20)));
 
-        // Header avec icône d'alerte
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(CARD_COLOR);
+    //     // Header avec icône d'alerte
+    //     JPanel headerPanel = new JPanel(new BorderLayout());
+    //     headerPanel.setBackground(CARD_COLOR);
 
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setBackground(CARD_COLOR);
+    //     JPanel titlePanel = new JPanel(new BorderLayout());
+    //     titlePanel.setBackground(CARD_COLOR);
 
-        FontIcon alertIcon = FontIcon.of(FontAwesomeSolid.EXCLAMATION_TRIANGLE, 18, WARNING_COLOR);
-        JLabel iconLabel = new JLabel(alertIcon);
-        titlePanel.add(iconLabel, BorderLayout.WEST);
+    //     FontIcon alertIcon = FontIcon.of(FontAwesomeSolid.EXCLAMATION_TRIANGLE, 18, WARNING_COLOR);
+    //     JLabel iconLabel = new JLabel(alertIcon);
+    //     titlePanel.add(iconLabel, BorderLayout.WEST);
 
-        JLabel titleLabel = new JLabel("  Alertes Importantes");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        titleLabel.setForeground(WARNING_COLOR);
-        titlePanel.add(titleLabel, BorderLayout.CENTER);
+    //     JLabel titleLabel = new JLabel("  Alertes Importantes");
+    //     titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+    //     titleLabel.setForeground(WARNING_COLOR);
+    //     titlePanel.add(titleLabel, BorderLayout.CENTER);
 
-        headerPanel.add(titlePanel, BorderLayout.WEST);
-        panel.add(headerPanel, BorderLayout.WEST);
+    //     headerPanel.add(titlePanel, BorderLayout.WEST);
+    //     panel.add(headerPanel, BorderLayout.WEST);
 
-        // Message d'alerte
-        JLabel alertLabel = new JLabel("Aucune alerte critique pour le moment");
-        alertLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        alertLabel.setForeground(TEXT_SECONDARY);
-        panel.add(alertLabel, BorderLayout.CENTER);
+    //     // Message d'alerte
+    //     JLabel alertLabel = new JLabel("Aucune alerte critique pour le moment");
+    //     alertLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    //     alertLabel.setForeground(TEXT_SECONDARY);
+    //     panel.add(alertLabel, BorderLayout.CENTER);
 
-        return panel;
-    }
+    //     return panel;
+    // }
 
     private void createFooterPanel() {
         JPanel footerPanel = new JPanel(new BorderLayout());

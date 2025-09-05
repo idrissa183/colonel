@@ -40,6 +40,10 @@ public class EntreeStock extends BaseEntity {
     @JoinColumn(name = "fournisseur_id")
     private Fournisseur fournisseur;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "commande_fournisseur_id")
+    private CommandeFournisseur commandeFournisseur;
+
     @Column(name = "numero_facture_fournisseur")
     private String numeroFactureFournisseur;
 
@@ -57,6 +61,9 @@ public class EntreeStock extends BaseEntity {
 
     @Column(name = "observation", columnDefinition = "TEXT")
     private String observation;
+
+    @Column(name = "fichier_reference")
+    private String fichierReference;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utilisateur_id")

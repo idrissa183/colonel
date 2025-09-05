@@ -27,6 +27,10 @@ public class LigneEntreeStock extends BaseEntity {
     @NotNull(message = "Le produit est obligatoire")
     private Produit produit;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ligne_commande_fournisseur_id")
+    private LigneCommandeFournisseur ligneCommandeFournisseur;
+
     @Column(name = "quantite", nullable = false)
     @NotNull(message = "La quantité est obligatoire")
     @Min(value = 1, message = "La quantité doit être au moins de 1")

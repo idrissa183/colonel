@@ -6,6 +6,9 @@ import com.longrich.smartgestion.service.StockService;
 import com.longrich.smartgestion.service.ProduitService;
 import com.longrich.smartgestion.service.FournisseurService;
 import com.longrich.smartgestion.service.FamilleProduitService;
+import com.longrich.smartgestion.service.EntreeStockService;
+import com.longrich.smartgestion.service.CommandeFournisseurService;
+import com.longrich.smartgestion.service.TransfertInventaireService;
 import com.longrich.smartgestion.dto.FamilleProduitDTO;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +52,9 @@ public class ModernStockPanel extends JPanel {
     private final ProduitService produitService;
     private final FournisseurService fournisseurService;
     private final FamilleProduitService familleProduitService;
+    private final EntreeStockService entreeStockService;
+    private final CommandeFournisseurService commandeFournisseurService;
+    private final TransfertInventaireService transfertInventaireService;
 
     // Composants principaux
     private JTabbedPane tabbedPane;
@@ -74,13 +80,17 @@ public class ModernStockPanel extends JPanel {
     private JTextField entreeNumeroCommandeField;
     private JTextField entreeNumeroFactureField;
     private JComboBox<String> entreeStatutCombo; // EN_ATTENTE, COMMANDE, RECU_PARTIEL, RECU_COMPLET, ANNULE
-    private JComboBox<String> entreeTypeInventaireCombo; // SALLE_VENTE / MAGASIN
+    private JComboBox<String> entreeTypeInventaireCombo; // MAGASIN uniquement
     private JRadioButton entreeHistoriserRadio;
     private JRadioButton entreeCumulRadio;
     private JTextField entreeFichierRefField;
     private JButton entreeChoisirFichierButton;
     private JTable entreeHistoriqueTable;
     private DefaultTableModel entreeHistoriqueTableModel;
+    // Entrée depuis commande
+    private JComboBox<String> entreeCommandeCombo;
+    private JTable entreeCommandeLignesTable;
+    private DefaultTableModel entreeCommandeLignesModel;
     // Rapport Entrées par emplacement
     private JTable entreesEmplacementTable;
     private DefaultTableModel entreesEmplacementModel;
@@ -102,6 +112,10 @@ public class ModernStockPanel extends JPanel {
     private JComboBox<String> sortieTypeInventaireCombo; // SALLE_VENTE / MAGASIN
     private JTable sortieHistoriqueTable;
     private DefaultTableModel sortieHistoriqueTableModel;
+    
+    // Onglet Transferts
+    private JComboBox<String> transfertProduitCombo;
+    private JTextField transfertQuantiteField;
     
     // Onglet Inventaire
     private JTable inventaireTable;
@@ -221,6 +235,9 @@ public class ModernStockPanel extends JPanel {
         // Onglet Sorties de Stock
         tabbedPane.addTab("📤 Sorties de Stock", creerOngletSorties());
         
+        // Onglet Transferts
+        tabbedPane.addTab("🔁 Transferts", creerOngletTransferts());
+
         // Onglet Inventaire
         tabbedPane.addTab("📋 Inventaire", creerOngletInventaire());
         
@@ -335,26 +352,27 @@ public class ModernStockPanel extends JPanel {
         titre.setAlignmentX(JLabel.LEFT_ALIGNMENT);
 
         // Formulaire
+        // Ancien mode (par produit) conservé mais masqué en démo; on privilégie l'entrée par commande
         entreeProduitCombo = creerComboBoxProduits();
-        entreeProduitCombo.setEditable(true);
-        AutoCompleteDecorator.decorate(entreeProduitCombo);
+        entreeProduitCombo.setVisible(false);
         entreeFournisseurCombo = creerComboBoxFournisseurs();
-        entreeFournisseurCombo.setEditable(true);
-        AutoCompleteDecorator.decorate(entreeFournisseurCombo);
+        entreeFournisseurCombo.setVisible(false);
         entreeQuantiteField = creerChampTexte("Quantité");
         entreePrixUnitaireField = creerChampTexte("Prix unitaire");
         entreeDateField = creerChampTexte("Date (yyyy-mm-dd)");
         entreeDateField.setText(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE));
         entreeCommentaireArea = creerZoneTexte("Commentaire");
+        // Champ libre de n° commande non utilisé ici (on sélectionne la commande ci-dessous)
         entreeNumeroCommandeField = creerChampTexte("N° Commande");
+        entreeNumeroCommandeField.setVisible(false);
         entreeNumeroFactureField = creerChampTexte("N° Facture");
         entreeStatutCombo = new JComboBox<>(new String[]{
             "EN_ATTENTE", "COMMANDE", "RECU_PARTIEL", "RECU_COMPLET", "ANNULE"
         });
         stylerComboBox(entreeStatutCombo);
 
-        // Type inventaire (Surface de vente / Magasin)
-        entreeTypeInventaireCombo = new JComboBox<>(new String[]{"SALLE_VENTE", "MAGASIN"});
+        // Type inventaire (Surface de vente / Magasin) - Forcé au Magasin
+        entreeTypeInventaireCombo = new JComboBox<>(new String[]{"MAGASIN"});
         stylerComboBox(entreeTypeInventaireCombo);
         entreeTypeInventaireCombo.setSelectedIndex(0);
 
@@ -392,33 +410,33 @@ public class ModernStockPanel extends JPanel {
         
         JButton enregistrerButton = creerBouton("💾 Enregistrer", SUCCESS_COLOR, 
             e -> enregistrerEntreeStock());
+        JButton avancerButton = creerBouton("🧭 Gestion avancée", INFO_COLOR,
+            e -> ouvrirGestionEntreeAvancee());
         JButton viderButton = creerBouton("🗑️ Vider", TEXT_SECONDARY, 
             e -> viderFormulaireEntrees());
 
+        boutonPanel.add(avancerButton);
         boutonPanel.add(enregistrerButton);
         boutonPanel.add(viderButton);
 
         panel.add(titre);
         panel.add(Box.createVerticalStrut(20));
-        panel.add(creerChampAvecLabel("Produit:", entreeProduitCombo));
+        // Bloc: sélection de la commande fournisseur
+        entreeCommandeCombo = new JComboBox<>();
+        stylerComboBox(entreeCommandeCombo);
+        chargerCommandesFournisseur();
+        entreeCommandeCombo.addActionListener(e -> chargerLignesCommandeSelectionnee());
+        panel.add(creerChampAvecLabel("Commande Fournisseur:", entreeCommandeCombo));
         panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("Fournisseur:", entreeFournisseurCombo));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("Quantité:", entreeQuantiteField));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("Prix unitaire:", entreePrixUnitaireField));
+        // Tableau des lignes de commande à réceptionner
+        creerTableauEntreeDepuisCommande();
+        JScrollPane spLignes = new JScrollPane(entreeCommandeLignesTable);
+        spLignes.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        panel.add(creerChampAvecLabel("Lignes à réceptionner:", spLignes));
         panel.add(Box.createVerticalStrut(10));
         panel.add(creerChampAvecLabel("Date:", entreeDateField));
         panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("N° Commande:", entreeNumeroCommandeField));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("N° Facture:", entreeNumeroFactureField));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("Statut réception:", entreeStatutCombo));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("Type d'inventaire:", entreeTypeInventaireCombo));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(creerChampAvecLabel("Option d'entrée:", entreeOptionsPanel));
+        // On n'affiche pas N° Facture / Statut réception / Type d'inventaire / Options d'entrée
         panel.add(Box.createVerticalStrut(10));
         panel.add(creerChampAvecLabel("Fichier de référence:", fichierPanel));
         panel.add(Box.createVerticalStrut(10));
@@ -1041,54 +1059,220 @@ public class ModernStockPanel extends JPanel {
         }
     }
 
-    private void enregistrerEntreeStock() {
+    private void chargerCommandesFournisseur() {
         try {
-            // Validation des champs
-            if (entreeProduitCombo.getSelectedIndex() == -1) {
+            entreeCommandeCombo.removeAllItems();
+            var enCours = commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.EN_COURS);
+            var partiel = commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.PARTIELLEMENT_LIVREE);
+            java.util.List<com.longrich.smartgestion.entity.CommandeFournisseur> all = new java.util.ArrayList<>();
+            all.addAll(enCours);
+            all.addAll(partiel);
+            for (var c : all) {
+                entreeCommandeCombo.addItem(c.getNumeroCommande() + " (ID:" + c.getId() + ")");
+            }
+        } catch (Exception ignored) { }
+    }
+
+    private void creerTableauEntreeDepuisCommande() {
+        String[] cols = {"Produit", "Commandé", "Déjà livré", "À réceptionner", "ProduitId", "LigneCmdId"};
+        entreeCommandeLignesModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return c == 3; }
+        };
+        entreeCommandeLignesTable = new JTable(entreeCommandeLignesModel);
+        stylerTableau(entreeCommandeLignesTable);
+        // Cacher colonnes id
+        entreeCommandeLignesTable.getColumnModel().getColumn(4).setMinWidth(0);
+        entreeCommandeLignesTable.getColumnModel().getColumn(4).setMaxWidth(0);
+        entreeCommandeLignesTable.getColumnModel().getColumn(5).setMinWidth(0);
+        entreeCommandeLignesTable.getColumnModel().getColumn(5).setMaxWidth(0);
+    }
+
+    private void chargerLignesCommandeSelectionnee() {
+        try {
+            entreeCommandeLignesModel.setRowCount(0);
+            if (entreeCommandeCombo.getSelectedIndex() < 0) return;
+            String item = (String) entreeCommandeCombo.getSelectedItem();
+            Long commandeId = extraireIdDepuisLibelle(item);
+            if (commandeId == null) return;
+            var lignes = commandeFournisseurService.getLignesCommande(commandeId);
+            for (var l : lignes) {
+                int livre = l.getQuantiteLivree() != null ? l.getQuantiteLivree() : 0;
+                int reste = l.getQuantiteCommandee() - livre;
+                if (reste <= 0) continue;
+                entreeCommandeLignesModel.addRow(new Object[] {
+                    l.getProduit().getLibelle(),
+                    l.getQuantiteCommandee(),
+                    livre,
+                    reste, // valeur par défaut, modifiable
+                    l.getProduit().getId(),
+                    l.getId()
+                });
+            }
+        } catch (Exception ex) {
+            afficherMessage("Erreur chargement lignes: " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private Long extraireIdDepuisLibelle(String item) {
+        if (item == null) return null;
+        int idx = item.lastIndexOf("(ID:");
+        if (idx >= 0) {
+            String idStr = item.substring(idx + 4, item.length() - 1).trim();
+            try { return Long.parseLong(idStr); } catch (NumberFormatException ignored) {}
+        }
+        return null;
+    }
+
+    private void ouvrirGestionEntreeAvancee() {
+        try {
+            var panel = new com.longrich.smartgestion.ui.panels.EntreeStockPanel(
+                entreeStockService,
+                fournisseurService,
+                produitService,
+                commandeFournisseurService
+            );
+            JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Gestion avancée des entrées", true);
+            dialog.setContentPane(panel);
+            dialog.setSize(1000, 680);
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            log.error("Erreur ouverture gestion avancée", e);
+            afficherMessage("Impossible d'ouvrir la gestion avancée.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private JPanel creerOngletTransferts() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel titre = new JLabel("🔁 Transfert Magasin → Surface de Vente");
+        titre.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        titre.setForeground(TEXT_PRIMARY);
+        titre.setAlignmentX(JLabel.LEFT_ALIGNMENT);
+
+        transfertProduitCombo = creerComboBoxProduits();
+        transfertProduitCombo.setEditable(true);
+        AutoCompleteDecorator.decorate(transfertProduitCombo);
+        transfertQuantiteField = creerChampTexte("Quantité à transférer");
+
+        JButton transferer = creerBouton("Transférer", PRIMARY_COLOR, e -> effectuerTransfert());
+
+        panel.add(titre);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creerChampAvecLabel("Produit:", transfertProduitCombo));
+        panel.add(creerChampAvecLabel("Quantité:", transfertQuantiteField));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actions.setOpaque(false);
+        actions.add(transferer);
+        panel.add(actions);
+
+        return panel;
+    }
+
+    private void effectuerTransfert() {
+        try {
+            if (transfertProduitCombo.getSelectedIndex() < 0) {
                 afficherMessage("Veuillez sélectionner un produit", "Erreur", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            String item = (String) transfertProduitCombo.getSelectedItem();
+            Long produitId = extraireIdDepuisLibelle(item);
+            Integer qte = Integer.valueOf(transfertQuantiteField.getText().trim());
+            if (qte <= 0) throw new NumberFormatException();
+            transfertInventaireService.transfererDepuisMagasin(produitId, qte);
+            afficherMessage("Transfert effectué.", "Succès", JOptionPane.INFORMATION_MESSAGE);
+        } catch (NumberFormatException ex) {
+            afficherMessage("Quantité invalide.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception ex) {
+            log.error("Erreur transfert", ex);
+            afficherMessage("Erreur: " + ex.getMessage(), "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
-            String quantiteText = entreeQuantiteField.getText().trim();
-            if (quantiteText.isEmpty()) {
-                afficherMessage("Veuillez saisir une quantité", "Erreur", JOptionPane.ERROR_MESSAGE);
-                return;
+    private void enregistrerEntreeStock() {
+        try {
+            // Si une commande est sélectionnée et des lignes sont présentes, utiliser le nouveau flux
+            if (entreeCommandeCombo != null && entreeCommandeCombo.getSelectedIndex() >= 0 && entreeCommandeLignesModel.getRowCount() > 0) {
+                String cmdItem = (String) entreeCommandeCombo.getSelectedItem();
+                Long commandeId = extraireIdDepuisLibelle(cmdItem);
+                if (commandeId == null) {
+                    afficherMessage("Commande invalide", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                String dateStr = entreeDateField.getText().trim();
+                java.time.LocalDate date = dateStr.isEmpty() ? LocalDate.now() : java.time.LocalDate.parse(dateStr);
+
+                com.longrich.smartgestion.dto.EntreeStockDTO dto = new com.longrich.smartgestion.dto.EntreeStockDTO();
+                dto.setCommandeFournisseurId(commandeId);
+                dto.setDateEntree(date.atStartOfDay());
+                // Pas de N° facture requis côté formulaire
+                dto.setObservation(entreeCommentaireArea.getText().trim());
+                dto.setFichierReference(entreeFichierRefField.getText().trim().isEmpty() ? null : entreeFichierRefField.getText().trim());
+
+                java.util.List<com.longrich.smartgestion.dto.LigneEntreeStockDTO> lignes = new java.util.ArrayList<>();
+                for (int i = 0; i < entreeCommandeLignesModel.getRowCount(); i++) {
+                    Integer commandeQ = (Integer) entreeCommandeLignesModel.getValueAt(i, 1);
+                    Integer deja = (Integer) entreeCommandeLignesModel.getValueAt(i, 2);
+                    Integer aRecevoir = Integer.valueOf(entreeCommandeLignesModel.getValueAt(i, 3).toString());
+                    Long produitId = Long.valueOf(entreeCommandeLignesModel.getValueAt(i, 4).toString());
+                    int restante = commandeQ - deja;
+                    if (aRecevoir <= 0 || aRecevoir > restante) {
+                        afficherMessage("Quantité à réceptionner invalide pour une ligne (max: " + restante + ")", "Erreur", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    var l = new com.longrich.smartgestion.dto.LigneEntreeStockDTO();
+                    l.setProduitId(produitId);
+                    l.setQuantiteRecue(aRecevoir);
+                    lignes.add(l);
+                }
+                dto.setLignesEntree(lignes);
+
+                entreeStockService.creerEtValiderDepuisCommande(dto);
+            } else {
+                // Rétrocompatibilité: entrée rapide par produit
+                if (entreeProduitCombo.getSelectedIndex() == -1) {
+                    afficherMessage("Veuillez sélectionner un produit", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                String quantiteText = entreeQuantiteField.getText().trim();
+                if (quantiteText.isEmpty()) {
+                    afficherMessage("Veuillez saisir une quantité", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                int quantite = Integer.parseInt(quantiteText);
+                if (quantite <= 0) {
+                    afficherMessage("La quantité doit être positive", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                ProduitDto produitSelectionne = produitsCache.get(entreeProduitCombo.getSelectedIndex());
+
+                ApprovisionnementDTO dto = ApprovisionnementDTO.builder()
+                    .produitId(produitSelectionne.getId())
+                    .quantite(quantite)
+                    .commentaire(entreeCommentaireArea.getText().trim())
+                    .dateApprovisionnement(LocalDate.parse(entreeDateField.getText().trim()))
+                    .numeroCommande(entreeNumeroCommandeField.getText().trim())
+                    .numeroFacture(entreeNumeroFactureField.getText().trim())
+                    .statut((String) entreeStatutCombo.getSelectedItem())
+                    .fichierReference(entreeFichierRefField.getText().trim().isEmpty() ? null : entreeFichierRefField.getText().trim())
+                    .build();
+
+                String prixText = entreePrixUnitaireField.getText().trim();
+                if (!prixText.isEmpty()) {
+                    dto.setPrixUnitaire(new java.math.BigDecimal(prixText));
+                }
+
+                boolean historiser = entreeHistoriserRadio.isSelected();
+                String typeInventaire = (String) entreeTypeInventaireCombo.getSelectedItem();
+                stockService.creerEntreeStockAvecOptions(dto, typeInventaire, historiser);
             }
-
-            int quantite = Integer.parseInt(quantiteText);
-            if (quantite <= 0) {
-                afficherMessage("La quantité doit être positive", "Erreur", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Récupération des données
-            ProduitDto produitSelectionne = produitsCache.get(entreeProduitCombo.getSelectedIndex());
-
-            ApprovisionnementDTO dto = ApprovisionnementDTO.builder()
-                .produitId(produitSelectionne.getId())
-                .quantite(quantite)
-                .commentaire(entreeCommentaireArea.getText().trim())
-                .dateApprovisionnement(LocalDate.parse(entreeDateField.getText().trim()))
-                .numeroCommande(entreeNumeroCommandeField.getText().trim())
-                .numeroFacture(entreeNumeroFactureField.getText().trim())
-                .statut((String) entreeStatutCombo.getSelectedItem())
-                .build();
-
-            // Si prix unitaire renseigné
-            String prixText = entreePrixUnitaireField.getText().trim();
-            if (!prixText.isEmpty()) {
-                dto.setPrixUnitaire(new java.math.BigDecimal(prixText));
-            }
-
-            // Fichier de référence
-            if (entreeFichierRefField.getText() != null && !entreeFichierRefField.getText().isBlank()) {
-                dto.setFichierReference(entreeFichierRefField.getText().trim());
-            }
-
-            // Enregistrement avec options Historiser/Cumul + emplacement
-            boolean historiser = entreeHistoriserRadio.isSelected();
-            String typeInventaire = (String) entreeTypeInventaireCombo.getSelectedItem();
-            stockService.creerEntreeStockAvecOptions(dto, typeInventaire, historiser);
             
             afficherMessage("Entrée de stock enregistrée avec succès", "Succès", JOptionPane.INFORMATION_MESSAGE);
             viderFormulaireEntrees();

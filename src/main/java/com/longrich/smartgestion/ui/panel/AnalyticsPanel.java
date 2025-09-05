@@ -11,8 +11,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-// import java.time.LocalDate;
-// import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,7 +83,7 @@ public class AnalyticsPanel extends JPanel {
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setBackground(BACKGROUND_COLOR);
 
-        JLabel titleLabel = new JLabel("📊 Analytics & Tableaux de Bord");
+        JLabel titleLabel = new JLabel("Analytics");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(TEXT_PRIMARY);
         titlePanel.add(titleLabel);

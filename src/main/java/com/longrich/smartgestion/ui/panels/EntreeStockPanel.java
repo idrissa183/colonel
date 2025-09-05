@@ -7,6 +7,7 @@ import com.longrich.smartgestion.entity.Fournisseur;
 import com.longrich.smartgestion.entity.Produit;
 import com.longrich.smartgestion.enums.StatutEntreeStock;
 import com.longrich.smartgestion.service.EntreeStockService;
+import com.longrich.smartgestion.service.CommandeFournisseurService;
 import com.longrich.smartgestion.service.FournisseurService;
 import com.longrich.smartgestion.service.ProduitService;
 
@@ -26,6 +27,7 @@ public class EntreeStockPanel extends JPanel {
     private final EntreeStockService entreeStockService;
     private final FournisseurService fournisseurService;
     private final ProduitService produitService;
+    private final CommandeFournisseurService commandeFournisseurService;
 
     // Composants UI
     private JTable tableEntrees;
@@ -35,6 +37,7 @@ public class EntreeStockPanel extends JPanel {
     private JTextField txtNumeroBonLivraison;
     private JTextArea txtObservation;
     private JComboBox<StatutEntreeStock> comboStatut;
+    private JComboBox<com.longrich.smartgestion.entity.CommandeFournisseur> comboCommande;
 
     // Table des lignes d'entrée
     private JTable tableLignes;
@@ -47,10 +50,12 @@ public class EntreeStockPanel extends JPanel {
 
     public EntreeStockPanel(EntreeStockService entreeStockService,
                            FournisseurService fournisseurService,
-                           ProduitService produitService) {
+                           ProduitService produitService,
+                           CommandeFournisseurService commandeFournisseurService) {
         this.entreeStockService = entreeStockService;
         this.fournisseurService = fournisseurService;
         this.produitService = produitService;
+        this.commandeFournisseurService = commandeFournisseurService;
 
         initializeComponents();
         setupLayout();
@@ -71,13 +76,15 @@ public class EntreeStockPanel extends JPanel {
         // Formulaire de saisie
         comboFournisseur = new JComboBox<>();
         txtNumeroFacture = new JTextField(20);
+        txtNumeroFacture.setVisible(false);
         txtNumeroBonLivraison = new JTextField(20);
         txtObservation = new JTextArea(3, 20);
         txtObservation.setLineWrap(true);
-        comboStatut = new JComboBox<>(StatutEntreeStock.values());
+        comboStatut = new JComboBox<>();
+        comboStatut.setVisible(false);
 
         // Table des lignes d'entrée
-        String[] colonnesLignes = {"Produit", "Quantité", "Qté Reçue", "Prix Unit.", "Montant", "Actions"};
+        String[] colonnesLignes = {"Produit", "Quantité", "Qté Reçue", "Prix Unit.", "Montant", "Actions", "ProduitId"};
         modelLignes = new DefaultTableModel(colonnesLignes, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -85,6 +92,12 @@ public class EntreeStockPanel extends JPanel {
             }
         };
         tableLignes = new JTable(modelLignes);
+        // Masquer la colonne ProduitId
+        if (tableLignes.getColumnModel().getColumnCount() > 6) {
+            tableLignes.getColumnModel().getColumn(6).setMinWidth(0);
+            tableLignes.getColumnModel().getColumn(6).setMaxWidth(0);
+            tableLignes.getColumnModel().getColumn(6).setWidth(0);
+        }
 
         // Composants pour ajouter des lignes
         comboProduit = new JComboBox<>();
@@ -169,25 +182,24 @@ public class EntreeStockPanel extends JPanel {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(comboFournisseur, gbc);
 
-        // Ligne 2: N° Facture
+        // Ligne 2: Commande Fournisseur
         gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("N° Facture:"), gbc);
+        formPanel.add(new JLabel("Commande Fournisseur:"), gbc);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(txtNumeroFacture, gbc);
+        comboCommande = new JComboBox<>();
+        formPanel.add(comboCommande, gbc);
 
-        // Ligne 3: N° Bon de livraison
+        // N° Facture non affiché
+
+        // Ligne 4: N° Bon de livraison
         gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
         formPanel.add(new JLabel("N° Bon Livraison:"), gbc);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(txtNumeroBonLivraison, gbc);
 
-        // Ligne 4: Statut
-        gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Statut:"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(comboStatut, gbc);
+        // Statut réception non affiché
 
-        // Ligne 5: Observation
+        // Ligne 6: Observation
         gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE;
         formPanel.add(new JLabel("Observation:"), gbc);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.BOTH;
@@ -268,6 +280,17 @@ public class EntreeStockPanel extends JPanel {
             comboProduit.addItem(produit);
         }
 
+        // Charger les commandes fournisseur actives (EN_COURS, PARTIELLEMENT_LIVREE)
+        comboCommande.removeAllItems();
+        try {
+            List<com.longrich.smartgestion.entity.CommandeFournisseur> enCours = commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.EN_COURS);
+            List<com.longrich.smartgestion.entity.CommandeFournisseur> partiel = commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.PARTIELLEMENT_LIVREE);
+            for (var c : enCours) comboCommande.addItem(c);
+            for (var c : partiel) comboCommande.addItem(c);
+        } catch (Exception e) {
+            // ignore pour l'UI
+        }
+
         // Charger les entrées de stock
         chargerEntrees();
     }
@@ -344,7 +367,8 @@ public class EntreeStockPanel extends JPanel {
                 0, // Quantité reçue
                 prixUnitaire,
                 prixUnitaire.multiply(BigDecimal.valueOf(quantite)),
-                "Supprimer"
+                "Supprimer",
+                produit.getId()
             };
             modelLignes.addRow(row);
 
@@ -359,9 +383,11 @@ public class EntreeStockPanel extends JPanel {
         try {
             EntreeStockDTO dto = new EntreeStockDTO();
             dto.setFournisseurId(((Fournisseur) comboFournisseur.getSelectedItem()).getId());
-            dto.setNumeroFactureFournisseur(txtNumeroFacture.getText());
+            if (comboCommande.getSelectedItem() != null) {
+                dto.setCommandeFournisseurId(((com.longrich.smartgestion.entity.CommandeFournisseur) comboCommande.getSelectedItem()).getId());
+            }
+            // Pas de numéro facture/statut dans ce flux
             dto.setNumeroBonLivraison(txtNumeroBonLivraison.getText());
-            dto.setStatut((StatutEntreeStock) comboStatut.getSelectedItem());
             dto.setObservation(txtObservation.getText());
             dto.setDateEntree(LocalDateTime.now());
 
@@ -369,7 +395,15 @@ public class EntreeStockPanel extends JPanel {
             List<LigneEntreeStockDTO> lignes = new ArrayList<>();
             for (int i = 0; i < modelLignes.getRowCount(); i++) {
                 LigneEntreeStockDTO ligne = new LigneEntreeStockDTO();
-                // Remplir les données de la ligne...
+                Object produitIdVal = modelLignes.getValueAt(i, 6);
+                if (produitIdVal != null) {
+                    ligne.setProduitId(Long.valueOf(produitIdVal.toString()));
+                }
+                Object qte = modelLignes.getValueAt(i, 1);
+                Object prix = modelLignes.getValueAt(i, 3);
+                ligne.setQuantite(Integer.valueOf(qte.toString()));
+                ligne.setQuantiteRecue(0);
+                ligne.setPrixUnitaire(new BigDecimal(prix.toString()));
                 lignes.add(ligne);
             }
             dto.setLignesEntree(lignes);

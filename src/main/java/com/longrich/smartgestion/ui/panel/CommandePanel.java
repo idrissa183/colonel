@@ -1,44 +1,74 @@
 package com.longrich.smartgestion.ui.panel;
 
-import com.longrich.smartgestion.dto.FournisseurDTO;
-import com.longrich.smartgestion.dto.CommandeFournisseurDTO;
-import com.longrich.smartgestion.dto.LigneCommandeFournisseurDTO;
-import com.longrich.smartgestion.dto.ProduitDto;
-import com.longrich.smartgestion.entity.CommandeFournisseur;
-import com.longrich.smartgestion.entity.LigneCommandeFournisseur;
-import com.longrich.smartgestion.enums.StatutCommande;
-import com.longrich.smartgestion.service.FournisseurService;
-import com.longrich.smartgestion.service.ProduitService;
-import com.longrich.smartgestion.service.CommandeFournisseurService;
-import com.longrich.smartgestion.ui.components.ButtonFactory;
-import com.longrich.smartgestion.ui.components.ComponentFactory;
-import com.longrich.smartgestion.ui.components.ModernDatePicker;
-
-import lombok.RequiredArgsConstructor;
-
-import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
-import org.kordamp.ikonli.swing.FontIcon;
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Component;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-// import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultCellEditor;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.JWindow;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.swing.FontIcon;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+
+import com.longrich.smartgestion.dto.CommandeFournisseurDTO;
+import com.longrich.smartgestion.dto.FournisseurDTO;
+import com.longrich.smartgestion.dto.LigneCommandeFournisseurDTO;
+import com.longrich.smartgestion.dto.ProduitDto;
+import com.longrich.smartgestion.entity.CommandeFournisseur;
+import com.longrich.smartgestion.entity.LigneCommandeFournisseur;
+import com.longrich.smartgestion.enums.StatutCommande;
+import com.longrich.smartgestion.service.CommandeFournisseurService;
+import com.longrich.smartgestion.service.FournisseurService;
+import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.ui.components.ButtonFactory;
+import com.longrich.smartgestion.ui.components.ComponentFactory;
+import com.longrich.smartgestion.ui.components.ModernDatePicker;
+
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
@@ -120,7 +150,7 @@ public class CommandePanel extends JPanel {
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setBackground(BACKGROUND_COLOR);
 
-        JLabel titleLabel = new JLabel("Gestion des Commandes Fournisseur");
+        JLabel titleLabel = new JLabel("Gestion des Commandes");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(TEXT_PRIMARY);
         titlePanel.add(titleLabel);
@@ -166,7 +196,7 @@ public class CommandePanel extends JPanel {
 
         // Onglet liste des commandes
         JPanel listePanel = createListeCommandesPanel();
-        tabbedPane.addTab("📋 Liste des Commandes Fournisseur", listePanel);
+        tabbedPane.addTab("📋 Liste des Commandes", listePanel);
 
         // Onglet nouvelle commande
         JPanel nouvellePanel = createNouvelleCommandePanel();
@@ -195,7 +225,7 @@ public class CommandePanel extends JPanel {
         searchPanel.setLayout(new BorderLayout());
 
         // Titre
-        JLabel searchTitle = ComponentFactory.createSectionTitle("Liste des Commandes Fournisseur");
+        JLabel searchTitle = ComponentFactory.createSectionTitle("Liste des Commandes");
 
         // Panneau de filtres moderne
         JPanel filtersPanel = new JPanel(new GridBagLayout());
@@ -299,7 +329,7 @@ public class CommandePanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         // Titre
-        JLabel titleLabel = ComponentFactory.createSectionTitle("Informations de la Commande Fournisseur");
+        JLabel titleLabel = ComponentFactory.createSectionTitle("Informations de la Commande");
         titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(10));

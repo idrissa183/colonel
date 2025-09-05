@@ -24,11 +24,14 @@ public class EntreeStockDTO {
     private LocalDate dateLivraison;
     private Long fournisseurId;
     private String nomFournisseur;
+    private Long commandeFournisseurId;
+    private String numeroCommandeFournisseur;
     private String numeroFactureFournisseur;
     private String numeroBonLivraison;
     private StatutEntreeStock statut;
     private BigDecimal montantTotal;
     private String observation;
+    private String fichierReference;
     private Long utilisateurId;
     private String nomUtilisateur;
     private List<LigneEntreeStockDTO> lignesEntree;

@@ -1,6 +1,7 @@
 package com.longrich.smartgestion.service;
 
 import com.longrich.smartgestion.entity.*;
+import com.longrich.smartgestion.enums.TypeEmplacement;
 import com.longrich.smartgestion.enums.TypeMouvement;
 import com.longrich.smartgestion.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class VenteService {
     private final BonusAttribueRepository bonusAttribueRepository;
     private final ClientRepository clientRepository;
     
-    private static final String TYPE_SURFACE_VENTE = "SALLE_VENTE";
+    private static final TypeEmplacement TYPE_SURFACE_VENTE = TypeEmplacement.SURFACE_VENTE;
     
     // === VENTES AVEC GESTION DES PROMOTIONS ===
     
@@ -152,7 +153,7 @@ public class VenteService {
     @Transactional(readOnly = true)
     public boolean verifierDisponibiliteSurfaceVente(Long produitId, Integer quantite) {
         return stockRepository.findByProduitId(produitId)
-            .filter(stock -> TYPE_SURFACE_VENTE.equals(stock.getTypeStock()))
+            .filter(stock -> stock.getTypeStock() == TYPE_SURFACE_VENTE)
             .map(stock -> stock.getQuantiteDisponible() >= quantite)
             .orElse(false);
     }
@@ -164,7 +165,7 @@ public class VenteService {
             .produit(produit)
             .typeMouvement(TypeMouvement.SORTIE)
             .quantite(quantite)
-            .origine(TYPE_SURFACE_VENTE)
+            .origine(TYPE_SURFACE_VENTE.getDisplayName())
             .observation("Vente - Surface de vente")
             .dateMouvement(LocalDateTime.now())
             .build();
@@ -177,7 +178,7 @@ public class VenteService {
             .produit(produitBonus)
             .typeMouvement(TypeMouvement.SORTIE)
             .quantite(quantite)
-            .origine(TYPE_SURFACE_VENTE)
+            .origine(TYPE_SURFACE_VENTE.getDisplayName())
             .observation("Sortie bonus - Vente promotionnelle")
             .dateMouvement(LocalDateTime.now())
             .build();

@@ -23,10 +23,9 @@ import com.longrich.smartgestion.ui.panel.CommandePanel;
 import com.longrich.smartgestion.ui.panel.DashboardPanel;
 import com.longrich.smartgestion.ui.panel.FacturePanel;
 import com.longrich.smartgestion.ui.panel.FournisseurPanel;
-import com.longrich.smartgestion.ui.panel.ProduitContainerPanel;
-import com.longrich.smartgestion.ui.panel.PvPanel;
-import com.longrich.smartgestion.ui.panel.SettingsPanel;
 import com.longrich.smartgestion.ui.panel.ModernStockPanel;
+import com.longrich.smartgestion.ui.panel.ProduitContainerPanel;
+import com.longrich.smartgestion.ui.panel.SettingsPanel;
 import com.longrich.smartgestion.ui.panel.UserPanel;
 import com.longrich.smartgestion.ui.panel.VentePanel;
 
@@ -49,7 +48,7 @@ public class MainFrame extends JFrame {
     private final AnalyticsPanel analyticsPanel;
     private final FacturePanel facturePanel;
     private final VentePanel ventePanel;
-    private final PvPanel pvPanel;
+    // private final PvPanel pvPanel;
     private final SettingsPanel settingsPanel;
     private final UserPanel userPanel;
     private final BackupPanel backupPanel;
@@ -147,7 +146,7 @@ public class MainFrame extends JFrame {
             case "clients" -> "Gestion des clients";
             case "produits" -> "Gestion des produits";
             case "stock" -> "Gestion du stock";
-            case "commandes" -> "Gestion des commandes fournisseur";
+            case "commandes" -> "Gestion des commandes";
             case "fournisseurs" -> "Gestion des fournisseurs";
             case "factures" -> "Gestion des factures";
             case "ventes" -> "Gestion des ventes";

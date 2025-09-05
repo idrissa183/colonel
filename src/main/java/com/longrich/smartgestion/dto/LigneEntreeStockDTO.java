@@ -20,6 +20,7 @@ public class LigneEntreeStockDTO {
     private Long produitId;
     private String nomProduit;
     private String codeProduit;
+    private Long ligneCommandeFournisseurId;
     private Integer quantite;
     private Integer quantiteRecue;
     private BigDecimal prixUnitaire;
