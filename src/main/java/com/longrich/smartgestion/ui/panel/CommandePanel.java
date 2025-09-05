@@ -1439,7 +1439,7 @@ public class CommandePanel extends JPanel {
         styleProductsTable(productsTable);
         
         // Remplir le tableau avec les lignes de commande
-        if (commande.getLignes() != null) {
+        if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
             for (LigneCommandeFournisseur ligne : commande.getLignes()) {
                 BigDecimal montantLigne = ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(ligne.getQuantiteCommandee()));
                 String statutLivraison = getStatutLivraison(ligne);
