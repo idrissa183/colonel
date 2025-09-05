@@ -147,7 +147,7 @@ public class MainFrame extends JFrame {
             case "clients" -> "Gestion des clients";
             case "produits" -> "Gestion des produits";
             case "stock" -> "Gestion du stock";
-            case "commandes" -> "Gestion des commandes";
+            case "commandes" -> "Gestion des commandes fournisseur";
             case "fournisseurs" -> "Gestion des fournisseurs";
             case "factures" -> "Gestion des factures";
             case "ventes" -> "Gestion des ventes";

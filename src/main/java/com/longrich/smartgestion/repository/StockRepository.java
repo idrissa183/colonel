@@ -2,6 +2,7 @@ package com.longrich.smartgestion.repository;
 
 import com.longrich.smartgestion.entity.Stock;
 import com.longrich.smartgestion.entity.Produit;
+import com.longrich.smartgestion.enums.TypeEmplacement;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +22,7 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     
     // Recherche par produit et type de stock
     Optional<Stock> findByProduitAndTypeStock(Produit produit, String typeStock);
+    Optional<Stock> findByProduitAndTypeStock(Produit produit, TypeEmplacement typeStock);
 
     // Recherche par produit ID
     @Query("SELECT s FROM Stock s WHERE s.produit.id = :produitId")
@@ -47,6 +49,7 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     // Recherche par type de stock
     List<Stock> findByTypeStock(String typeStock);
+    List<Stock> findByTypeStock(TypeEmplacement typeStock);
 
     // Recherche par emplacement
     List<Stock> findByEmplacementContainingIgnoreCase(String emplacement);

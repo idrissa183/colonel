@@ -1,11 +1,7 @@
 package com.longrich.smartgestion.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.longrich.smartgestion.enums.TypeEmplacement;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -44,8 +40,10 @@ public class Stock extends BaseEntity {
     @JoinColumn(name = "salle_vente_id")
     private SalleVente salleVente;
 
-    @Column(name = "type_stock", length = 20)
-    private String typeStock; // ENTREPOT, MAGASIN, SALLE_VENTE
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type_stock", nullable = false)
+    @Builder.Default
+    private TypeEmplacement typeStock = TypeEmplacement.MAGASIN;
     
     @Column(name = "date_entree")
     private java.time.LocalDate dateEntree;
@@ -62,5 +60,17 @@ public class Stock extends BaseEntity {
         return produit != null &&
                 produit.getStockMinimum() != null &&
                 getQuantiteDisponible() <= produit.getStockMinimum();
+    }
+
+    public boolean isStockMagasin() {
+        return typeStock == TypeEmplacement.MAGASIN;
+    }
+
+    public boolean isStockSurfaceVente() {
+        return typeStock == TypeEmplacement.SURFACE_VENTE;
+    }
+
+    public boolean peutVendre() {
+        return typeStock == TypeEmplacement.SURFACE_VENTE && getQuantiteDisponible() > 0;
     }
 }

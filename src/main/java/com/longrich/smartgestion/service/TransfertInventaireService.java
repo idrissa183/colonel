@@ -3,6 +3,7 @@ package com.longrich.smartgestion.service;
 import com.longrich.smartgestion.entity.Stock;
 import com.longrich.smartgestion.entity.Produit;
 import com.longrich.smartgestion.entity.MouvementStock;
+import com.longrich.smartgestion.enums.TypeEmplacement;
 import com.longrich.smartgestion.enums.TypeMouvement;
 import com.longrich.smartgestion.repository.StockRepository;
 import com.longrich.smartgestion.repository.ProduitRepository;
@@ -26,8 +27,8 @@ public class TransfertInventaireService {
     private final ProduitRepository produitRepository;
     private final MouvementStockRepository mouvementStockRepository;
     
-    private static final String TYPE_SURFACE_VENTE = "SALLE_VENTE";
-    private static final String TYPE_MAGASIN = "MAGASIN";
+    private static final TypeEmplacement TYPE_SURFACE_VENTE = TypeEmplacement.SURFACE_VENTE;
+    private static final TypeEmplacement TYPE_MAGASIN = TypeEmplacement.MAGASIN;
     
     /**
      * Effectue un transfert automatique vers la surface de vente si nécessaire
@@ -92,15 +93,15 @@ public class TransfertInventaireService {
             .toList();
     }
     
-    private void creerMouvementTransfert(Produit produit, Integer quantite, String origine, String destination) {
+    private void creerMouvementTransfert(Produit produit, Integer quantite, TypeEmplacement origine, TypeEmplacement destination) {
         // Mouvement de sortie
         MouvementStock mouvementSortie = MouvementStock.builder()
             .produit(produit)
             .typeMouvement(TypeMouvement.SORTIE)
             .quantite(quantite)
-            .origine(origine)
-            .destination(destination)
-            .observation("Transfert automatique de " + origine + " vers " + destination)
+            .origine(origine.getDisplayName())
+            .destination(destination.getDisplayName())
+            .observation("Transfert automatique de " + origine.getDisplayName() + " vers " + destination.getDisplayName())
             .dateMouvement(LocalDateTime.now())
             .build();
         
@@ -111,9 +112,9 @@ public class TransfertInventaireService {
             .produit(produit)
             .typeMouvement(TypeMouvement.ENTREE)
             .quantite(quantite)
-            .origine(origine)
-            .destination(destination)
-            .observation("Réception transfert de " + origine + " vers " + destination)
+            .origine(origine.getDisplayName())
+            .destination(destination.getDisplayName())
+            .observation("Réception transfert de " + origine.getDisplayName() + " vers " + destination.getDisplayName())
             .dateMouvement(LocalDateTime.now())
             .build();
         

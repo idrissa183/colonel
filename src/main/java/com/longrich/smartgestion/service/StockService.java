@@ -3,6 +3,7 @@ package com.longrich.smartgestion.service;
 import com.longrich.smartgestion.dto.*;
 import com.longrich.smartgestion.entity.*;
 import com.longrich.smartgestion.enums.MotifSortie;
+import com.longrich.smartgestion.enums.TypeEmplacement;
 import com.longrich.smartgestion.enums.TypeMouvement;
 import com.longrich.smartgestion.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -298,7 +299,7 @@ public class StockService {
             .produit(produit)
             .quantite(quantite)
             .quantiteReservee(0)
-            .typeStock(typeInventaire)
+            .typeStock(TypeEmplacement.valueOf(typeInventaire))
             .dateEntree(LocalDate.now())
             .fichierReference(fichierReference)
             .build();
@@ -313,7 +314,7 @@ public class StockService {
                 newStock.setProduit(produit);
                 newStock.setQuantite(0);
                 newStock.setQuantiteReservee(0);
-                newStock.setTypeStock(typeInventaire);
+                newStock.setTypeStock(TypeEmplacement.valueOf(typeInventaire));
                 newStock.setDateEntree(LocalDate.now());
                 return newStock;
             });

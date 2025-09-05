@@ -29,6 +29,10 @@ public class ProduitService {
                 .collect(Collectors.toList());
     }
 
+    public List<Produit> findAll() {
+        return produitRepository.findAll();
+    }
+
     public List<ProduitDto> getActiveProduits() {
         return produitRepository.findByActiveTrue().stream()
                 .map(this::convertToDto)

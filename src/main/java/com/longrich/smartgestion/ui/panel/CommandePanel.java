@@ -1,10 +1,14 @@
 package com.longrich.smartgestion.ui.panel;
 
-import com.longrich.smartgestion.dto.ClientDTO;
-import com.longrich.smartgestion.dto.CommandeDTO;
+import com.longrich.smartgestion.dto.FournisseurDTO;
+import com.longrich.smartgestion.dto.CommandeFournisseurDTO;
+import com.longrich.smartgestion.dto.LigneCommandeFournisseurDTO;
 import com.longrich.smartgestion.dto.ProduitDto;
-import com.longrich.smartgestion.service.ClientService;
+import com.longrich.smartgestion.entity.CommandeFournisseur;
+import com.longrich.smartgestion.enums.StatutCommande;
+import com.longrich.smartgestion.service.FournisseurService;
 import com.longrich.smartgestion.service.ProduitService;
+import com.longrich.smartgestion.service.CommandeFournisseurService;
 import com.longrich.smartgestion.ui.components.ButtonFactory;
 import com.longrich.smartgestion.ui.components.ComponentFactory;
 import com.longrich.smartgestion.ui.components.ModernDatePicker;
@@ -53,8 +57,9 @@ public class CommandePanel extends JPanel {
     private static final Color TEXT_PRIMARY = new Color(17, 24, 39);
     private static final Color TEXT_SECONDARY = new Color(107, 114, 128);
 
-    private final ClientService clientService;
+    private final FournisseurService fournisseurService;
     private final ProduitService produitService;
+    private final CommandeFournisseurService commandeFournisseurService;
 
     // Composants UI pour les commandes
     private JTextField searchField;
@@ -64,12 +69,12 @@ public class CommandePanel extends JPanel {
     private JLabel statsLabel;
 
     // Composants pour nouvelle commande avec validation
-    private ComponentFactory.FieldPanel clientFieldPanel;
-    private JComboBox<String> clientCombo;
+    private ComponentFactory.FieldPanel fournisseurFieldPanel;
+    private JComboBox<String> fournisseurCombo;
     private ComponentFactory.FieldPanel dateFieldPanel;
     private ModernDatePicker dateCommandePicker;
-    private ComponentFactory.FieldPanel statutFieldPanel;
-    private JComboBox<String> statutCombo;
+    private ComponentFactory.FieldPanel dateLivraisonFieldPanel;
+    private ModernDatePicker dateLivraisonPrevuePicker;
     private ComponentFactory.FieldPanel observationsFieldPanel;
     private JTextArea observationsArea;
 
@@ -84,10 +89,10 @@ public class CommandePanel extends JPanel {
     private JTextField prixUnitaireField;
     private JLabel totalCommandeLabel;
 
-    private List<ClientDTO> clientsList;
+    private List<FournisseurDTO> fournisseursList;
     private List<ProduitDto> produitsList;
     private List<LigneCommandeTemp> lignesCommande;
-    private CommandeDTO currentCommande;
+    private CommandeFournisseurDTO currentCommande;
 
     @PostConstruct
     public void initializeUI() {
@@ -101,7 +106,7 @@ public class CommandePanel extends JPanel {
         createMainContent();
 
         loadCommandes();
-        loadClients();
+        loadFournisseurs();
         loadProduits();
     }
 
@@ -114,7 +119,7 @@ public class CommandePanel extends JPanel {
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         titlePanel.setBackground(BACKGROUND_COLOR);
 
-        JLabel titleLabel = new JLabel("Gestion des Commandes");
+        JLabel titleLabel = new JLabel("Gestion des Commandes Fournisseur");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(TEXT_PRIMARY);
         titlePanel.add(titleLabel);
@@ -160,7 +165,7 @@ public class CommandePanel extends JPanel {
 
         // Onglet liste des commandes
         JPanel listePanel = createListeCommandesPanel();
-        tabbedPane.addTab("📋 Liste des Commandes", listePanel);
+        tabbedPane.addTab("📋 Liste des Commandes Fournisseur", listePanel);
 
         // Onglet nouvelle commande
         JPanel nouvellePanel = createNouvelleCommandePanel();
@@ -189,7 +194,7 @@ public class CommandePanel extends JPanel {
         searchPanel.setLayout(new BorderLayout());
 
         // Titre
-        JLabel searchTitle = ComponentFactory.createSectionTitle("Liste des Commandes");
+        JLabel searchTitle = ComponentFactory.createSectionTitle("Liste des Commandes Fournisseur");
 
         // Panneau de filtres moderne
         JPanel filtersPanel = new JPanel(new GridBagLayout());
@@ -199,14 +204,14 @@ public class CommandePanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
 
         // Champ de recherche avec icône
-        searchField = ComponentFactory.createStyledTextField("Rechercher par numéro, client...");
+        searchField = ComponentFactory.createStyledTextField("Rechercher par numéro, fournisseur...");
         searchField.setPreferredSize(new Dimension(250, 38));
         searchField.addActionListener(e -> searchCommandes());
         JPanel searchPanel_inner = ComponentFactory.createSearchField(searchField);
         searchPanel_inner.setPreferredSize(new Dimension(250, 38));
 
         // Filtre par statut stylisé
-        String[] statutOptions = { "Tous les statuts", "En attente", "Confirmée", "En cours", "Livrée", "Annulée" };
+        String[] statutOptions = { "Tous les statuts", "En Attente", "Confirmée", "En Cours", "Livrée", "Annulée" };
         statusFilterCombo = ComponentFactory.createStyledComboBox(statutOptions);
         statusFilterCombo.setPreferredSize(new Dimension(150, 38));
         statusFilterCombo.addActionListener(e -> filterCommandes());
@@ -246,7 +251,7 @@ public class CommandePanel extends JPanel {
                 BorderFactory.createEmptyBorder(0, 0, 0, 0)));
 
         // Modèle de table
-        String[] columns = { "N° Commande", "Client", "Date", "Statut", "Total", "Actions" };
+        String[] columns = { "N° Commande", "Fournisseur", "Date", "Statut", "Total", "Actions" };
         commandesTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -293,23 +298,23 @@ public class CommandePanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
         // Titre
-        JLabel titleLabel = ComponentFactory.createSectionTitle("Informations de la Commande");
+        JLabel titleLabel = ComponentFactory.createSectionTitle("Informations de la Commande Fournisseur");
         titleLabel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         panel.add(titleLabel);
         panel.add(Box.createVerticalStrut(10));
 
-        // Première ligne - Client et Date avec validation
+        // Première ligne - Fournisseur et Date de commande
         JPanel firstRow = new JPanel(new GridLayout(1, 2, 20, 0));
         firstRow.setBackground(ComponentFactory.getCardColor());
         firstRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         firstRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
 
-        // Client avec validation
-        clientCombo = ComponentFactory.createStyledComboBox();
-        clientFieldPanel = ComponentFactory.createFieldPanel("Client", clientCombo, true);
-        firstRow.add(clientFieldPanel);
+        // Fournisseur avec validation
+        fournisseurCombo = ComponentFactory.createStyledComboBox();
+        fournisseurFieldPanel = ComponentFactory.createFieldPanel("Fournisseur", fournisseurCombo, true);
+        firstRow.add(fournisseurFieldPanel);
 
-        // Date avec DatePicker moderne
+        // Date de commande avec DatePicker moderne
         dateCommandePicker = new ModernDatePicker(LocalDate.now());
         dateFieldPanel = ComponentFactory.createFieldPanel("Date de commande", dateCommandePicker, true);
         firstRow.add(dateFieldPanel);
@@ -317,17 +322,16 @@ public class CommandePanel extends JPanel {
         panel.add(firstRow);
         panel.add(Box.createVerticalStrut(10));
 
-        // Deuxième ligne - Statut et Observations
+        // Deuxième ligne - Date de livraison prévue et Observations
         JPanel secondRow = new JPanel(new GridLayout(1, 2, 20, 0));
         secondRow.setBackground(ComponentFactory.getCardColor());
         secondRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         secondRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        // Statut avec validation
-        String[] statutOptions = { "En attente", "Confirmée", "En cours", "Livrée", "Annulée" };
-        statutCombo = ComponentFactory.createStyledComboBox(statutOptions);
-        statutFieldPanel = ComponentFactory.createFieldPanel("Statut", statutCombo, true);
-        secondRow.add(statutFieldPanel);
+        // Date de livraison prévue
+        dateLivraisonPrevuePicker = new ModernDatePicker(LocalDate.now().plusDays(7));
+        dateLivraisonFieldPanel = ComponentFactory.createFieldPanel("Date de livraison prévue", dateLivraisonPrevuePicker, false);
+        secondRow.add(dateLivraisonFieldPanel);
 
         // Observations
         observationsArea = ComponentFactory.createStyledTextArea(3);
@@ -489,28 +493,33 @@ public class CommandePanel extends JPanel {
     private boolean validateCommandeFields() {
         boolean isValid = true;
 
-        // Validation client
-        if (clientCombo.getSelectedIndex() == -1) {
-            clientFieldPanel.setError("Veuillez sélectionner un client");
+        // Validation fournisseur
+        if (fournisseurCombo.getSelectedIndex() == -1) {
+            fournisseurFieldPanel.setError("Veuillez sélectionner un fournisseur");
             isValid = false;
         } else {
-            clientFieldPanel.clearError();
+            fournisseurFieldPanel.clearError();
         }
 
-        // Validation date
+        // Validation date de commande
         if (dateCommandePicker.getSelectedDate() == null) {
-            dateFieldPanel.setError("Veuillez sélectionner une date");
+            dateFieldPanel.setError("Veuillez sélectionner une date de commande");
+            isValid = false;
+        } else if (dateCommandePicker.getSelectedDate().isAfter(LocalDate.now())) {
+            dateFieldPanel.setError("La date de commande ne peut pas être dans le futur");
             isValid = false;
         } else {
             dateFieldPanel.clearError();
         }
 
-        // Validation statut
-        if (statutCombo.getSelectedIndex() == -1) {
-            statutFieldPanel.setError("Veuillez sélectionner un statut");
-            isValid = false;
-        } else {
-            statutFieldPanel.clearError();
+        // Validation date de livraison prévue (optionnelle mais doit être après la date de commande si renseignée)
+        if (dateLivraisonPrevuePicker.getSelectedDate() != null && dateCommandePicker.getSelectedDate() != null) {
+            if (dateLivraisonPrevuePicker.getSelectedDate().isBefore(dateCommandePicker.getSelectedDate())) {
+                dateLivraisonFieldPanel.setError("La date de livraison doit être postérieure à la date de commande");
+                isValid = false;
+            } else {
+                dateLivraisonFieldPanel.clearError();
+            }
         }
 
         return isValid;
@@ -571,9 +580,9 @@ public class CommandePanel extends JPanel {
     }
 
     private void clearAllErrors() {
-        clientFieldPanel.clearError();
+        fournisseurFieldPanel.clearError();
         dateFieldPanel.clearError();
-        statutFieldPanel.clearError();
+        dateLivraisonFieldPanel.clearError();
         produitFieldPanel.clearError();
         quantiteFieldPanel.clearError();
         prixFieldPanel.clearError();
@@ -655,27 +664,67 @@ public class CommandePanel extends JPanel {
         @Override
         public java.awt.Component getTableCellRendererComponent(JTable table, Object value,
                 boolean isSelected, boolean hasFocus, int row, int column) {
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 5));
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 2));
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
 
-            JButton viewButton = new JButton(FontIcon.of(FontAwesomeSolid.EYE, 12, INFO_COLOR));
-            JButton editButton = new JButton(FontIcon.of(FontAwesomeSolid.EDIT, 12, WARNING_COLOR));
-            JButton deleteButton = new JButton(FontIcon.of(FontAwesomeSolid.TRASH, 12, DANGER_COLOR));
-
-            for (JButton btn : new JButton[] { viewButton, editButton, deleteButton }) {
-                btn.setPreferredSize(new Dimension(25, 25));
-                btn.setBorderPainted(false);
-                btn.setContentAreaFilled(false);
-                btn.setFocusPainted(false);
-                btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                panel.add(btn);
+            // Récupérer le statut de la commande pour afficher les bons boutons
+            String statut = (String) table.getValueAt(row, 3); // Colonne statut
+            
+            JButton viewButton = new JButton(FontIcon.of(FontAwesomeSolid.EYE, 10, INFO_COLOR));
+            viewButton.setToolTipText("Voir détails");
+            
+            // Boutons selon le statut
+            if ("En Cours".equals(statut)) {
+                JButton confirmButton = new JButton(FontIcon.of(FontAwesomeSolid.CHECK, 10, SUCCESS_COLOR));
+                confirmButton.setToolTipText("Confirmer");
+                JButton cancelButton = new JButton(FontIcon.of(FontAwesomeSolid.TIMES, 10, DANGER_COLOR));
+                cancelButton.setToolTipText("Annuler");
+                
+                for (JButton btn : new JButton[] { viewButton, confirmButton, cancelButton }) {
+                    styleActionButton(btn);
+                    panel.add(btn);
+                }
+            } else if ("Confirmée".equals(statut)) {
+                JButton partialButton = new JButton(FontIcon.of(FontAwesomeSolid.SHIPPING_FAST, 10, WARNING_COLOR));
+                partialButton.setToolTipText("Livraison partielle");
+                JButton deliverButton = new JButton(FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 10, SUCCESS_COLOR));
+                deliverButton.setToolTipText("Livrer totalement");
+                JButton cancelButton = new JButton(FontIcon.of(FontAwesomeSolid.TIMES, 10, DANGER_COLOR));
+                cancelButton.setToolTipText("Annuler");
+                
+                for (JButton btn : new JButton[] { viewButton, partialButton, deliverButton, cancelButton }) {
+                    styleActionButton(btn);
+                    panel.add(btn);
+                }
+            } else if ("Partiellement Livrée".equals(statut)) {
+                JButton deliverButton = new JButton(FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 10, SUCCESS_COLOR));
+                deliverButton.setToolTipText("Livrer totalement");
+                
+                for (JButton btn : new JButton[] { viewButton, deliverButton }) {
+                    styleActionButton(btn);
+                    panel.add(btn);
+                }
+            } else {
+                // Statut Livrée ou Annulée - seulement voir
+                styleActionButton(viewButton);
+                panel.add(viewButton);
             }
 
             return panel;
         }
+        
+        private void styleActionButton(JButton btn) {
+            btn.setPreferredSize(new Dimension(22, 22));
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            btn.setFocusPainted(false);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        }
     }
 
     private class ActionButtonEditor extends DefaultCellEditor {
+        private JPanel panel;
+        
         public ActionButtonEditor() {
             super(new JCheckBox());
         }
@@ -683,8 +732,63 @@ public class CommandePanel extends JPanel {
         @Override
         public java.awt.Component getTableCellEditorComponent(JTable table, Object value,
                 boolean isSelected, int row, int column) {
-            return new ActionButtonRenderer().getTableCellRendererComponent(table, value, isSelected, false, row,
-                    column);
+            
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 2));
+            panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+
+            String statut = (String) table.getValueAt(row, 3);
+            String numeroCommande = (String) table.getValueAt(row, 0);
+            
+            JButton viewButton = createActionButton(FontAwesomeSolid.EYE, "Voir", INFO_COLOR, 
+                e -> voirDetailsCommande(numeroCommande));
+            
+            if ("En Cours".equals(statut)) {
+                JButton confirmButton = createActionButton(FontAwesomeSolid.CHECK, "Confirmer", SUCCESS_COLOR,
+                    e -> confirmerCommande(numeroCommande));
+                JButton cancelButton = createActionButton(FontAwesomeSolid.TIMES, "Annuler", DANGER_COLOR,
+                    e -> annulerCommande(numeroCommande));
+                
+                panel.add(viewButton);
+                panel.add(confirmButton);
+                panel.add(cancelButton);
+                
+            } else if ("Confirmée".equals(statut)) {
+                JButton partialButton = createActionButton(FontAwesomeSolid.SHIPPING_FAST, "Livraison partielle", WARNING_COLOR,
+                    e -> livrerPartiellement(numeroCommande));
+                JButton deliverButton = createActionButton(FontAwesomeSolid.CHECK_CIRCLE, "Livrer", SUCCESS_COLOR,
+                    e -> livrerTotalement(numeroCommande));
+                JButton cancelButton = createActionButton(FontAwesomeSolid.TIMES, "Annuler", DANGER_COLOR,
+                    e -> annulerCommande(numeroCommande));
+                
+                panel.add(viewButton);
+                panel.add(partialButton);
+                panel.add(deliverButton);
+                panel.add(cancelButton);
+                
+            } else if ("Partiellement Livrée".equals(statut)) {
+                JButton deliverButton = createActionButton(FontAwesomeSolid.CHECK_CIRCLE, "Livrer", SUCCESS_COLOR,
+                    e -> livrerTotalement(numeroCommande));
+                
+                panel.add(viewButton);
+                panel.add(deliverButton);
+                
+            } else {
+                panel.add(viewButton);
+            }
+
+            return panel;
+        }
+        
+        private JButton createActionButton(FontAwesomeSolid icon, String tooltip, Color color, ActionListener action) {
+            JButton btn = new JButton(FontIcon.of(icon, 10, color));
+            btn.setToolTipText(tooltip);
+            btn.setPreferredSize(new Dimension(22, 22));
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            btn.setFocusPainted(false);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            btn.addActionListener(action);
+            return btn;
         }
     }
 
@@ -750,34 +854,38 @@ public class CommandePanel extends JPanel {
 
     // Méthodes d'action
     private void loadCommandes() {
-        commandesTableModel.setRowCount(0);
-
-        // Données factices
-        Object[][] sampleData = {
-                { "CMD-001", "Client Test 1", "15/01/2024", "En cours", "150,000 FCFA", "" },
-                { "CMD-002", "Client Test 2", "16/01/2024", "Livrée", "75,500 FCFA", "" },
-                { "CMD-003", "Client Test 3", "17/01/2024", "En attente", "200,000 FCFA", "" }
-        };
-
-        for (Object[] row : sampleData) {
-            commandesTableModel.addRow(row);
+        try {
+            commandesTableModel.setRowCount(0);
+            List<CommandeFournisseur> commandes = commandeFournisseurService.getAllCommandes();
+            
+            for (CommandeFournisseur commande : commandes) {
+                Object[] row = {
+                    commande.getNumeroCommande(),
+                    commande.getFournisseur().getNomComplet(),
+                    commande.getDateCommande().toLocalDate().toString(),
+                    commande.getStatut().getLibelle(),
+                    String.format("%,.0f FCFA", commande.getMontantTotal()),
+                    ""
+                };
+                commandesTableModel.addRow(row);
+            }
+            updateStats();
+        } catch (Exception e) {
+            showErrorMessage("Erreur lors du chargement des commandes: " + e.getMessage());
         }
-
-        updateStats();
     }
 
-    private void loadClients() {
+    private void loadFournisseurs() {
         try {
-            clientsList = clientService.getAllClients();
-            clientCombo.removeAllItems();
-            for (ClientDTO client : clientsList) {
-                clientCombo.addItem(client.getNom() + " " + client.getPrenom());
+            fournisseursList = fournisseurService.getActiveFournisseurs();
+            fournisseurCombo.removeAllItems();
+            for (FournisseurDTO fournisseur : fournisseursList) {
+                fournisseurCombo.addItem(fournisseur.getNomComplet());
             }
         } catch (Exception e) {
-            // Gestion d'erreur silencieuse
+            showErrorMessage("Erreur lors du chargement des fournisseurs: " + e.getMessage());
         }
     }
-
     private void loadProduits() {
         try {
             produitsList = produitService.getActiveProduits();
@@ -791,7 +899,16 @@ public class CommandePanel extends JPanel {
     }
 
     private void updateStats() {
-        statsLabel.setText("3 commandes • 2 en cours • 1 livrée");
+        try {
+            long totalCommandes = commandeFournisseurService.getAllCommandes().size();
+            long enCours = commandeFournisseurService.countCommandesByStatut(StatutCommande.EN_COURS);
+            long livrees = commandeFournisseurService.countCommandesByStatut(StatutCommande.LIVREE);
+            
+            statsLabel.setText(String.format("%d commandes • %d en cours • %d livrées", 
+                totalCommandes, enCours, livrees));
+        } catch (Exception e) {
+            statsLabel.setText("Erreur lors du calcul des statistiques");
+        }
     }
 
     private void updatePrixUnitaire() {
@@ -867,13 +984,10 @@ public class CommandePanel extends JPanel {
     private void saveCommande() {
         // Validation complète avec gestion d'erreurs moderne
         if (!validateCommandeFields()) {
-            // showWarningMessage("Veuillez corriger les erreurs dans les informations de la
-            // commande");
             return;
         }
 
         if (lignesCommande.isEmpty()) {
-            // showWarningMessage("Veuillez ajouter au moins un produit à la commande");
             return;
         }
 
@@ -882,36 +996,66 @@ public class CommandePanel extends JPanel {
                 .map(LigneCommandeTemp::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        String dateLivraisonText = dateLivraisonPrevuePicker.getSelectedDate() != null ? 
+            dateLivraisonPrevuePicker.getDateText() : "Non définie";
+            
         int option = JOptionPane.showConfirmDialog(
                 this,
-                String.format("Confirmer la sauvegarde de la commande ?\n\n" +
-                        "Client: %s\n" +
-                        "Date: %s\n" +
+                String.format("Confirmer la création de la commande fournisseur ?\n\n" +
+                        "Fournisseur: %s\n" +
+                        "Date de commande: %s\n" +
+                        "Date de livraison prévue: %s\n" +
                         "Produits: %d\n" +
-                        "Total: %,.0f FCFA",
-                        clientCombo.getSelectedItem(),
+                        "Total: %,.0f FCFA\n\n" +
+                        "Statut initial: EN_COURS",
+                        fournisseurCombo.getSelectedItem(),
                         dateCommandePicker.getDateText(),
+                        dateLivraisonText,
                         lignesCommande.size(),
                         total),
-                "Confirmation de sauvegarde",
+                "Confirmation de création",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
 
         if (option == JOptionPane.YES_OPTION) {
             try {
-                // Simulation de sauvegarde avec progress
                 showInfoMessage("Sauvegarde en cours...");
-                // TODO: Implémenter la sauvegarde réelle
-
-                showSuccessMessage("✓ Commande sauvegardée avec succès (N° CMD-" +
-                        String.format("%04d", System.currentTimeMillis() % 10000) + ")");
-
+                
+                // Créer la commande fournisseur
+                FournisseurDTO selectedFournisseur = fournisseursList.get(fournisseurCombo.getSelectedIndex());
+                
+                CommandeFournisseurDTO commandeDTO = CommandeFournisseurDTO.builder()
+                    .fournisseurId(selectedFournisseur.getId())
+                    .dateCommande(dateCommandePicker.getSelectedDate().atStartOfDay())
+                    .dateLivraisonPrevue(dateLivraisonPrevuePicker.getSelectedDate() != null ? 
+                        dateLivraisonPrevuePicker.getSelectedDate().atStartOfDay() : null)
+                    .observations(observationsArea.getText())
+                    .build();
+                
+                // Créer les lignes de commande
+                List<LigneCommandeFournisseurDTO> lignesDTO = new ArrayList<>();
+                for (LigneCommandeTemp ligne : lignesCommande) {
+                    ProduitDto produit = produitsList.stream()
+                        .filter(p -> p.getLibelle().equals(ligne.getProduitNom()))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("Produit non trouvé: " + ligne.getProduitNom()));
+                    
+                    lignesDTO.add(LigneCommandeFournisseurDTO.builder()
+                        .produitId(produit.getId())
+                        .quantite(ligne.getQuantite())
+                        .prixUnitaire(ligne.getPrixUnitaire())
+                        .build());
+                }
+                commandeDTO.setLignes(lignesDTO);
+                
+                CommandeFournisseur savedCommande = commandeFournisseurService.createCommande(commandeDTO);
+                
+                showSuccessMessage("✓ Commande fournisseur sauvegardée: " + savedCommande.getNumeroCommande());
+                
                 clearCommande();
                 loadCommandes();
-
-                // Basculer vers l'onglet liste
                 switchToListTab();
-
+                
             } catch (Exception e) {
                 showErrorMessage("Erreur lors de la sauvegarde: " + e.getMessage());
             }
@@ -930,7 +1074,7 @@ public class CommandePanel extends JPanel {
 
     private void clearCommande() {
         // Confirmation avant vidage si des données existent
-        if (!lignesCommande.isEmpty() || clientCombo.getSelectedIndex() != -1) {
+        if (!lignesCommande.isEmpty() || fournisseurCombo.getSelectedIndex() != -1) {
             int option = JOptionPane.showConfirmDialog(
                     this,
                     "Êtes-vous sûr de vouloir vider tous les champs ?\n" +
@@ -945,9 +1089,9 @@ public class CommandePanel extends JPanel {
         }
 
         // Réinitialisation complète avec gestion d'erreurs
-        clientCombo.setSelectedIndex(-1);
+        fournisseurCombo.setSelectedIndex(-1);
         dateCommandePicker.setSelectedDate(LocalDate.now());
-        statutCombo.setSelectedIndex(0);
+        dateLivraisonPrevuePicker.setSelectedDate(LocalDate.now().plusDays(7));
         observationsArea.setText("");
         clearLigneFields();
 
@@ -955,8 +1099,6 @@ public class CommandePanel extends JPanel {
         lignesTableModel.setRowCount(0);
         updateTotalCommande();
         clearAllErrors();
-
-        // showInfoMessage("Formulaire vidé");
     }
 
     private void searchCommandes() {
@@ -997,7 +1139,7 @@ public class CommandePanel extends JPanel {
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
             // Écriture de l'en-tête
-            writer.println("\"N° Commande\",\"Client\",\"Date\",\"Statut\",\"Total\"");
+            writer.println("\"N° Commande\",\"Fournisseur\",\"Date\",\"Statut\",\"Total\"");
 
             int rowCount = commandesTableModel.getRowCount();
             int columnCount = commandesTableModel.getColumnCount() - 1; // Ignorer la colonne Actions
@@ -1024,7 +1166,7 @@ public class CommandePanel extends JPanel {
     private void refreshData() {
         try {
             loadCommandes();
-            loadClients();
+            loadFournisseurs();
             loadProduits();
             showSuccessMessage("Données actualisées");
         } catch (Exception e) {
@@ -1047,5 +1189,130 @@ public class CommandePanel extends JPanel {
 
     private void showInfoMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // Méthodes pour gérer les actions sur les commandes fournisseurs
+
+    private void voirDetailsCommande(String numeroCommande) {
+        try {
+            CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+                .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+            
+            StringBuilder details = new StringBuilder();
+            details.append("DÉTAILS DE LA COMMANDE\n\n");
+            details.append("Numéro: ").append(commande.getNumeroCommande()).append("\n");
+            details.append("Fournisseur: ").append(commande.getFournisseur().getNomComplet()).append("\n");
+            details.append("Date de commande: ").append(commande.getDateCommande().toLocalDate()).append("\n");
+            details.append("Statut: ").append(commande.getStatut().getLibelle()).append("\n");
+            details.append("Montant total: ").append(String.format("%,.0f FCFA", commande.getMontantTotal())).append("\n");
+            
+            if (commande.getDateLivraisonPrevue() != null) {
+                details.append("Date de livraison prévue: ").append(commande.getDateLivraisonPrevue().toLocalDate()).append("\n");
+            }
+            if (commande.getDateLivraisonReelle() != null) {
+                details.append("Date de livraison réelle: ").append(commande.getDateLivraisonReelle().toLocalDate()).append("\n");
+            }
+            
+            if (commande.getObservations() != null && !commande.getObservations().trim().isEmpty()) {
+                details.append("\nObservations:\n").append(commande.getObservations());
+            }
+            
+            JTextArea textArea = new JTextArea(details.toString());
+            textArea.setEditable(false);
+            textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new Dimension(500, 400));
+            
+            JOptionPane.showMessageDialog(this, scrollPane, "Détails de la commande " + numeroCommande, 
+                JOptionPane.INFORMATION_MESSAGE);
+                
+        } catch (Exception e) {
+            showErrorMessage("Erreur lors de l'affichage des détails: " + e.getMessage());
+        }
+    }
+
+    private void confirmerCommande(String numeroCommande) {
+        int option = JOptionPane.showConfirmDialog(this, 
+            "Confirmer la commande " + numeroCommande + " ?\n\n" +
+            "Cette action changera le statut de 'En Cours' vers 'Confirmée'.",
+            "Confirmation de commande", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.QUESTION_MESSAGE);
+            
+        if (option == JOptionPane.YES_OPTION) {
+            try {
+                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+                    
+                commandeFournisseurService.confirmerCommande(commande.getId());
+                showSuccessMessage("✓ Commande " + numeroCommande + " confirmée");
+                loadCommandes();
+            } catch (Exception e) {
+                showErrorMessage("Erreur lors de la confirmation: " + e.getMessage());
+            }
+        }
+    }
+
+    private void annulerCommande(String numeroCommande) {
+        String motif = JOptionPane.showInputDialog(this, 
+            "Motif d'annulation de la commande " + numeroCommande + " :",
+            "Annulation de commande",
+            JOptionPane.QUESTION_MESSAGE);
+            
+        if (motif != null && !motif.trim().isEmpty()) {
+            try {
+                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+                    
+                commandeFournisseurService.annulerCommande(commande.getId(), motif);
+                showSuccessMessage("✓ Commande " + numeroCommande + " annulée");
+                loadCommandes();
+            } catch (Exception e) {
+                showErrorMessage("Erreur lors de l'annulation: " + e.getMessage());
+            }
+        }
+    }
+
+    private void livrerPartiellement(String numeroCommande) {
+        String details = JOptionPane.showInputDialog(this,
+            "Détails de la livraison partielle pour " + numeroCommande + " :\n" +
+            "(Ex: 50% des produits livrés, reste prévu pour...)",
+            "Livraison partielle",
+            JOptionPane.QUESTION_MESSAGE);
+            
+        if (details != null && !details.trim().isEmpty()) {
+            try {
+                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+                    
+                commandeFournisseurService.livrerPartiellement(commande.getId(), details);
+                showSuccessMessage("✓ Livraison partielle enregistrée pour " + numeroCommande);
+                loadCommandes();
+            } catch (Exception e) {
+                showErrorMessage("Erreur lors de l'enregistrement de la livraison: " + e.getMessage());
+            }
+        }
+    }
+
+    private void livrerTotalement(String numeroCommande) {
+        int option = JOptionPane.showConfirmDialog(this,
+            "Confirmer la livraison totale de la commande " + numeroCommande + " ?\n\n" +
+            "Cette action marquera la commande comme entièrement livrée.",
+            "Livraison totale",
+            JOptionPane.YES_NO_OPTION,
+            JOptionPane.QUESTION_MESSAGE);
+            
+        if (option == JOptionPane.YES_OPTION) {
+            try {
+                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+                    
+                commandeFournisseurService.livrerTotalement(commande.getId());
+                showSuccessMessage("✓ Commande " + numeroCommande + " entièrement livrée");
+                loadCommandes();
+            } catch (Exception e) {
+                showErrorMessage("Erreur lors de la livraison: " + e.getMessage());
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.longrich.smartgestion.service;
 import com.longrich.smartgestion.entity.Stock;
 import com.longrich.smartgestion.entity.Produit;
 import com.longrich.smartgestion.entity.MouvementStock;
+import com.longrich.smartgestion.enums.TypeEmplacement;
 import com.longrich.smartgestion.enums.TypeMouvement;
 import com.longrich.smartgestion.repository.StockRepository;
 import com.longrich.smartgestion.repository.ProduitRepository;
@@ -27,8 +28,8 @@ public class InventaireService {
     private final ProduitRepository produitRepository;
     private final MouvementStockRepository mouvementStockRepository;
     
-    private static final String TYPE_SURFACE_VENTE = "SALLE_VENTE";
-    private static final String TYPE_MAGASIN = "MAGASIN";
+    private static final TypeEmplacement TYPE_SURFACE_VENTE = TypeEmplacement.SURFACE_VENTE;
+    private static final TypeEmplacement TYPE_MAGASIN = TypeEmplacement.MAGASIN;
     
     // === GESTION INVENTAIRE SURFACE DE VENTE ===
     
@@ -164,14 +165,14 @@ public class InventaireService {
     
     // === MÉTHODES PRIVÉES ===
     
-    private void creerMouvementTransfert(Produit produit, Integer quantite, String origine, String destination) {
+    private void creerMouvementTransfert(Produit produit, Integer quantite, TypeEmplacement origine, TypeEmplacement destination) {
         // Mouvement de sortie
         MouvementStock mouvementSortie = MouvementStock.builder()
             .produit(produit)
             .typeMouvement(TypeMouvement.SORTIE)
             .quantite(quantite)
-            .origine(origine)
-            .destination(destination)
+            .origine(origine.getDisplayName())
+            .destination(destination.getDisplayName())
             .observation("Transfert de " + origine + " vers " + destination)
             .dateMouvement(LocalDateTime.now())
             .build();
@@ -183,8 +184,8 @@ public class InventaireService {
             .produit(produit)
             .typeMouvement(TypeMouvement.ENTREE)
             .quantite(quantite)
-            .origine(origine)
-            .destination(destination)
+            .origine(origine.getDisplayName())
+            .destination(destination.getDisplayName())
             .observation("Réception transfert de " + origine + " vers " + destination)
             .dateMouvement(LocalDateTime.now())
             .build();

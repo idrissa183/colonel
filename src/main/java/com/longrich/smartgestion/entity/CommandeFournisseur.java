@@ -51,6 +51,9 @@ public class CommandeFournisseur extends BaseEntity {
     @Column(name = "date_livraison_prevue")
     private LocalDateTime dateLivraisonPrevue;
 
+    @Column(name = "date_livraison_reelle")
+    private LocalDateTime dateLivraisonReelle;
+
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false)

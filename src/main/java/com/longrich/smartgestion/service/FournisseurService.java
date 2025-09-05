@@ -26,6 +26,10 @@ public class FournisseurService {
         return fournisseurMapper.toDTOList(fournisseurRepository.findAll());
     }
 
+    public List<Fournisseur> findAll() {
+        return fournisseurRepository.findAll();
+    }
+
     public List<FournisseurDTO> getActiveFournisseurs() {
         return fournisseurMapper.toDTOList(fournisseurRepository.findByActiveTrue());
     }

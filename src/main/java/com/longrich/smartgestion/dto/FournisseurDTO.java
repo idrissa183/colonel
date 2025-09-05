@@ -41,4 +41,14 @@ public class FournisseurDTO {
     private Boolean prenomObligatoire;
     private Boolean estPersonnePhysique;
     private Boolean estPersonneMorale;
+    
+    public String getNomComplet() {
+        if (nomComplet != null) {
+            return nomComplet;
+        }
+        if (prenom != null && !prenom.trim().isEmpty()) {
+            return nom + " " + prenom;
+        }
+        return nom;
+    }
 }

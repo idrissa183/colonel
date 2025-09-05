@@ -11,9 +11,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -35,10 +32,6 @@ import lombok.Setter;
 @Builder
 public class Fournisseur extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "type_stockiste", nullable = false)
@@ -78,6 +71,10 @@ public class Fournisseur extends BaseEntity {
     @Builder.Default
     private List<CommandeFournisseur> commandes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "fournisseur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<EntreeStock> entreesStock = new ArrayList<>();
+
     // Méthodes utilitaires
     public String getNomComplet() {
         if (typeStockiste == TypeStockiste.PERSONNE_PHYSIQUE && prenom != null) {
@@ -96,5 +93,15 @@ public class Fournisseur extends BaseEntity {
 
     public boolean estPersonneMorale() {
         return typeStockiste == TypeStockiste.PERSONNE_MORALE;
+    }
+
+    public void addEntreeStock(EntreeStock entreeStock) {
+        entreesStock.add(entreeStock);
+        entreeStock.setFournisseur(this);
+    }
+
+    public void removeEntreeStock(EntreeStock entreeStock) {
+        entreesStock.remove(entreeStock);
+        entreeStock.setFournisseur(null);
     }
 }
