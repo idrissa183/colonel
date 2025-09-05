@@ -684,7 +684,15 @@ public class UserPanel extends JPanel {
             activeCheckbox.setSelected(true);
             formPanel.add(activeCheckbox);
 
-            add(formPanel, BorderLayout.CENTER);
+            // Ajouter un scroll au formulaire
+            JScrollPane scrollPane = new JScrollPane(formPanel);
+            scrollPane.setBorder(null);
+            scrollPane.setBackground(ComponentFactory.getBackgroundColor());
+            scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            
+            add(scrollPane, BorderLayout.CENTER);
 
             // Attacher la validation en temps réel
             attachRealtimeValidation();

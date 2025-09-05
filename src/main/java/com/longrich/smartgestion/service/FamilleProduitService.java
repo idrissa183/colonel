@@ -48,8 +48,7 @@ public class FamilleProduitService {
         FamilleProduit existingFamille = familleProduitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Famille produit non trouvée"));
 
-        if (!existingFamille.getLibelleFamille().equals(familleDTO.getLibelleFamille()) &&
-                familleProduitRepository.existsByLibelleFamille(familleDTO.getLibelleFamille())) {
+        if (familleProduitRepository.existsByLibelleFamilleAndIdNot(familleDTO.getLibelleFamille(), id)) {
             throw new IllegalArgumentException("Une famille avec ce libellé existe déjà");
         }
 

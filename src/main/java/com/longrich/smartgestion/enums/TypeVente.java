@@ -14,3 +14,21 @@ public enum TypeVente {
         return displayName;
     }
 }
+
+
+// package com.longrich.smartgestion.enums;
+
+// public enum TypeVente {
+//     STANDARD("Standard"),
+//     PROMOTIONNELLE("Promotionnelle");
+
+//     private final String displayName;
+
+//     TypeVente(String displayName) {
+//         this.displayName = displayName;
+//     }
+
+//     public String getDisplayName() {
+//         return displayName;
+//     }
+// }

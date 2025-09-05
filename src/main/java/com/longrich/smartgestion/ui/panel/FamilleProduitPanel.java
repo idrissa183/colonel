@@ -291,8 +291,9 @@ public class FamilleProduitPanel extends JPanel {
         String v = libelleFamilleField.getText().trim();
         clearFieldError(libelleFamilleField);
         if (!v.isEmpty()) {
-            // Validation basée sur l'entité (longueur max 100 selon @Column(length = 100))
-            if (v.length() > 100) {
+            if (v.length() < 2) {
+                setFieldError(libelleFamilleField, "Le libellé famille doit contenir au moins 2 caractères");
+            } else if (v.length() > 100) {
                 setFieldError(libelleFamilleField, "Le libellé famille ne peut pas dépasser 100 caractères");
             }
         }
@@ -693,9 +694,14 @@ public class FamilleProduitPanel extends JPanel {
         if (libelleFamille.isEmpty()) {
             setFieldError(libelleFamilleField, "Ce champ est requis");
             valid = false;
-        } else if (libelleFamille.length() > 100) {
-            setFieldError(libelleFamilleField, "Le libellé famille ne peut pas dépasser 100 caractères");
-            valid = false;
+        } else {
+            if (libelleFamille.length() < 2) {
+                setFieldError(libelleFamilleField, "Le libellé famille doit contenir au moins 2 caractères");
+                valid = false;
+            } else if (libelleFamille.length() > 100) {
+                setFieldError(libelleFamilleField, "Le libellé famille ne peut pas dépasser 100 caractères");
+                valid = false;
+            }
         }
 
         return valid;

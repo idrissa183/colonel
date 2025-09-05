@@ -61,7 +61,10 @@ public class ProduitService {
     }
 
     public ProduitDto saveProduit(ProduitDto produitDto) {
-        // Validation du code barre supprimée - ID auto-généré
+        // Vérification d'unicité du libellé
+        if (produitRepository.existsByLibelle(produitDto.getLibelle())) {
+            throw new IllegalArgumentException("Un produit avec ce libellé existe déjà");
+        }
 
         Produit produit = convertToEntity(produitDto);
         Produit savedProduit = produitRepository.save(produit);
@@ -73,7 +76,10 @@ public class ProduitService {
         Produit existingProduit = produitRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Produit non trouvé"));
 
-        // Validation du code barre supprimée - ID auto-généré
+        // Vérification d'unicité du libellé (exclure le produit actuel)
+        if (produitRepository.existsByLibelleAndIdNot(produitDto.getLibelle(), id)) {
+            throw new IllegalArgumentException("Un produit avec ce libellé existe déjà");
+        }
 
         updateProduitFromDto(existingProduit, produitDto);
         Produit updatedProduit = produitRepository.save(existingProduit);

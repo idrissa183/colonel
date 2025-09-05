@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.List;
@@ -21,7 +22,8 @@ import java.util.List;
 public class FamilleProduit extends BaseEntity {
 
     @NotBlank(message = "Le libellé famille est obligatoire")
-    @Column(name = "libelle_famille", nullable = false, length = 100)
+    @Size(min = 2, max = 100, message = "Le libellé famille doit contenir entre 2 et 100 caractères")
+    @Column(name = "libelle_famille", nullable = false, unique = true, length = 100)
     private String libelleFamille;
 
     @Column(name = "description", columnDefinition = "TEXT")

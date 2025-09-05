@@ -1,5 +1,6 @@
 package com.longrich.smartgestion.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.longrich.smartgestion.enums.TypeStockiste;
@@ -74,7 +75,8 @@ public class Fournisseur extends BaseEntity {
 
     // Relations
     @OneToMany(mappedBy = "fournisseur", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CommandeFournisseur> commandes;
+    @Builder.Default
+    private List<CommandeFournisseur> commandes = new ArrayList<>();
 
     // Méthodes utilitaires
     public String getNomComplet() {

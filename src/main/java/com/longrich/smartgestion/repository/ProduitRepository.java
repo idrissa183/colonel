@@ -32,4 +32,8 @@ public interface ProduitRepository extends JpaRepository<Produit, Long> {
        
        // Autocomplétion pour les produits
        List<Produit> findByLibelleContainingIgnoreCase(String libelle);
+       
+       // Vérification d'unicité
+       boolean existsByLibelle(String libelle);
+       boolean existsByLibelleAndIdNot(String libelle, Long id);
 }

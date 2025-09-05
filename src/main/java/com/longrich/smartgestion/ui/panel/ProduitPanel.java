@@ -389,10 +389,10 @@ public class ProduitPanel extends JPanel {
         String v = libelleField.getText().trim();
         clearFieldError(libelleField);
         if (!v.isEmpty()) {
-            // Le libellé est obligatoire selon l'entité, pas de validation de longueur spécifique
-            // mais on peut ajouter une validation basique
-            if (v.length() > 255) {
-                setFieldError(libelleField, "Le libellé ne peut pas dépasser 255 caractères");
+            if (v.length() < 2) {
+                setFieldError(libelleField, "Le libellé doit contenir au moins 2 caractères");
+            } else if (v.length() > 100) {
+                setFieldError(libelleField, "Le libellé ne peut pas dépasser 100 caractères");
             }
         }
     }
@@ -1124,9 +1124,14 @@ public class ProduitPanel extends JPanel {
         if (libelle.isEmpty()) {
             setFieldError(libelleField, "Ce champ est requis");
             valid = false;
-        } else if (libelle.length() > 255) {
-            setFieldError(libelleField, "Le libellé ne peut pas dépasser 255 caractères");
-            valid = false;
+        } else {
+            if (libelle.length() < 2) {
+                setFieldError(libelleField, "Le libellé doit contenir au moins 2 caractères");
+                valid = false;
+            } else if (libelle.length() > 100) {
+                setFieldError(libelleField, "Le libellé ne peut pas dépasser 100 caractères");
+                valid = false;
+            }
         }
 
         // Validation de la famille (requise)

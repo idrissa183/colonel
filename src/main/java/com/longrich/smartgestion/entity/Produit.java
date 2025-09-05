@@ -2,6 +2,7 @@ package com.longrich.smartgestion.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -18,6 +19,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,7 +41,8 @@ public class Produit extends BaseEntity {
     private Long id;
     
     @NotBlank(message = "Le libellé est obligatoire")
-    @Column(name = "libelle", nullable = false)
+    @Size(min = 2, max = 100, message = "Le libellé doit contenir entre 2 et 100 caractères")
+    @Column(name = "libelle", nullable = false, unique = true, length = 100)
     private String libelle;
 
     @Column(name = "description", columnDefinition = "TEXT")
@@ -76,11 +79,22 @@ public class Produit extends BaseEntity {
     private Integer seuilAlerte = 5;
 
     // Relations
-    @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Stock> stocks;
+    // Relations pour les mouvements de stock (entrées et sorties)
+    @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<StockIn> stockIns = new ArrayList<>(); // Initialisation pour éviter les NullPointerExceptions
+
+    @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<StockOut> stockOuts = new ArrayList<>(); // Initialisation pour éviter les NullPointerExceptions
+
+    @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @Builder.Default
+    private List<LigneCommande> lignesCommande = new ArrayList<>(); // Initialisation
+
 
     @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<LigneCommande> lignesCommande;
+    private List<Stock> stocks;
 
     // Méthodes utilitaires
     public BigDecimal getMarge() {
