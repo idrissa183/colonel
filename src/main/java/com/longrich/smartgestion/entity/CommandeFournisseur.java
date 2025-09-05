@@ -41,7 +41,7 @@ public class CommandeFournisseur extends BaseEntity {
     private Fournisseur fournisseur;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @NotNull(message = "La date de commande est obligatoire")

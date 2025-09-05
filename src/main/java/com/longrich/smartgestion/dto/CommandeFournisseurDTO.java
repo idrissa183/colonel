@@ -24,9 +24,7 @@ public class CommandeFournisseurDTO {
     private StatutCommande statut;
     private BigDecimal montantTotal;
     private String observations;
-    private String createdBy;
-    private String approvedBy;
-    private LocalDateTime approvedAt;
+    private Long userId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<LigneCommandeFournisseurDTO> lignes;

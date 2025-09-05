@@ -307,7 +307,8 @@ public class CommandePanel extends JPanel {
         JPanel firstRow = new JPanel(new GridLayout(1, 2, 20, 0));
         firstRow.setBackground(ComponentFactory.getCardColor());
         firstRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        firstRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        firstRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
+        firstRow.setPreferredSize(new Dimension(Integer.MAX_VALUE, 90));
 
         // Fournisseur avec validation
         fournisseurCombo = ComponentFactory.createStyledComboBox();
@@ -326,7 +327,8 @@ public class CommandePanel extends JPanel {
         JPanel secondRow = new JPanel(new GridLayout(1, 2, 20, 0));
         secondRow.setBackground(ComponentFactory.getCardColor());
         secondRow.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
-        secondRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        secondRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
+        secondRow.setPreferredSize(new Dimension(Integer.MAX_VALUE, 120));
 
         // Date de livraison prévue
         dateLivraisonPrevuePicker = new ModernDatePicker(LocalDate.now().plusDays(7));
