@@ -5,6 +5,7 @@ import com.longrich.smartgestion.dto.CommandeFournisseurDTO;
 import com.longrich.smartgestion.dto.LigneCommandeFournisseurDTO;
 import com.longrich.smartgestion.dto.ProduitDto;
 import com.longrich.smartgestion.entity.CommandeFournisseur;
+import com.longrich.smartgestion.entity.LigneCommandeFournisseur;
 import com.longrich.smartgestion.enums.StatutCommande;
 import com.longrich.smartgestion.service.FournisseurService;
 import com.longrich.smartgestion.service.ProduitService;
@@ -1016,7 +1017,7 @@ public class CommandePanel extends JPanel {
                 
                 lignesDTO.add(LigneCommandeFournisseurDTO.builder()
                     .produitId(produit.getId())
-                    .quantite(ligne.getQuantite())
+                    .quantiteCommandee(ligne.getQuantite())
                     .prixUnitaire(ligne.getPrixUnitaire())
                     .build());
             }
@@ -1027,9 +1028,8 @@ public class CommandePanel extends JPanel {
             
             // Dialogue de succès comme pour les clients
             showSuccessDialog(
-                "Commande créée avec succès !",
-                "La commande " + savedCommande.getNumeroCommande() + 
-                " a été créée et est maintenant en cours de traitement."
+                "Commande " + savedCommande.getNumeroCommande() + " créée avec succès !",
+                ""
             );
             
             // Nettoyage automatique des champs
@@ -1183,7 +1183,7 @@ public class CommandePanel extends JPanel {
         JDialog successDialog = new JDialog((java.awt.Frame) SwingUtilities.getWindowAncestor(this), 
             title, true);
         successDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        successDialog.setSize(400, 180);
+        successDialog.setSize(400, message != null && !message.trim().isEmpty() ? 180 : 150);
         successDialog.setLocationRelativeTo(this);
         successDialog.setResizable(false);
 
@@ -1207,14 +1207,17 @@ public class CommandePanel extends JPanel {
         titleLabel.setForeground(TEXT_PRIMARY);
         messagePanel.add(titleLabel, BorderLayout.NORTH);
 
-        JTextArea messageArea = new JTextArea(message);
-        messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        messageArea.setForeground(TEXT_SECONDARY);
-        messageArea.setEditable(false);
-        messageArea.setOpaque(false);
-        messageArea.setWrapStyleWord(true);
-        messageArea.setLineWrap(true);
-        messagePanel.add(messageArea, BorderLayout.CENTER);
+        // N'afficher le message descriptif que s'il n'est pas vide
+        if (message != null && !message.trim().isEmpty()) {
+            JTextArea messageArea = new JTextArea(message);
+            messageArea.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            messageArea.setForeground(TEXT_SECONDARY);
+            messageArea.setEditable(false);
+            messageArea.setOpaque(false);
+            messageArea.setWrapStyleWord(true);
+            messageArea.setLineWrap(true);
+            messagePanel.add(messageArea, BorderLayout.CENTER);
+        }
 
         dialogPanel.add(messagePanel, BorderLayout.CENTER);
 
@@ -1420,24 +1423,164 @@ public class CommandePanel extends JPanel {
     }
 
     private void livrerPartiellement(String numeroCommande) {
-        String details = JOptionPane.showInputDialog(this,
-            "Détails de la livraison partielle pour " + numeroCommande + " :\n" +
-            "(Ex: 50% des produits livrés, reste prévu pour...)",
-            "Livraison partielle",
-            JOptionPane.QUESTION_MESSAGE);
+        try {
+            CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+                .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+                
+            showDeliveryDialog(commande);
             
-        if (details != null && !details.trim().isEmpty()) {
-            try {
-                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
-                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
-                    
-                commandeFournisseurService.livrerPartiellement(commande.getId(), details);
-                showSuccessMessage("✓ Livraison partielle enregistrée pour " + numeroCommande);
-                loadCommandes();
-            } catch (Exception e) {
-                showErrorMessage("Erreur lors de l'enregistrement de la livraison: " + e.getMessage());
-            }
+        } catch (Exception e) {
+            showErrorMessage("Erreur: " + e.getMessage());
         }
+    }
+    
+    private void showDeliveryDialog(CommandeFournisseur commande) {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Enregistrer Livraison - " + commande.getNumeroCommande(), true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(600, 400);
+        dialog.setLocationRelativeTo(this);
+        
+        // Header panel
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        headerPanel.setBackground(PRIMARY_COLOR);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        
+        JLabel titleLabel = new JLabel("Quantités à livrer pour chaque produit");
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel);
+        
+        // Content panel with order lines
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        
+        // Table model for delivery quantities
+        String[] columnNames = {"Produit", "Qté Commandée", "Qté Déjà Livrée", "Qté à Livrer", "Restante"};
+        DefaultTableModel deliveryModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 3; // Only "Qté à Livrer" column is editable
+            }
+        };
+        
+        // Load order lines
+        List<LigneCommandeFournisseur> lignes = commandeFournisseurService.getLignesCommande(commande.getId());
+        java.util.Map<Long, Integer> quantitesLivraison = new java.util.HashMap<>();
+        
+        for (LigneCommandeFournisseur ligne : lignes) {
+            Object[] row = {
+                ligne.getProduit().getLibelle(),
+                ligne.getQuantiteCommandee(),
+                ligne.getQuantiteLivree(),
+                0, // Initial delivery quantity
+                ligne.getQuantiteRestante()
+            };
+            deliveryModel.addRow(row);
+            quantitesLivraison.put(ligne.getId(), 0);
+        }
+        
+        JTable deliveryTable = new JTable(deliveryModel);
+        deliveryTable.setRowHeight(35);
+        deliveryTable.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        
+        // Custom cell renderer for better visuals
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        for (int i = 1; i < 5; i++) {
+            deliveryTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        }
+        
+        // Update "Restante" column when "Qté à Livrer" changes
+        deliveryModel.addTableModelListener(e -> {
+            if (e.getColumn() == 3 && e.getType() == javax.swing.event.TableModelEvent.UPDATE) {
+                int row = e.getFirstRow();
+                try {
+                    int qtyCommanded = (Integer) deliveryModel.getValueAt(row, 1);
+                    int qtyAlreadyDelivered = (Integer) deliveryModel.getValueAt(row, 2);
+                    Object qtyToDeliverObj = deliveryModel.getValueAt(row, 3);
+                    
+                    int qtyToDeliver = 0;
+                    if (qtyToDeliverObj instanceof String) {
+                        qtyToDeliver = Integer.parseInt((String) qtyToDeliverObj);
+                    } else if (qtyToDeliverObj instanceof Integer) {
+                        qtyToDeliver = (Integer) qtyToDeliverObj;
+                    }
+                    
+                    // Validate: total delivered cannot exceed commanded
+                    int totalDelivered = qtyAlreadyDelivered + qtyToDeliver;
+                    if (totalDelivered > qtyCommanded) {
+                        qtyToDeliver = qtyCommanded - qtyAlreadyDelivered;
+                        deliveryModel.setValueAt(qtyToDeliver, row, 3);
+                    }
+                    
+                    int remaining = qtyCommanded - qtyAlreadyDelivered - qtyToDeliver;
+                    deliveryModel.setValueAt(remaining, row, 4);
+                    
+                    // Update map
+                    if (row < lignes.size()) {
+                        quantitesLivraison.put(lignes.get(row).getId(), qtyToDeliver);
+                    }
+                } catch (NumberFormatException ex) {
+                    deliveryModel.setValueAt(0, row, 3);
+                }
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(deliveryTable);
+        contentPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Button panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        
+        JButton cancelButton = new JButton("Annuler");
+        cancelButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        cancelButton.setBackground(SECONDARY_COLOR);
+        cancelButton.setForeground(Color.WHITE);
+        cancelButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        cancelButton.setFocusPainted(false);
+        cancelButton.addActionListener(e -> dialog.dispose());
+        
+        JButton saveButton = new JButton("Enregistrer Livraison");
+        saveButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        saveButton.setBackground(SUCCESS_COLOR);
+        saveButton.setForeground(Color.WHITE);
+        saveButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
+        saveButton.setFocusPainted(false);
+        saveButton.addActionListener(e -> {
+            try {
+                // Filter out zero quantities and call service
+                java.util.Map<Long, Integer> filteredQuantities = quantitesLivraison.entrySet().stream()
+                    .filter(entry -> entry.getValue() > 0)
+                    .collect(java.util.stream.Collectors.toMap(
+                        java.util.Map.Entry::getKey, 
+                        java.util.Map.Entry::getValue
+                    ));
+                
+                if (filteredQuantities.isEmpty()) {
+                    showErrorMessage("Aucune quantité à livrer spécifiée");
+                    return;
+                }
+                
+                commandeFournisseurService.enregistrerLivraison(commande.getId(), filteredQuantities);
+                showSuccessMessage("✓ Livraison enregistrée pour " + commande.getNumeroCommande());
+                loadCommandes();
+                dialog.dispose();
+                
+            } catch (Exception ex) {
+                showErrorMessage("Erreur lors de l'enregistrement: " + ex.getMessage());
+            }
+        });
+        
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(Box.createHorizontalStrut(10));
+        buttonPanel.add(saveButton);
+        
+        dialog.add(headerPanel, BorderLayout.NORTH);
+        dialog.add(contentPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.setVisible(true);
     }
 
     private void livrerTotalement(String numeroCommande) {

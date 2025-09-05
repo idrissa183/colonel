@@ -16,7 +16,8 @@ public class LigneCommandeFournisseurDTO {
     private Long commandeFournisseurId;
     private Long produitId;
     private String produitLibelle;
-    private Integer quantite;
+    private Integer quantiteCommandee;
+    private Integer quantiteLivree;
     private BigDecimal prixUnitaire;
     private BigDecimal sousTotal;
 }

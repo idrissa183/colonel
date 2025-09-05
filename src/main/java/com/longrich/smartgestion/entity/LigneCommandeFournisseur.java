@@ -27,8 +27,12 @@ public class LigneCommandeFournisseur extends BaseEntity {
 
     @NotNull(message = "La quantité est obligatoire")
     @Min(value = 1, message = "La quantité doit être au moins 1")
-    @Column(name = "quantite", nullable = false)
-    private Integer quantite;
+    @Column(name = "quantite_commandee", nullable = false)
+    private Integer quantiteCommandee;
+
+    @Builder.Default
+    @Column(name = "quantite_livree", nullable = false)
+    private Integer quantiteLivree = 0;
 
     @NotNull(message = "Le prix unitaire est obligatoire")
     @DecimalMin(value = "0.0", inclusive = false, message = "Le prix unitaire doit être positif")
@@ -41,8 +45,26 @@ public class LigneCommandeFournisseur extends BaseEntity {
     @PrePersist
     @PreUpdate
     public void calculerSousTotal() {
-        if (quantite != null && prixUnitaire != null) {
-            sousTotal = prixUnitaire.multiply(BigDecimal.valueOf(quantite));
+        if (quantiteCommandee != null && prixUnitaire != null) {
+            sousTotal = prixUnitaire.multiply(BigDecimal.valueOf(quantiteCommandee));
         }
+    }
+
+    // Méthodes utilitaires
+    public Integer getQuantiteRestante() {
+        return quantiteCommandee - quantiteLivree;
+    }
+
+    public boolean estCompleteumentLivree() {
+        return quantiteLivree.equals(quantiteCommandee);
+    }
+
+    public boolean estPartiellementLivree() {
+        return quantiteLivree > 0 && quantiteLivree < quantiteCommandee;
+    }
+
+    public double getPourcentageLivraison() {
+        if (quantiteCommandee == 0) return 0.0;
+        return (quantiteLivree * 100.0) / quantiteCommandee;
     }
 }

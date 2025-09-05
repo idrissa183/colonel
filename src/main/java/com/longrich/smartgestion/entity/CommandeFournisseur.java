@@ -76,4 +76,41 @@ public class CommandeFournisseur extends BaseEntity {
             numeroCommande = "CMDF-" + System.currentTimeMillis();
         }
     }
+
+    // Méthodes pour gestion automatique du statut selon les livraisons
+    public StatutCommande calculerStatutSelonLivraisons() {
+        if (lignes == null || lignes.isEmpty()) {
+            return StatutCommande.EN_COURS;
+        }
+
+        boolean touteQuantitesLivrees = lignes.stream()
+            .allMatch(ligne -> ligne.getQuantiteLivree().equals(ligne.getQuantiteCommandee()));
+
+        boolean aucuneQuantiteLivree = lignes.stream()
+            .allMatch(ligne -> ligne.getQuantiteLivree() == 0);
+
+        if (touteQuantitesLivrees) {
+            return StatutCommande.LIVREE;
+        } else if (aucuneQuantiteLivree) {
+            return this.statut; // Garder le statut actuel si rien n'est livré
+        } else {
+            return StatutCommande.PARTIELLEMENT_LIVREE;
+        }
+    }
+
+    public int getTotalQuantiteCommandee() {
+        if (lignes == null) return 0;
+        return lignes.stream().mapToInt(ligne -> ligne.getQuantiteCommandee()).sum();
+    }
+
+    public int getTotalQuantiteLivree() {
+        if (lignes == null) return 0;
+        return lignes.stream().mapToInt(ligne -> ligne.getQuantiteLivree()).sum();
+    }
+
+    public double getPourcentageGlobalLivraison() {
+        int totalCommande = getTotalQuantiteCommandee();
+        if (totalCommande == 0) return 0.0;
+        return (getTotalQuantiteLivree() * 100.0) / totalCommande;
+    }
 }

@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -189,7 +190,7 @@ public class CommandeFournisseurService {
         LigneCommandeFournisseur ligne = LigneCommandeFournisseur.builder()
                 .commandeFournisseur(commande)
                 .produit(produit)
-                .quantite(ligneDTO.getQuantite())
+                .quantiteCommandee(ligneDTO.getQuantiteCommandee())
                 .prixUnitaire(ligneDTO.getPrixUnitaire())
                 .build();
 
@@ -207,8 +208,8 @@ public class CommandeFournisseurService {
         LigneCommandeFournisseur ligne = ligneCommandeFournisseurRepository.findById(ligneId)
                 .orElseThrow(() -> new IllegalArgumentException("Ligne de commande non trouvée"));
 
-        if (ligneDTO.getQuantite() != null) {
-            ligne.setQuantite(ligneDTO.getQuantite());
+        if (ligneDTO.getQuantiteCommandee() != null) {
+            ligne.setQuantiteCommandee(ligneDTO.getQuantiteCommandee());
         }
 
         if (ligneDTO.getPrixUnitaire() != null) {
@@ -305,45 +306,63 @@ public class CommandeFournisseurService {
         return commandeFournisseurRepository.save(commande);
     }
 
-    public CommandeFournisseur livrerPartiellement(Long commandeId, String details) {
-        log.info("Livraison partielle de la commande ID: {}", commandeId);
+    public CommandeFournisseur enregistrerLivraison(Long commandeId, Map<Long, Integer> quantitesLivrees) {
+        log.info("Enregistrement de livraison pour la commande ID: {}", commandeId);
         
         CommandeFournisseur commande = commandeFournisseurRepository.findById(commandeId)
                 .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
 
-        if (commande.getStatut() != StatutCommande.CONFIRMEE && commande.getStatut() != StatutCommande.EN_COURS) {
-            throw new IllegalStateException("Seules les commandes confirmées ou en cours peuvent être partiellement livrées");
+        if (commande.getStatut() == StatutCommande.ANNULEE) {
+            throw new IllegalStateException("Une commande annulée ne peut pas recevoir de livraison");
         }
 
-        commande.setStatut(StatutCommande.PARTIELLEMENT_LIVREE);
+        // Mettre à jour les quantités livrées pour chaque ligne
+        List<LigneCommandeFournisseur> lignes = getLignesCommande(commandeId);
+        for (LigneCommandeFournisseur ligne : lignes) {
+            if (quantitesLivrees.containsKey(ligne.getId())) {
+                Integer nouvelleQuantiteLivree = quantitesLivrees.get(ligne.getId());
+                
+                // Validation : ne pas dépasser la quantité commandée
+                if (nouvelleQuantiteLivree > ligne.getQuantiteCommandee()) {
+                    throw new IllegalArgumentException("La quantité livrée ne peut pas dépasser la quantité commandée pour " + ligne.getProduit().getLibelle());
+                }
+                
+                ligne.setQuantiteLivree(nouvelleQuantiteLivree);
+                ligneCommandeFournisseurRepository.save(ligne);
+            }
+        }
+
+        // Recalculer automatiquement le statut de la commande
+        StatutCommande nouveauStatut = commande.calculerStatutSelonLivraisons();
+        commande.setStatut(nouveauStatut);
         
-        // Ajouter les détails de la livraison partielle aux observations
+        // Si entièrement livrée, mettre la date de livraison réelle
+        if (nouveauStatut == StatutCommande.LIVREE) {
+            commande.setDateLivraisonReelle(LocalDateTime.now());
+        }
+
+        // Ajouter dans les observations
         String observations = commande.getObservations() != null ? commande.getObservations() : "";
-        observations += "\n[LIVRAISON PARTIELLE] " + details;
+        observations += "\n[LIVRAISON] " + LocalDateTime.now().toLocalDate() + 
+                       " - Statut: " + nouveauStatut.getLibelle() + 
+                       " (" + String.format("%.1f", commande.getPourcentageGlobalLivraison()) + "%)";
         commande.setObservations(observations);
         
         return commandeFournisseurRepository.save(commande);
     }
 
     public CommandeFournisseur livrerTotalement(Long commandeId) {
-        log.info("Livraison totale de la commande ID: {}", commandeId);
-        
-        CommandeFournisseur commande = commandeFournisseurRepository.findById(commandeId)
-                .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+        log.info("Livraison totale automatique de la commande ID: {}", commandeId);
 
-        if (commande.getStatut() == StatutCommande.ANNULEE) {
-            throw new IllegalStateException("Une commande annulée ne peut pas être livrée");
+        // Livrer toutes les quantités automatiquement
+        List<LigneCommandeFournisseur> lignes = getLignesCommande(commandeId);
+        Map<Long, Integer> quantitesTotales = new java.util.HashMap<>();
+        
+        for (LigneCommandeFournisseur ligne : lignes) {
+            quantitesTotales.put(ligne.getId(), ligne.getQuantiteCommandee());
         }
-
-        commande.setStatut(StatutCommande.LIVREE);
-        commande.setDateLivraisonReelle(LocalDateTime.now());
         
-        // Ajouter la confirmation de livraison aux observations
-        String observations = commande.getObservations() != null ? commande.getObservations() : "";
-        observations += "\n[LIVRÉE] Commande entièrement livrée le " + LocalDateTime.now().toLocalDate();
-        commande.setObservations(observations);
-        
-        return commandeFournisseurRepository.save(commande);
+        return enregistrerLivraison(commandeId, quantitesTotales);
     }
 
     @Transactional(readOnly = true)
@@ -367,5 +386,25 @@ public class CommandeFournisseurService {
                          c.getStatut() == StatutCommande.EN_COURS ||
                          c.getStatut() == StatutCommande.PARTIELLEMENT_LIVREE)
                 .orElse(false);
+    }
+
+    // Compatibility method for simple partial delivery with text details
+    public CommandeFournisseur livrerPartiellement(Long commandeId, String details) {
+        log.info("Livraison partielle simple pour la commande ID: {} - Détails: {}", commandeId, details);
+        
+        CommandeFournisseur commande = commandeFournisseurRepository.findById(commandeId)
+                .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
+
+        // For now, just update status and add details to observations
+        if (commande.getStatut() == StatutCommande.EN_COURS || commande.getStatut() == StatutCommande.CONFIRMEE) {
+            commande.setStatut(StatutCommande.PARTIELLEMENT_LIVREE);
+        }
+        
+        // Add details to observations
+        String observations = commande.getObservations() != null ? commande.getObservations() : "";
+        observations += "\n[LIVRAISON PARTIELLE] " + LocalDateTime.now().toLocalDate() + " - " + details;
+        commande.setObservations(observations);
+        
+        return commandeFournisseurRepository.save(commande);
     }
 }

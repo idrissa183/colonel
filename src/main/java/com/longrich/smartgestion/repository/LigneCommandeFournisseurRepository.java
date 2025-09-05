@@ -26,7 +26,7 @@ public interface LigneCommandeFournisseurRepository extends JpaRepository<LigneC
     @Query("SELECT SUM(l.sousTotal) FROM LigneCommandeFournisseur l WHERE l.active = true AND l.commandeFournisseur = :commande")
     BigDecimal sumSousTotalByCommande(@Param("commande") CommandeFournisseur commande);
 
-    @Query("SELECT SUM(l.quantite) FROM LigneCommandeFournisseur l WHERE l.active = true AND l.produit = :produit")
+    @Query("SELECT SUM(l.quantiteCommandee) FROM LigneCommandeFournisseur l WHERE l.active = true AND l.produit = :produit")
     Integer sumQuantiteByProduit(@Param("produit") Produit produit);
 
     @Query("SELECT l FROM LigneCommandeFournisseur l WHERE l.active = true AND " +
