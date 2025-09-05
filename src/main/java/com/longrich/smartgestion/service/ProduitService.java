@@ -223,4 +223,15 @@ public class ProduitService {
             log.error("Erreur lors de la vérification des IDs: {}", e.getMessage());
         }
     }
+
+    /**
+     * Recherche un produit par son ID - méthode utilitaire pour les UI
+     */
+    @Transactional(readOnly = true)
+    public Produit findById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return produitRepository.findById(id).orElse(null);
+    }
 }

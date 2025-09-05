@@ -444,4 +444,22 @@ public class StockService {
             .valide(ajustement.getValide())
             .build();
     }
+
+    /**
+     * Méthodes utilitaires pour les nouveaux panneaux UI
+     */
+    @Transactional(readOnly = true)
+    public List<Stock> getStocksByTypeStock(TypeEmplacement typeEmplacement) {
+        return stockRepository.findByTypeStock(typeEmplacement);
+    }
+
+    @Transactional(readOnly = true)
+    public Stock getStockByProduitAndType(Produit produit, TypeEmplacement typeEmplacement) {
+        return stockRepository.findByProduitAndTypeStock(produit, typeEmplacement).orElse(null);
+    }
+
+    @Transactional(readOnly = true) 
+    public Stock findByProduitAndTypeStock(Produit produit, TypeEmplacement typeEmplacement) {
+        return stockRepository.findByProduitAndTypeStock(produit, typeEmplacement).orElse(null);
+    }
 }

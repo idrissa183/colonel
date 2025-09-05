@@ -11,17 +11,21 @@ import com.longrich.smartgestion.service.CommandeFournisseurService;
 import com.longrich.smartgestion.service.FournisseurService;
 import com.longrich.smartgestion.service.ProduitService;
 
+import lombok.extern.slf4j.Slf4j;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+@Slf4j
 public class EntreeStockPanel extends JPanel {
 
     private final EntreeStockService entreeStockService;
@@ -45,6 +49,11 @@ public class EntreeStockPanel extends JPanel {
     private JComboBox<Produit> comboProduit;
     private JSpinner spinnerQuantite;
     private JSpinner spinnerPrixUnitaire;
+    
+    // Nouveaux champs pour l'amélioration
+    private JTextField txtFournisseurReadOnly;
+    private JSpinner spinnerDateEntree;
+    private JTextField txtFichierReference;
 
     private EntreeStock entreeStockCourante;
 
@@ -176,31 +185,62 @@ public class EntreeStockPanel extends JPanel {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
 
-        // Ligne 1: Fournisseur
+        // Ligne 1: Commande Fournisseur (obligatoire)
         gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST;
-        formPanel.add(new JLabel("Fournisseur:"), gbc);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        formPanel.add(comboFournisseur, gbc);
-
-        // Ligne 2: Commande Fournisseur
-        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
-        formPanel.add(new JLabel("Commande Fournisseur:"), gbc);
+        JLabel labelCommande = new JLabel("Commande Fournisseur *:");
+        labelCommande.setFont(labelCommande.getFont().deriveFont(java.awt.Font.BOLD));
+        formPanel.add(labelCommande, gbc);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         comboCommande = new JComboBox<>();
+        comboCommande.addActionListener(e -> onCommandeSelectionnee());
         formPanel.add(comboCommande, gbc);
+
+        // Ligne 2: Fournisseur (en lecture seule, dérivé de la commande)
+        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
+        formPanel.add(new JLabel("Fournisseur:"), gbc);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        JTextField txtFournisseur = new JTextField();
+        txtFournisseur.setEditable(false);
+        txtFournisseur.setBackground(Color.LIGHT_GRAY);
+        formPanel.add(txtFournisseur, gbc);
+        
+        // Référence pour mise à jour automatique du fournisseur
+        this.txtFournisseurReadOnly = txtFournisseur;
 
         // N° Facture non affiché
 
-        // Ligne 4: N° Bon de livraison
+        // Ligne 3: Date d'entrée (obligatoire)
         gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
+        JLabel labelDate = new JLabel("Date d'entrée *:");
+        labelDate.setFont(labelDate.getFont().deriveFont(java.awt.Font.BOLD));
+        formPanel.add(labelDate, gbc);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        this.spinnerDateEntree = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(spinnerDateEntree, "dd/MM/yyyy");
+        spinnerDateEntree.setEditor(dateEditor);
+        formPanel.add(spinnerDateEntree, gbc);
+
+        // Ligne 4: N° Bon de livraison
+        gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
         formPanel.add(new JLabel("N° Bon Livraison:"), gbc);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         formPanel.add(txtNumeroBonLivraison, gbc);
 
-        // Statut réception non affiché
+        // Ligne 5: Fichier de référence
+        gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE;
+        formPanel.add(new JLabel("Fichier de référence:"), gbc);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        JPanel filePanel = new JPanel(new BorderLayout());
+        this.txtFichierReference = new JTextField();
+        txtFichierReference.setEditable(false);
+        JButton btnParcourir = new JButton("Parcourir...");
+        btnParcourir.addActionListener(e -> choisirFichier(txtFichierReference));
+        filePanel.add(txtFichierReference, BorderLayout.CENTER);
+        filePanel.add(btnParcourir, BorderLayout.EAST);
+        formPanel.add(filePanel, gbc);
 
         // Ligne 6: Observation
-        gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.fill = GridBagConstraints.NONE;
         formPanel.add(new JLabel("Observation:"), gbc);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.BOTH;
         formPanel.add(new JScrollPane(txtObservation), gbc);
@@ -229,36 +269,42 @@ public class EntreeStockPanel extends JPanel {
 
     private JPanel createLignesPanel() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Lignes d'Entrée"));
+        panel.setBorder(BorderFactory.createTitledBorder("Produits de la Commande"));
 
-        // Formulaire d'ajout de ligne
-        JPanel addPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        // Panneau d'information
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel infoLabel = new JLabel("<html><i>Sélectionnez une commande pour voir les produits disponibles.</i></html>");
+        infoPanel.add(infoLabel);
+        panel.add(infoPanel, BorderLayout.NORTH);
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        addPanel.add(new JLabel("Produit:"), gbc);
-        gbc.gridx = 1;
-        addPanel.add(comboProduit, gbc);
+        // Table des lignes avec colonnes adaptées
+        String[] colonnesLignes = {"Produit", "Qté Commandée", "Qté Déjà Livrée", "Qté Restante", "Qté Reçue", "Prix Unit.", "Montant", "Actions", "ProduitId"};
+        modelLignes = new DefaultTableModel(colonnesLignes, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                // Seules les colonnes Qté Reçue et Actions sont éditables
+                return column == 4 || column == 7;
+            }
+        };
+        tableLignes = new JTable(modelLignes);
+        
+        // Masquer la colonne ProduitId
+        if (tableLignes.getColumnModel().getColumnCount() > 8) {
+            tableLignes.getColumnModel().getColumn(8).setMinWidth(0);
+            tableLignes.getColumnModel().getColumn(8).setMaxWidth(0);
+            tableLignes.getColumnModel().getColumn(8).setWidth(0);
+        }
 
-        gbc.gridx = 2;
-        addPanel.add(new JLabel("Quantité:"), gbc);
-        gbc.gridx = 3;
-        addPanel.add(spinnerQuantite, gbc);
+        // Configuration des tailles de colonnes
+        tableLignes.getColumnModel().getColumn(0).setPreferredWidth(200); // Produit
+        tableLignes.getColumnModel().getColumn(1).setPreferredWidth(80);  // Qté Commandée
+        tableLignes.getColumnModel().getColumn(2).setPreferredWidth(80);  // Qté Déjà Livrée
+        tableLignes.getColumnModel().getColumn(3).setPreferredWidth(80);  // Qté Restante
+        tableLignes.getColumnModel().getColumn(4).setPreferredWidth(80);  // Qté Reçue
+        tableLignes.getColumnModel().getColumn(5).setPreferredWidth(80);  // Prix Unit.
+        tableLignes.getColumnModel().getColumn(6).setPreferredWidth(100); // Montant
+        tableLignes.getColumnModel().getColumn(7).setPreferredWidth(80);  // Actions
 
-        gbc.gridx = 4;
-        addPanel.add(new JLabel("Prix Unit.:"), gbc);
-        gbc.gridx = 5;
-        addPanel.add(spinnerPrixUnitaire, gbc);
-
-        JButton btnAdd = new JButton("Ajouter");
-        btnAdd.addActionListener(e -> ajouterLigne());
-        gbc.gridx = 6;
-        addPanel.add(btnAdd, gbc);
-
-        panel.add(addPanel, BorderLayout.NORTH);
-
-        // Table des lignes
         JScrollPane scrollLignes = new JScrollPane(tableLignes);
         panel.add(scrollLignes, BorderLayout.CENTER);
 
@@ -281,15 +327,7 @@ public class EntreeStockPanel extends JPanel {
         }
 
         // Charger les commandes fournisseur actives (EN_COURS, PARTIELLEMENT_LIVREE)
-        comboCommande.removeAllItems();
-        try {
-            List<com.longrich.smartgestion.entity.CommandeFournisseur> enCours = commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.EN_COURS);
-            List<com.longrich.smartgestion.entity.CommandeFournisseur> partiel = commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.PARTIELLEMENT_LIVREE);
-            for (var c : enCours) comboCommande.addItem(c);
-            for (var c : partiel) comboCommande.addItem(c);
-        } catch (Exception e) {
-            // ignore pour l'UI
-        }
+        chargerCommandesDisponibles();
 
         // Charger les entrées de stock
         chargerEntrees();
@@ -381,36 +419,65 @@ public class EntreeStockPanel extends JPanel {
 
     private void sauvegarderEntree() {
         try {
-            EntreeStockDTO dto = new EntreeStockDTO();
-            dto.setFournisseurId(((Fournisseur) comboFournisseur.getSelectedItem()).getId());
-            if (comboCommande.getSelectedItem() != null) {
-                dto.setCommandeFournisseurId(((com.longrich.smartgestion.entity.CommandeFournisseur) comboCommande.getSelectedItem()).getId());
+            // Validation des champs obligatoires
+            if (comboCommande.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "La commande fournisseur est obligatoire.", 
+                    "Champ obligatoire", JOptionPane.WARNING_MESSAGE);
+                return;
             }
-            // Pas de numéro facture/statut dans ce flux
+
+            // Vérifier qu'au moins une quantité reçue > 0
+            boolean auMoinsUneQuantite = false;
+            for (int i = 0; i < modelLignes.getRowCount(); i++) {
+                Object qteRecue = modelLignes.getValueAt(i, 4);
+                if (qteRecue != null && Integer.parseInt(qteRecue.toString()) > 0) {
+                    auMoinsUneQuantite = true;
+                    break;
+                }
+            }
+            
+            if (!auMoinsUneQuantite) {
+                JOptionPane.showMessageDialog(this, "Veuillez saisir au moins une quantité reçue.", 
+                    "Quantités manquantes", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            EntreeStockDTO dto = new EntreeStockDTO();
+            dto.setCommandeFournisseurId(((com.longrich.smartgestion.entity.CommandeFournisseur) comboCommande.getSelectedItem()).getId());
             dto.setNumeroBonLivraison(txtNumeroBonLivraison.getText());
             dto.setObservation(txtObservation.getText());
-            dto.setDateEntree(LocalDateTime.now());
+            // Récupérer la date depuis le spinner
+            Date dateEntree = (Date) spinnerDateEntree.getValue();
+            dto.setDateEntree(dateEntree.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+            if (!txtFichierReference.getText().trim().isEmpty()) {
+                dto.setFichierReference(txtFichierReference.getText().trim());
+            }
 
-            // Collecter les lignes
+            // Collecter les lignes avec quantité reçue > 0
             List<LigneEntreeStockDTO> lignes = new ArrayList<>();
             for (int i = 0; i < modelLignes.getRowCount(); i++) {
-                LigneEntreeStockDTO ligne = new LigneEntreeStockDTO();
-                Object produitIdVal = modelLignes.getValueAt(i, 6);
-                if (produitIdVal != null) {
-                    ligne.setProduitId(Long.valueOf(produitIdVal.toString()));
+                Object qteRecueObj = modelLignes.getValueAt(i, 4);
+                int qteRecue = qteRecueObj != null ? Integer.parseInt(qteRecueObj.toString()) : 0;
+                
+                if (qteRecue > 0) {
+                    LigneEntreeStockDTO ligne = new LigneEntreeStockDTO();
+                    Object produitIdVal = modelLignes.getValueAt(i, 8);
+                    if (produitIdVal != null) {
+                        ligne.setProduitId(Long.valueOf(produitIdVal.toString()));
+                    }
+                    Object prix = modelLignes.getValueAt(i, 5);
+                    ligne.setQuantite(qteRecue);
+                    ligne.setQuantiteRecue(qteRecue);
+                    ligne.setPrixUnitaire(new BigDecimal(prix.toString()));
+                    lignes.add(ligne);
                 }
-                Object qte = modelLignes.getValueAt(i, 1);
-                Object prix = modelLignes.getValueAt(i, 3);
-                ligne.setQuantite(Integer.valueOf(qte.toString()));
-                ligne.setQuantiteRecue(0);
-                ligne.setPrixUnitaire(new BigDecimal(prix.toString()));
-                lignes.add(ligne);
             }
             dto.setLignesEntree(lignes);
 
-            entreeStockService.creerEntreeStock(dto);
+            // Utiliser la méthode créer et valider directement
+            entreeStockService.creerEtValiderDepuisCommande(dto);
             
-            JOptionPane.showMessageDialog(this, "Entrée de stock créée avec succès!");
+            JOptionPane.showMessageDialog(this, "Entrée de stock enregistrée et validée avec succès!");
             chargerEntrees();
             viderFormulaire();
             
@@ -427,12 +494,95 @@ public class EntreeStockPanel extends JPanel {
     }
 
     private void viderFormulaire() {
-        comboFournisseur.setSelectedIndex(0);
-        txtNumeroFacture.setText("");
+        comboCommande.setSelectedIndex(-1);
+        if (txtFournisseurReadOnly != null) {
+            txtFournisseurReadOnly.setText("");
+        }
+        spinnerDateEntree.setValue(new Date());
         txtNumeroBonLivraison.setText("");
+        if (txtFichierReference != null) {
+            txtFichierReference.setText("");
+        }
         txtObservation.setText("");
-        comboStatut.setSelectedItem(StatutEntreeStock.EN_ATTENTE);
         modelLignes.setRowCount(0);
+    }
+
+    private void chargerCommandesDisponibles() {
+        comboCommande.removeAllItems();
+        try {
+            List<com.longrich.smartgestion.entity.CommandeFournisseur> enCours = 
+                commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.EN_COURS);
+            List<com.longrich.smartgestion.entity.CommandeFournisseur> partiel = 
+                commandeFournisseurService.getCommandesByStatut(com.longrich.smartgestion.enums.StatutCommande.PARTIELLEMENT_LIVREE);
+            
+            for (var c : enCours) comboCommande.addItem(c);
+            for (var c : partiel) comboCommande.addItem(c);
+        } catch (Exception e) {
+            log.error("Erreur lors du chargement des commandes", e);
+        }
+    }
+
+    private void onCommandeSelectionnee() {
+        com.longrich.smartgestion.entity.CommandeFournisseur commande = 
+            (com.longrich.smartgestion.entity.CommandeFournisseur) comboCommande.getSelectedItem();
+        
+        if (commande != null) {
+            // Mettre à jour le fournisseur en lecture seule
+            if (txtFournisseurReadOnly != null) {
+                txtFournisseurReadOnly.setText(commande.getFournisseur().getNomComplet());
+            }
+            chargerProduitsCommande(commande);
+        } else {
+            if (txtFournisseurReadOnly != null) {
+                txtFournisseurReadOnly.setText("");
+            }
+            modelLignes.setRowCount(0);
+        }
+    }
+
+    private void chargerProduitsCommande(com.longrich.smartgestion.entity.CommandeFournisseur commande) {
+        modelLignes.setRowCount(0);
+        
+        // Charger les lignes de commande avec les quantités
+        try {
+            List<com.longrich.smartgestion.entity.LigneCommandeFournisseur> lignes = 
+                commande.getLignes();
+            
+            for (com.longrich.smartgestion.entity.LigneCommandeFournisseur ligne : lignes) {
+                int qteCommandee = ligne.getQuantiteCommandee();
+                int qteLivree = ligne.getQuantiteLivree() != null ? ligne.getQuantiteLivree() : 0;
+                int qteRestante = qteCommandee - qteLivree;
+                
+                // Afficher seulement les produits partiellement ou non livrés
+                if (qteRestante > 0) {
+                    Object[] row = {
+                        ligne.getProduit().getLibelle(),           // Produit
+                        qteCommandee,                              // Qté Commandée
+                        qteLivree,                                 // Qté Déjà Livrée
+                        qteRestante,                               // Qté Restante
+                        0,                                         // Qté Reçue (saisir)
+                        ligne.getPrixUnitaire(),                  // Prix Unit.
+                        BigDecimal.ZERO,                          // Montant (calculé)
+                        "Saisir",                                  // Actions
+                        ligne.getProduit().getId()                // ProduitId (masqué)
+                    };
+                    modelLignes.addRow(row);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Erreur lors du chargement des produits: " + e.getMessage());
+        }
+    }
+
+    private void choisirFichier(JTextField txtFichier) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Sélectionner un fichier de référence");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+            "Fichiers de référence (PDF, JPG, PNG)", "pdf", "jpg", "jpeg", "png"));
+        
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            txtFichier.setText(fileChooser.getSelectedFile().getAbsolutePath());
+        }
     }
 
     private void filtrerEntrees(StatutEntreeStock statut) {

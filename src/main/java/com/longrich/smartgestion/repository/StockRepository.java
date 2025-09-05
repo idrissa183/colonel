@@ -50,6 +50,9 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     // Recherche par type de stock
     List<Stock> findByTypeStock(String typeStock);
     List<Stock> findByTypeStock(TypeEmplacement typeStock);
+    
+    // Stocks avec quantité supérieure à un seuil
+    List<Stock> findByTypeStockAndQuantiteGreaterThan(TypeEmplacement typeStock, Integer quantite);
 
     // Recherche par emplacement
     List<Stock> findByEmplacementContainingIgnoreCase(String emplacement);

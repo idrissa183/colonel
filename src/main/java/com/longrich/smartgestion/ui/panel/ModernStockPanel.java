@@ -9,6 +9,11 @@ import com.longrich.smartgestion.service.FamilleProduitService;
 import com.longrich.smartgestion.service.EntreeStockService;
 import com.longrich.smartgestion.service.CommandeFournisseurService;
 import com.longrich.smartgestion.service.TransfertInventaireService;
+import com.longrich.smartgestion.service.SortieStockService;
+import com.longrich.smartgestion.service.TransfertStockService;
+import com.longrich.smartgestion.ui.panels.EntreeStockPanel;
+import com.longrich.smartgestion.ui.panels.SortieStockPanel;
+import com.longrich.smartgestion.ui.panels.TransfertStockPanel;
 import com.longrich.smartgestion.dto.FamilleProduitDTO;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +60,13 @@ public class ModernStockPanel extends JPanel {
     private final EntreeStockService entreeStockService;
     private final CommandeFournisseurService commandeFournisseurService;
     private final TransfertInventaireService transfertInventaireService;
+    private final SortieStockService sortieStockService;
+    private final TransfertStockService transfertStockService;
+    
+    // Nouveaux panneaux modernes
+    private EntreeStockPanel entreeStockPanel;
+    private SortieStockPanel sortieStockPanel;
+    private TransfertStockPanel transfertStockPanel;
 
     // Composants principaux
     private JTabbedPane tabbedPane;
@@ -410,12 +422,9 @@ public class ModernStockPanel extends JPanel {
         
         JButton enregistrerButton = creerBouton("💾 Enregistrer", SUCCESS_COLOR, 
             e -> enregistrerEntreeStock());
-        JButton avancerButton = creerBouton("🧭 Gestion avancée", INFO_COLOR,
-            e -> ouvrirGestionEntreeAvancee());
         JButton viderButton = creerBouton("🗑️ Vider", TEXT_SECONDARY, 
             e -> viderFormulaireEntrees());
 
-        boutonPanel.add(avancerButton);
         boutonPanel.add(enregistrerButton);
         boutonPanel.add(viderButton);
 
@@ -1123,24 +1132,7 @@ public class ModernStockPanel extends JPanel {
         return null;
     }
 
-    private void ouvrirGestionEntreeAvancee() {
-        try {
-            var panel = new com.longrich.smartgestion.ui.panels.EntreeStockPanel(
-                entreeStockService,
-                fournisseurService,
-                produitService,
-                commandeFournisseurService
-            );
-            JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "Gestion avancée des entrées", true);
-            dialog.setContentPane(panel);
-            dialog.setSize(1000, 680);
-            dialog.setLocationRelativeTo(this);
-            dialog.setVisible(true);
-        } catch (Exception e) {
-            log.error("Erreur ouverture gestion avancée", e);
-            afficherMessage("Impossible d'ouvrir la gestion avancée.", "Erreur", JOptionPane.ERROR_MESSAGE);
-        }
-    }
+    // (Gestion avancée supprimée)
 
     private JPanel creerOngletTransferts() {
         JPanel panel = new JPanel();
@@ -1384,4 +1376,5 @@ public class ModernStockPanel extends JPanel {
             entreeFichierRefField.setText(chooser.getSelectedFile().getAbsolutePath());
         }
     }
+
 }

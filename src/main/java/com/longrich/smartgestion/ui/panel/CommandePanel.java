@@ -700,48 +700,11 @@ public class CommandePanel extends JPanel {
             JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 2));
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
 
-            // Récupérer le statut de la commande pour afficher les bons boutons
-            String statut = (String) table.getValueAt(row, 3); // Colonne statut
-            
+            // Seulement le bouton "Voir"
             JButton viewButton = new JButton(FontIcon.of(FontAwesomeSolid.EYE, 10, INFO_COLOR));
             viewButton.setToolTipText("Voir détails");
-            
-            // Boutons selon le statut
-            if ("En Cours".equals(statut)) {
-                JButton confirmButton = new JButton(FontIcon.of(FontAwesomeSolid.CHECK, 10, SUCCESS_COLOR));
-                confirmButton.setToolTipText("Confirmer");
-                JButton cancelButton = new JButton(FontIcon.of(FontAwesomeSolid.TIMES, 10, DANGER_COLOR));
-                cancelButton.setToolTipText("Annuler");
-                
-                for (JButton btn : new JButton[] { viewButton, confirmButton, cancelButton }) {
-                    styleActionButton(btn);
-                    panel.add(btn);
-                }
-            } else if ("Confirmée".equals(statut)) {
-                JButton partialButton = new JButton(FontIcon.of(FontAwesomeSolid.SHIPPING_FAST, 10, WARNING_COLOR));
-                partialButton.setToolTipText("Livraison partielle");
-                JButton deliverButton = new JButton(FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 10, SUCCESS_COLOR));
-                deliverButton.setToolTipText("Livrer totalement");
-                JButton cancelButton = new JButton(FontIcon.of(FontAwesomeSolid.TIMES, 10, DANGER_COLOR));
-                cancelButton.setToolTipText("Annuler");
-                
-                for (JButton btn : new JButton[] { viewButton, partialButton, deliverButton, cancelButton }) {
-                    styleActionButton(btn);
-                    panel.add(btn);
-                }
-            } else if ("Partiellement Livrée".equals(statut)) {
-                JButton deliverButton = new JButton(FontIcon.of(FontAwesomeSolid.CHECK_CIRCLE, 10, SUCCESS_COLOR));
-                deliverButton.setToolTipText("Livrer totalement");
-                
-                for (JButton btn : new JButton[] { viewButton, deliverButton }) {
-                    styleActionButton(btn);
-                    panel.add(btn);
-                }
-            } else {
-                // Statut Livrée ou Annulée - seulement voir
-                styleActionButton(viewButton);
-                panel.add(viewButton);
-            }
+            styleActionButton(viewButton);
+            panel.add(viewButton);
 
             return panel;
         }
@@ -769,45 +732,13 @@ public class CommandePanel extends JPanel {
             panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 2, 2));
             panel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
 
-            String statut = (String) table.getValueAt(row, 3);
             String numeroCommande = (String) table.getValueAt(row, 0);
             
+            // Seulement le bouton "Voir"
             JButton viewButton = createActionButton(FontAwesomeSolid.EYE, "Voir", INFO_COLOR, 
                 e -> voirDetailsCommande(numeroCommande));
             
-            if ("En Cours".equals(statut)) {
-                JButton confirmButton = createActionButton(FontAwesomeSolid.CHECK, "Confirmer", SUCCESS_COLOR,
-                    e -> confirmerCommande(numeroCommande));
-                JButton cancelButton = createActionButton(FontAwesomeSolid.TIMES, "Annuler", DANGER_COLOR,
-                    e -> annulerCommande(numeroCommande));
-                
-                panel.add(viewButton);
-                panel.add(confirmButton);
-                panel.add(cancelButton);
-                
-            } else if ("Confirmée".equals(statut)) {
-                JButton partialButton = createActionButton(FontAwesomeSolid.SHIPPING_FAST, "Livraison partielle", WARNING_COLOR,
-                    e -> livrerPartiellement(numeroCommande));
-                JButton deliverButton = createActionButton(FontAwesomeSolid.CHECK_CIRCLE, "Livrer", SUCCESS_COLOR,
-                    e -> livrerTotalement(numeroCommande));
-                JButton cancelButton = createActionButton(FontAwesomeSolid.TIMES, "Annuler", DANGER_COLOR,
-                    e -> annulerCommande(numeroCommande));
-                
-                panel.add(viewButton);
-                panel.add(partialButton);
-                panel.add(deliverButton);
-                panel.add(cancelButton);
-                
-            } else if ("Partiellement Livrée".equals(statut)) {
-                JButton deliverButton = createActionButton(FontAwesomeSolid.CHECK_CIRCLE, "Livrer", SUCCESS_COLOR,
-                    e -> livrerTotalement(numeroCommande));
-                
-                panel.add(viewButton);
-                panel.add(deliverButton);
-                
-            } else {
-                panel.add(viewButton);
-            }
+            panel.add(viewButton);
 
             return panel;
         }
@@ -1374,264 +1305,298 @@ public class CommandePanel extends JPanel {
 
     private void voirDetailsCommande(String numeroCommande) {
         try {
-            CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
+            CommandeFournisseur commande = commandeFournisseurService.getCommandeWithLignesByNumero(numeroCommande)
                 .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
             
-            StringBuilder details = new StringBuilder();
-            details.append("DÉTAILS DE LA COMMANDE\n\n");
-            details.append("Numéro: ").append(commande.getNumeroCommande()).append("\n");
-            details.append("Fournisseur: ").append(commande.getFournisseur().getNomComplet()).append("\n");
-            details.append("Date de commande: ").append(commande.getDateCommande().toLocalDate()).append("\n");
-            details.append("Statut: ").append(commande.getStatut().getLibelle()).append("\n");
-            details.append("Montant total: ").append(String.format("%,.0f FCFA", commande.getMontantTotal())).append("\n");
+            // Créer le dialogue personnalisé
+            JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), 
+                "Détails de la commande " + numeroCommande, true);
+            dialog.setLayout(new BorderLayout());
+            dialog.setSize(800, 600);
+            dialog.setLocationRelativeTo(this);
             
-            if (commande.getDateLivraisonPrevue() != null) {
-                details.append("Date de livraison prévue: ").append(commande.getDateLivraisonPrevue().toLocalDate()).append("\n");
-            }
-            if (commande.getDateLivraisonReelle() != null) {
-                details.append("Date de livraison réelle: ").append(commande.getDateLivraisonReelle().toLocalDate()).append("\n");
-            }
+            // Panel principal avec informations générales
+            JPanel headerPanel = createCommandeHeaderPanelForDialog(commande);
             
-            if (commande.getObservations() != null && !commande.getObservations().trim().isEmpty()) {
-                details.append("\nObservations:\n").append(commande.getObservations());
-            }
+            // Panel avec tableau des produits
+            JPanel productsPanel = createCommandeProductsPanel(commande);
             
-            JTextArea textArea = new JTextArea(details.toString());
-            textArea.setEditable(false);
-            textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-            JScrollPane scrollPane = new JScrollPane(textArea);
-            scrollPane.setPreferredSize(new Dimension(500, 400));
+            // Panel des boutons
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            buttonPanel.setBackground(CARD_COLOR);
             
-            JOptionPane.showMessageDialog(this, scrollPane, "Détails de la commande " + numeroCommande, 
-                JOptionPane.INFORMATION_MESSAGE);
+            JButton closeButton = createStyledButton("Fermer", SECONDARY_COLOR);
+            closeButton.addActionListener(e -> dialog.dispose());
+            
+            JButton printButton = createStyledButton("Imprimer", PRIMARY_COLOR);
+            printButton.addActionListener(e -> imprimerCommande(commande));
+            
+            buttonPanel.add(printButton);
+            buttonPanel.add(closeButton);
+            
+            // Assemblage du dialogue
+            dialog.add(headerPanel, BorderLayout.NORTH);
+            dialog.add(productsPanel, BorderLayout.CENTER);
+            dialog.add(buttonPanel, BorderLayout.SOUTH);
+            
+            dialog.setVisible(true);
                 
         } catch (Exception e) {
             showErrorMessage("Erreur lors de l'affichage des détails: " + e.getMessage());
         }
     }
 
-    private void confirmerCommande(String numeroCommande) {
-        int option = JOptionPane.showConfirmDialog(this, 
-            "Confirmer la commande " + numeroCommande + " ?\n\n" +
-            "Cette action changera le statut de 'En Cours' vers 'Confirmée'.",
-            "Confirmation de commande", 
-            JOptionPane.YES_NO_OPTION, 
-            JOptionPane.QUESTION_MESSAGE);
-            
-        if (option == JOptionPane.YES_OPTION) {
-            try {
-                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
-                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
-                    
-                commandeFournisseurService.confirmerCommande(commande.getId());
-                showSuccessMessage("✓ Commande " + numeroCommande + " confirmée");
-                loadCommandes();
-            } catch (Exception e) {
-                showErrorMessage("Erreur lors de la confirmation: " + e.getMessage());
-            }
+    private JPanel createCommandeHeaderPanelForDialog(CommandeFournisseur commande) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COLOR),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        
+        // Titre
+        JLabel titleLabel = new JLabel("DÉTAILS DE LA COMMANDE", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        titleLabel.setForeground(TEXT_PRIMARY);
+        
+        // Panel d'informations en grille
+        JPanel infoPanel = new JPanel(new GridBagLayout());
+        infoPanel.setBackground(CARD_COLOR);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        // Ligne 1 : Numéro et Fournisseur
+        gbc.gridx = 0; gbc.gridy = 0;
+        infoPanel.add(createInfoLabel("Numéro:", commande.getNumeroCommande()), gbc);
+        gbc.gridx = 1;
+        infoPanel.add(createInfoLabel("Fournisseur:", commande.getFournisseur().getNomComplet()), gbc);
+        
+        // Ligne 2 : Date commande et Statut
+        gbc.gridx = 0; gbc.gridy = 1;
+        infoPanel.add(createInfoLabel("Date de commande:", commande.getDateCommande().toLocalDate().toString()), gbc);
+        gbc.gridx = 1;
+        JPanel statutPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        statutPanel.setBackground(CARD_COLOR);
+        JLabel statutLabel = new JLabel(commande.getStatut().getLibelle());
+        statutLabel.setOpaque(true);
+        statutLabel.setBackground(getStatutColor(commande.getStatut()));
+        statutLabel.setForeground(Color.WHITE);
+        statutLabel.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+        statutPanel.add(statutLabel);
+        infoPanel.add(createInfoLabel("Statut:", ""), gbc);
+        gbc.gridx = 2;
+        infoPanel.add(statutPanel, gbc);
+        
+        // Ligne 3 : Dates de livraison si disponibles
+        if (commande.getDateLivraisonPrevue() != null) {
+            gbc.gridx = 0; gbc.gridy = 2;
+            infoPanel.add(createInfoLabel("Livraison prévue:", commande.getDateLivraisonPrevue().toLocalDate().toString()), gbc);
         }
+        if (commande.getDateLivraisonReelle() != null) {
+            gbc.gridx = 1; gbc.gridy = 2;
+            infoPanel.add(createInfoLabel("Livraison réelle:", commande.getDateLivraisonReelle().toLocalDate().toString()), gbc);
+        }
+        
+        // Montant total
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+        JLabel montantLabel = new JLabel("Montant total: " + String.format("%,.0f FCFA", commande.getMontantTotal()));
+        montantLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        montantLabel.setForeground(SUCCESS_COLOR);
+        infoPanel.add(montantLabel, gbc);
+        
+        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(Box.createVerticalStrut(10), BorderLayout.CENTER);
+        panel.add(infoPanel, BorderLayout.SOUTH);
+        
+        return panel;
     }
 
-    private void annulerCommande(String numeroCommande) {
-        String motif = JOptionPane.showInputDialog(this, 
-            "Motif d'annulation de la commande " + numeroCommande + " :",
-            "Annulation de commande",
-            JOptionPane.QUESTION_MESSAGE);
-            
-        if (motif != null && !motif.trim().isEmpty()) {
-            try {
-                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
-                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
-                    
-                commandeFournisseurService.annulerCommande(commande.getId(), motif);
-                showSuccessMessage("✓ Commande " + numeroCommande + " annulée");
-                loadCommandes();
-            } catch (Exception e) {
-                showErrorMessage("Erreur lors de l'annulation: " + e.getMessage());
-            }
-        }
-    }
-
-    private void livrerPartiellement(String numeroCommande) {
-        try {
-            CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
-                .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
-                
-            showDeliveryDialog(commande);
-            
-        } catch (Exception e) {
-            showErrorMessage("Erreur: " + e.getMessage());
-        }
-    }
-    
-    private void showDeliveryDialog(CommandeFournisseur commande) {
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Enregistrer Livraison - " + commande.getNumeroCommande(), true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(600, 400);
-        dialog.setLocationRelativeTo(this);
+    private JPanel createCommandeProductsPanel(CommandeFournisseur commande) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COLOR),
+            BorderFactory.createEmptyBorder(10, 20, 20, 20)
+        ));
         
-        // Header panel
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.setBackground(PRIMARY_COLOR);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
+        // Titre du tableau
+        JLabel tableTitle = new JLabel("PRODUITS COMMANDÉS");
+        tableTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        tableTitle.setForeground(TEXT_PRIMARY);
+        tableTitle.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
         
-        JLabel titleLabel = new JLabel("Quantités à livrer pour chaque produit");
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-        titleLabel.setForeground(Color.WHITE);
-        headerPanel.add(titleLabel);
-        
-        // Content panel with order lines
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
-        // Table model for delivery quantities
-        String[] columnNames = {"Produit", "Qté Commandée", "Qté Déjà Livrée", "Qté à Livrer", "Restante"};
-        DefaultTableModel deliveryModel = new DefaultTableModel(columnNames, 0) {
+        // Créer le tableau des produits
+        String[] columnNames = {"Produit", "Quantité", "Prix Unitaire", "Montant", "Statut Livraison"};
+        DefaultTableModel productsModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 3; // Only "Qté à Livrer" column is editable
+                return false;
             }
         };
         
-        // Load order lines
-        List<LigneCommandeFournisseur> lignes = commandeFournisseurService.getLignesCommande(commande.getId());
-        java.util.Map<Long, Integer> quantitesLivraison = new java.util.HashMap<>();
+        JTable productsTable = new JTable(productsModel);
+        styleProductsTable(productsTable);
         
-        for (LigneCommandeFournisseur ligne : lignes) {
-            Object[] row = {
-                ligne.getProduit().getLibelle(),
-                ligne.getQuantiteCommandee(),
-                ligne.getQuantiteLivree(),
-                0, // Initial delivery quantity
-                ligne.getQuantiteRestante()
-            };
-            deliveryModel.addRow(row);
-            quantitesLivraison.put(ligne.getId(), 0);
+        // Remplir le tableau avec les lignes de commande
+        if (commande.getLignes() != null) {
+            for (LigneCommandeFournisseur ligne : commande.getLignes()) {
+                BigDecimal montantLigne = ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(ligne.getQuantiteCommandee()));
+                String statutLivraison = getStatutLivraison(ligne);
+                
+                Object[] row = {
+                    ligne.getProduit().getLibelle(),
+                    ligne.getQuantiteCommandee(),
+                    String.format("%,.0f FCFA", ligne.getPrixUnitaire()),
+                    String.format("%,.0f FCFA", montantLigne),
+                    statutLivraison
+                };
+                productsModel.addRow(row);
+            }
         }
         
-        JTable deliveryTable = new JTable(deliveryModel);
-        deliveryTable.setRowHeight(35);
-        deliveryTable.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(productsTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(BORDER_COLOR));
+        scrollPane.setPreferredSize(new Dimension(750, 200));
         
-        // Custom cell renderer for better visuals
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        for (int i = 1; i < 5; i++) {
-            deliveryTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
+        panel.add(tableTitle, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        // Panel des totaux
+        if (commande.getLignes() != null && !commande.getLignes().isEmpty()) {
+            JPanel totalsPanel = createTotalsPanel(commande);
+            panel.add(totalsPanel, BorderLayout.SOUTH);
         }
         
-        // Update "Restante" column when "Qté à Livrer" changes
-        deliveryModel.addTableModelListener(e -> {
-            if (e.getColumn() == 3 && e.getType() == javax.swing.event.TableModelEvent.UPDATE) {
-                int row = e.getFirstRow();
-                try {
-                    int qtyCommanded = (Integer) deliveryModel.getValueAt(row, 1);
-                    int qtyAlreadyDelivered = (Integer) deliveryModel.getValueAt(row, 2);
-                    Object qtyToDeliverObj = deliveryModel.getValueAt(row, 3);
-                    
-                    int qtyToDeliver = 0;
-                    if (qtyToDeliverObj instanceof String) {
-                        qtyToDeliver = Integer.parseInt((String) qtyToDeliverObj);
-                    } else if (qtyToDeliverObj instanceof Integer) {
-                        qtyToDeliver = (Integer) qtyToDeliverObj;
-                    }
-                    
-                    // Validate: total delivered cannot exceed commanded
-                    int totalDelivered = qtyAlreadyDelivered + qtyToDeliver;
-                    if (totalDelivered > qtyCommanded) {
-                        qtyToDeliver = qtyCommanded - qtyAlreadyDelivered;
-                        deliveryModel.setValueAt(qtyToDeliver, row, 3);
-                    }
-                    
-                    int remaining = qtyCommanded - qtyAlreadyDelivered - qtyToDeliver;
-                    deliveryModel.setValueAt(remaining, row, 4);
-                    
-                    // Update map
-                    if (row < lignes.size()) {
-                        quantitesLivraison.put(lignes.get(row).getId(), qtyToDeliver);
-                    }
-                } catch (NumberFormatException ex) {
-                    deliveryModel.setValueAt(0, row, 3);
-                }
-            }
-        });
-        
-        JScrollPane scrollPane = new JScrollPane(deliveryTable);
-        contentPanel.add(scrollPane, BorderLayout.CENTER);
-        
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        buttonPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
-        
-        JButton cancelButton = new JButton("Annuler");
-        cancelButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-        cancelButton.setBackground(SECONDARY_COLOR);
-        cancelButton.setForeground(Color.WHITE);
-        cancelButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        cancelButton.setFocusPainted(false);
-        cancelButton.addActionListener(e -> dialog.dispose());
-        
-        JButton saveButton = new JButton("Enregistrer Livraison");
-        saveButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        saveButton.setBackground(SUCCESS_COLOR);
-        saveButton.setForeground(Color.WHITE);
-        saveButton.setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
-        saveButton.setFocusPainted(false);
-        saveButton.addActionListener(e -> {
-            try {
-                // Filter out zero quantities and call service
-                java.util.Map<Long, Integer> filteredQuantities = quantitesLivraison.entrySet().stream()
-                    .filter(entry -> entry.getValue() > 0)
-                    .collect(java.util.stream.Collectors.toMap(
-                        java.util.Map.Entry::getKey, 
-                        java.util.Map.Entry::getValue
-                    ));
-                
-                if (filteredQuantities.isEmpty()) {
-                    showErrorMessage("Aucune quantité à livrer spécifiée");
-                    return;
-                }
-                
-                commandeFournisseurService.enregistrerLivraison(commande.getId(), filteredQuantities);
-                showSuccessMessage("✓ Livraison enregistrée pour " + commande.getNumeroCommande());
-                loadCommandes();
-                dialog.dispose();
-                
-            } catch (Exception ex) {
-                showErrorMessage("Erreur lors de l'enregistrement: " + ex.getMessage());
-            }
-        });
-        
-        buttonPanel.add(cancelButton);
-        buttonPanel.add(Box.createHorizontalStrut(10));
-        buttonPanel.add(saveButton);
-        
-        dialog.add(headerPanel, BorderLayout.NORTH);
-        dialog.add(contentPanel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-        
-        dialog.setVisible(true);
+        return panel;
     }
 
-    private void livrerTotalement(String numeroCommande) {
-        int option = JOptionPane.showConfirmDialog(this,
-            "Confirmer la livraison totale de la commande " + numeroCommande + " ?\n\n" +
-            "Cette action marquera la commande comme entièrement livrée.",
-            "Livraison totale",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.QUESTION_MESSAGE);
-            
-        if (option == JOptionPane.YES_OPTION) {
-            try {
-                CommandeFournisseur commande = commandeFournisseurService.getCommandeByNumero(numeroCommande)
-                    .orElseThrow(() -> new IllegalArgumentException("Commande non trouvée"));
-                    
-                commandeFournisseurService.livrerTotalement(commande.getId());
-                showSuccessMessage("✓ Commande " + numeroCommande + " entièrement livrée");
-                loadCommandes();
-            } catch (Exception e) {
-                showErrorMessage("Erreur lors de la livraison: " + e.getMessage());
-            }
+    private JPanel createTotalsPanel(CommandeFournisseur commande) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        panel.setBackground(CARD_COLOR);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        
+        int totalProduits = commande.getLignes().size();
+        int totalQuantites = commande.getLignes().stream()
+            .mapToInt(LigneCommandeFournisseur::getQuantiteCommandee)
+            .sum();
+        
+        JLabel statsLabel = new JLabel(String.format(
+            "Total: %d produits • %d unités • %,.0f FCFA", 
+            totalProduits, totalQuantites, commande.getMontantTotal()));
+        statsLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        statsLabel.setForeground(TEXT_SECONDARY);
+        
+        panel.add(statsLabel);
+        return panel;
+    }
+
+    private void styleProductsTable(JTable table) {
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        table.setRowHeight(28);
+        table.setShowGrid(true);
+        table.setGridColor(BORDER_COLOR);
+        table.setSelectionBackground(new Color(59, 130, 246, 50));
+        table.setSelectionForeground(TEXT_PRIMARY);
+        
+        // Style de l'en-tête
+        JTableHeader header = table.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        header.setBackground(BACKGROUND_COLOR);
+        header.setForeground(TEXT_PRIMARY);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, PRIMARY_COLOR));
+        header.setReorderingAllowed(false);
+        
+        // Configuration des largeurs de colonnes
+        table.getColumnModel().getColumn(0).setPreferredWidth(250); // Produit
+        table.getColumnModel().getColumn(1).setPreferredWidth(80);  // Quantité
+        table.getColumnModel().getColumn(2).setPreferredWidth(120); // Prix Unitaire
+        table.getColumnModel().getColumn(3).setPreferredWidth(120); // Montant
+        table.getColumnModel().getColumn(4).setPreferredWidth(130); // Statut Livraison
+        
+        // Centrer les colonnes numériques
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
+        table.getColumnModel().getColumn(1).setCellRenderer(centerRenderer);
+        
+        DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
+        rightRenderer.setHorizontalAlignment(SwingConstants.RIGHT);
+        table.getColumnModel().getColumn(2).setCellRenderer(rightRenderer);
+        table.getColumnModel().getColumn(3).setCellRenderer(rightRenderer);
+    }
+
+    private JPanel createInfoLabel(String label, String value) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panel.setBackground(CARD_COLOR);
+        
+        JLabel labelComponent = new JLabel(label);
+        labelComponent.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        labelComponent.setForeground(TEXT_SECONDARY);
+        
+        JLabel valueComponent = new JLabel(value);
+        valueComponent.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        valueComponent.setForeground(TEXT_PRIMARY);
+        
+        panel.add(labelComponent);
+        panel.add(Box.createHorizontalStrut(5));
+        panel.add(valueComponent);
+        
+        return panel;
+    }
+
+    private String getStatutLivraison(LigneCommandeFournisseur ligne) {
+        int quantiteLivree = ligne.getQuantiteLivree() != null ? ligne.getQuantiteLivree() : 0;
+        int quantiteCommandee = ligne.getQuantiteCommandee();
+        
+        if (quantiteLivree == 0) {
+            return "Non livrée";
+        } else if (quantiteLivree >= quantiteCommandee) {
+            return "Livrée";
+        } else {
+            return "Partielle (" + quantiteLivree + "/" + quantiteCommandee + ")";
         }
     }
+
+    private Color getStatutColor(StatutCommande statut) {
+        return switch (statut) {
+            case EN_ATTENTE -> WARNING_COLOR;
+            case EN_COURS -> INFO_COLOR;
+            case CONFIRMEE -> PRIMARY_COLOR;
+            case PARTIELLEMENT_LIVREE -> new Color(255, 193, 7);
+            case LIVREE -> SUCCESS_COLOR;
+            case ANNULEE -> DANGER_COLOR;
+            default -> SECONDARY_COLOR;
+        };
+    }
+
+    private JButton createStyledButton(String text, Color backgroundColor) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        button.setBackground(backgroundColor);
+        button.setForeground(Color.WHITE);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Effet hover
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(backgroundColor.darker());
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(backgroundColor);
+            }
+        });
+        
+        return button;
+    }
+
+    private void imprimerCommande(CommandeFournisseur commande) {
+        JOptionPane.showMessageDialog(this, 
+            "Fonctionnalité d'impression en cours de développement.\n" +
+            "Cette fonctionnalité permettra d'imprimer ou d'exporter la commande en PDF.", 
+            "Impression", 
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+
 }

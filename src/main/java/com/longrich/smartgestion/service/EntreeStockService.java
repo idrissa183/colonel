@@ -33,36 +33,40 @@ public class EntreeStockService {
 
     @Transactional
     public EntreeStock creerEntreeStock(EntreeStockDTO dto) {
-        log.info("Création d'une entrée de stock pour le fournisseur: {}", dto.getFournisseurId());
+        log.info("Création d'une entrée de stock pour la commande: {}", dto.getCommandeFournisseurId());
+
+        // La commande fournisseur est obligatoire selon les nouvelles exigences
+        if (dto.getCommandeFournisseurId() == null) {
+            throw new RuntimeException("La commande fournisseur est obligatoire pour créer une entrée de stock");
+        }
+
+        CommandeFournisseur commande = commandeFournisseurRepository.findById(dto.getCommandeFournisseurId())
+                .orElseThrow(() -> new RuntimeException("Commande fournisseur non trouvée: " + dto.getCommandeFournisseurId()));
+
+        // Vérifier que la commande est en cours ou partiellement livrée
+        if (commande.getStatut() != com.longrich.smartgestion.enums.StatutCommande.EN_COURS &&
+            commande.getStatut() != com.longrich.smartgestion.enums.StatutCommande.PARTIELLEMENT_LIVREE) {
+            throw new RuntimeException("Seules les commandes EN_COURS ou PARTIELLEMENT_LIVREE peuvent recevoir des entrées de stock");
+        }
 
         EntreeStock entreeStock = EntreeStock.builder()
                 .dateEntree(dto.getDateEntree() != null ? dto.getDateEntree() : LocalDateTime.now())
-                .dateCommande(dto.getDateCommande())
+                .dateCommande(commande.getDateCommande().toLocalDate())
                 .dateLivraison(dto.getDateLivraison())
                 .numeroFactureFournisseur(dto.getNumeroFactureFournisseur())
                 .numeroBonLivraison(dto.getNumeroBonLivraison())
                 .statut(StatutEntreeStock.EN_ATTENTE)
                 .observation(dto.getObservation())
                 .fichierReference(dto.getFichierReference())
+                .fournisseur(commande.getFournisseur()) // Le fournisseur vient de la commande
+                .commandeFournisseur(commande)
                 .build();
-
-        if (dto.getFournisseurId() != null) {
-            Fournisseur fournisseur = fournisseurRepository.findById(dto.getFournisseurId())
-                    .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé: " + dto.getFournisseurId()));
-            entreeStock.setFournisseur(fournisseur);
-        }
-
-        if (dto.getCommandeFournisseurId() != null) {
-            CommandeFournisseur commande = commandeFournisseurRepository.findById(dto.getCommandeFournisseurId())
-                    .orElseThrow(() -> new RuntimeException("Commande fournisseur non trouvée: " + dto.getCommandeFournisseurId()));
-            entreeStock.setCommandeFournisseur(commande);
-        }
 
         EntreeStock savedEntreeStock = entreeStockRepository.save(entreeStock);
 
         if (dto.getLignesEntree() != null && !dto.getLignesEntree().isEmpty()) {
             for (LigneEntreeStockDTO ligneDto : dto.getLignesEntree()) {
-                ajouterLigneEntree(savedEntreeStock.getId(), ligneDto);
+                ajouterLigneEntreeAvecValidation(savedEntreeStock.getId(), ligneDto);
             }
         }
 
@@ -195,7 +199,7 @@ public class EntreeStockService {
                 .datePeremption(dto.getDatePeremption())
                 .numeroLot(dto.getNumeroLot())
                 .observation(dto.getObservation())
-                .emplacementMagasin(dto.getEmplacementMagasin() != null ? dto.getEmplacementMagasin() : "MAGASIN")
+                .emplacementMagasin("MAGASIN") // Force l'emplacement MAGASIN
                 .build();
 
         // Lier la ligne d'entrée à une ligne de commande si fournie / possible
@@ -221,6 +225,48 @@ public class EntreeStockService {
         recalculerMontantTotal(entreeStock);
         
         return savedLigne;
+    }
+
+    /**
+     * Ajoute une ligne d'entrée avec validation des quantités par rapport à la commande
+     */
+    @Transactional
+    public LigneEntreeStock ajouterLigneEntreeAvecValidation(Long entreeStockId, LigneEntreeStockDTO dto) {
+        EntreeStock entreeStock = entreeStockRepository.findById(entreeStockId)
+                .orElseThrow(() -> new RuntimeException("Entrée de stock non trouvée: " + entreeStockId));
+
+        if (entreeStock.isValidee()) {
+            throw new RuntimeException("Impossible de modifier une entrée de stock validée");
+        }
+
+        Produit produit = produitRepository.findById(dto.getProduitId())
+                .orElseThrow(() -> new RuntimeException("Produit non trouvé: " + dto.getProduitId()));
+
+        // Validation: le produit doit faire partie de la commande
+        if (entreeStock.getCommandeFournisseur() != null) {
+            List<LigneCommandeFournisseur> lignesCmd = ligneCommandeFournisseurRepository
+                    .findByCommandeFournisseurAndProduit(entreeStock.getCommandeFournisseur(), produit);
+            if (lignesCmd.isEmpty()) {
+                throw new RuntimeException("Le produit '" + produit.getLibelle() + 
+                    "' ne fait pas partie de la commande sélectionnée");
+            }
+
+            // Validation: la quantité reçue ne doit pas dépasser la quantité commandée restante
+            LigneCommandeFournisseur ligneCmd = lignesCmd.get(0);
+            int quantiteCommandee = ligneCmd.getQuantiteCommandee();
+            int quantiteDejaLivree = ligneCmd.getQuantiteLivree() != null ? ligneCmd.getQuantiteLivree() : 0;
+            int quantiteRestante = quantiteCommandee - quantiteDejaLivree;
+            
+            int quantiteRecue = dto.getQuantiteRecue() != null ? dto.getQuantiteRecue() : dto.getQuantite();
+            
+            if (quantiteRecue > quantiteRestante) {
+                throw new RuntimeException("La quantité reçue (" + quantiteRecue + 
+                    ") dépasse la quantité restante (" + quantiteRestante + ") pour le produit '" + 
+                    produit.getLibelle() + "'");
+            }
+        }
+
+        return ajouterLigneEntree(entreeStockId, dto);
     }
 
     @Transactional

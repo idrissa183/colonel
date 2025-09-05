@@ -56,6 +56,11 @@ public class CommandeFournisseurService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<CommandeFournisseur> getCommandeWithLignesByNumero(String numeroCommande) {
+        return commandeFournisseurRepository.findByNumeroCommandeWithLignes(numeroCommande);
+    }
+
+    @Transactional(readOnly = true)
     public List<CommandeFournisseur> getCommandesByFournisseur(Long fournisseurId) {
         return fournisseurRepository.findById(fournisseurId)
                 .map(commandeFournisseurRepository::findByFournisseur)
