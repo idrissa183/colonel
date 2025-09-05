@@ -11,6 +11,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 import org.springframework.context.annotation.Profile;
@@ -583,17 +588,23 @@ public class UserPanel extends JPanel {
 
     // Dialog pour créer/modifier un utilisateur
     private class UserDialog extends JDialog {
+        // Patterns alignés avec les contraintes Bean Validation de l'entité User
+        private static final Pattern P_TEL_BF = Pattern.compile("^(\\+226[02567]\\d{7}|[02567]\\d{7})$");
+        private static final Pattern P_EMAIL = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+        
         private ComponentFactory.FieldPanel usernamePanel;
         private ComponentFactory.FieldPanel emailPanel;
         private ComponentFactory.FieldPanel nomPanel;
         private ComponentFactory.FieldPanel prenomPanel;
         private ComponentFactory.FieldPanel telephonePanel;
+        private ComponentFactory.FieldPanel passwordPanel;
         private JPasswordField passwordField;
         private JComboBox<UserRole> roleCombo;
         private JCheckBox activeCheckbox;
         private boolean confirmed = false;
         private User user;
         private boolean isEditing;
+        private final Map<JComponent, JLabel> errorLabels = new HashMap<>();
 
         public UserDialog(Frame parent, User user) {
             super(parent, user == null ? "Nouvel Utilisateur" : "Modifier Utilisateur", true);
@@ -619,25 +630,25 @@ public class UserPanel extends JPanel {
             formPanel.setBackground(ComponentFactory.getBackgroundColor());
 
             // Username
-            usernamePanel = ComponentFactory.createFieldPanel("Nom d'utilisateur:", 
+            usernamePanel = ComponentFactory.createFieldPanel("Nom d'utilisateur *:", 
                 ComponentFactory.createStyledTextField());
             formPanel.add(usernamePanel);
             formPanel.add(Box.createVerticalStrut(15));
 
             // Email
-            emailPanel = ComponentFactory.createFieldPanel("Email:", 
+            emailPanel = ComponentFactory.createFieldPanel("Email *:", 
                 ComponentFactory.createStyledTextField());
             formPanel.add(emailPanel);
             formPanel.add(Box.createVerticalStrut(15));
 
             // Nom
-            nomPanel = ComponentFactory.createFieldPanel("Nom:", 
+            nomPanel = ComponentFactory.createFieldPanel("Nom *:", 
                 ComponentFactory.createStyledTextField());
             formPanel.add(nomPanel);
             formPanel.add(Box.createVerticalStrut(15));
 
             // Prénom
-            prenomPanel = ComponentFactory.createFieldPanel("Prénom:", 
+            prenomPanel = ComponentFactory.createFieldPanel("Prénom *:", 
                 ComponentFactory.createStyledTextField());
             formPanel.add(prenomPanel);
             formPanel.add(Box.createVerticalStrut(15));
@@ -648,26 +659,21 @@ public class UserPanel extends JPanel {
             formPanel.add(telephonePanel);
             formPanel.add(Box.createVerticalStrut(15));
 
-            // Mot de passe
-            JPanel passwordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            passwordPanel.setBackground(ComponentFactory.getBackgroundColor());
-            passwordPanel.add(ComponentFactory.createLabel("Mot de passe:"));
-            passwordField = new JPasswordField(20);
+            // Mot de passe avec même formatage que les autres champs
+            passwordField = new JPasswordField();
             passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
             passwordField.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(ComponentFactory.getBorderColor(), 1),
                     BorderFactory.createEmptyBorder(8, 12, 8, 12)));
-            passwordPanel.add(passwordField);
+            String passwordLabel = isEditing ? "Mot de passe:" : "Mot de passe *:";
+            passwordPanel = ComponentFactory.createFieldPanel(passwordLabel, passwordField);
             formPanel.add(passwordPanel);
             formPanel.add(Box.createVerticalStrut(15));
 
-            // Rôle
-            JPanel rolePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            rolePanel.setBackground(ComponentFactory.getBackgroundColor());
-            rolePanel.add(ComponentFactory.createLabel("Rôle:"));
+            // Rôle avec même formatage que les autres champs
             roleCombo = new JComboBox<>(UserRole.values());
             roleCombo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            rolePanel.add(roleCombo);
+            ComponentFactory.FieldPanel rolePanel = ComponentFactory.createFieldPanel("Rôle *:", roleCombo);
             formPanel.add(rolePanel);
             formPanel.add(Box.createVerticalStrut(15));
 
@@ -679,6 +685,9 @@ public class UserPanel extends JPanel {
             formPanel.add(activeCheckbox);
 
             add(formPanel, BorderLayout.CENTER);
+
+            // Attacher la validation en temps réel
+            attachRealtimeValidation();
 
             // Boutons
             JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -694,6 +703,99 @@ public class UserPanel extends JPanel {
             buttonPanel.add(saveButton);
             buttonPanel.add(cancelButton);
             add(buttonPanel, BorderLayout.SOUTH);
+        }
+
+        private void attachRealtimeValidation() {
+            addDocListener((JTextField) usernamePanel.getField(), this::validateUsernameRealtime);
+            addDocListener((JTextField) emailPanel.getField(), this::validateEmailRealtime);
+            addDocListener((JTextField) nomPanel.getField(), this::validateNomRealtime);
+            addDocListener((JTextField) prenomPanel.getField(), this::validatePrenomRealtime);
+            addDocListener((JTextField) telephonePanel.getField(), this::validateTelephoneRealtime);
+            addDocListener(passwordField, this::validatePasswordRealtime);
+        }
+
+        private void addDocListener(JTextField field, Runnable validator) {
+            if (field == null) return;
+            field.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) { validator.run(); }
+                @Override
+                public void removeUpdate(DocumentEvent e) { validator.run(); }
+                @Override
+                public void changedUpdate(DocumentEvent e) { validator.run(); }
+            });
+        }
+
+        private void validateUsernameRealtime() {
+            String v = ((JTextField) usernamePanel.getField()).getText().trim();
+            clearFieldError(usernamePanel);
+            if (!v.isEmpty()) {
+                if (v.length() < 4) {
+                    setFieldError(usernamePanel, "Le nom d'utilisateur doit contenir au moins 4 caractères");
+                } else if (v.length() > 50) {
+                    setFieldError(usernamePanel, "Le nom d'utilisateur ne peut pas dépasser 50 caractères");
+                }
+            }
+        }
+
+        private void validateEmailRealtime() {
+            String v = ((JTextField) emailPanel.getField()).getText().trim();
+            clearFieldError(emailPanel);
+            if (!v.isEmpty() && !P_EMAIL.matcher(v).matches()) {
+                setFieldError(emailPanel, "Email invalide");
+            }
+        }
+
+        private void validateNomRealtime() {
+            String v = ((JTextField) nomPanel.getField()).getText().trim();
+            clearFieldError(nomPanel);
+            if (!v.isEmpty()) {
+                if (v.length() < 2) {
+                    setFieldError(nomPanel, "Le nom doit contenir au moins 2 caractères");
+                } else if (v.length() > 50) {
+                    setFieldError(nomPanel, "Le nom ne peut pas dépasser 50 caractères");
+                }
+            }
+        }
+
+        private void validatePrenomRealtime() {
+            String v = ((JTextField) prenomPanel.getField()).getText().trim();
+            clearFieldError(prenomPanel);
+            if (!v.isEmpty()) {
+                if (v.length() < 2) {
+                    setFieldError(prenomPanel, "Le prénom doit contenir au moins 2 caractères");
+                } else if (v.length() > 50) {
+                    setFieldError(prenomPanel, "Le prénom ne peut pas dépasser 50 caractères");
+                }
+            }
+        }
+
+        private void validateTelephoneRealtime() {
+            String v = ((JTextField) telephonePanel.getField()).getText().trim();
+            clearFieldError(telephonePanel);
+            if (!v.isEmpty() && !P_TEL_BF.matcher(v).matches()) {
+                setFieldError(telephonePanel, "Numéro de téléphone burkinabè invalide");
+            }
+        }
+
+        private void validatePasswordRealtime() {
+            String v = new String(passwordField.getPassword()).trim();
+            clearFieldError(passwordPanel);
+            if (!v.isEmpty() && v.length() < 8) {
+                setFieldError(passwordPanel, "Le mot de passe doit contenir au moins 8 caractères");
+            }
+        }
+
+        private void clearFieldError(ComponentFactory.FieldPanel fieldPanel) {
+            if (fieldPanel != null) {
+                fieldPanel.clearError();
+            }
+        }
+
+        private void setFieldError(ComponentFactory.FieldPanel fieldPanel, String message) {
+            if (fieldPanel != null) {
+                fieldPanel.setError(message);
+            }
         }
 
         private void loadUserData() {
@@ -742,44 +844,83 @@ public class UserPanel extends JPanel {
             emailPanel.clearError();
             nomPanel.clearError();
             prenomPanel.clearError();
+            passwordPanel.clearError();
 
+            // Validation du nom d'utilisateur (requis)
             String username = ((JTextField) usernamePanel.getField()).getText().trim();
             if (username.isEmpty()) {
-                usernamePanel.setError("Le nom d'utilisateur est obligatoire");
+                usernamePanel.setError("Ce champ est requis");
                 valid = false;
-            } else if (username.length() < 3) {
-                usernamePanel.setError("Le nom d'utilisateur doit contenir au moins 3 caractères");
-                valid = false;
+            } else {
+                if (username.length() < 4) {
+                    usernamePanel.setError("Le nom d'utilisateur doit contenir au moins 4 caractères");
+                    valid = false;
+                } else if (username.length() > 50) {
+                    usernamePanel.setError("Le nom d'utilisateur ne peut pas dépasser 50 caractères");
+                    valid = false;
+                }
             }
 
+            // Validation de l'email (requis)
             String email = ((JTextField) emailPanel.getField()).getText().trim();
             if (email.isEmpty()) {
-                emailPanel.setError("L'email est obligatoire");
+                emailPanel.setError("Ce champ est requis");
                 valid = false;
-            } else if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
-                emailPanel.setError("Format d'email invalide");
+            } else if (!P_EMAIL.matcher(email).matches()) {
+                emailPanel.setError("Email invalide");
                 valid = false;
             }
 
+            // Validation du nom (requis)
             String nom = ((JTextField) nomPanel.getField()).getText().trim();
             if (nom.isEmpty()) {
-                nomPanel.setError("Le nom est obligatoire");
+                nomPanel.setError("Ce champ est requis");
                 valid = false;
+            } else {
+                if (nom.length() < 2) {
+                    nomPanel.setError("Le nom doit contenir au moins 2 caractères");
+                    valid = false;
+                } else if (nom.length() > 50) {
+                    nomPanel.setError("Le nom ne peut pas dépasser 50 caractères");
+                    valid = false;
+                }
             }
 
+            // Validation du prénom (requis)
             String prenom = ((JTextField) prenomPanel.getField()).getText().trim();
             if (prenom.isEmpty()) {
-                prenomPanel.setError("Le prénom est obligatoire");
+                prenomPanel.setError("Ce champ est requis");
+                valid = false;
+            } else {
+                if (prenom.length() < 2) {
+                    prenomPanel.setError("Le prénom doit contenir au moins 2 caractères");
+                    valid = false;
+                } else if (prenom.length() > 50) {
+                    prenomPanel.setError("Le prénom ne peut pas dépasser 50 caractères");
+                    valid = false;
+                }
+            }
+
+            // Validation du téléphone (optionnel mais doit respecter le format si présent)
+            String telephone = ((JTextField) telephonePanel.getField()).getText().trim();
+            if (!telephone.isEmpty() && !P_TEL_BF.matcher(telephone).matches()) {
+                telephonePanel.setError("Numéro de téléphone burkinabè invalide");
                 valid = false;
             }
 
-            String password = new String(passwordField.getPassword());
-            if (!isEditing && password.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Le mot de passe est obligatoire pour un nouvel utilisateur", 
-                        "Erreur", JOptionPane.ERROR_MESSAGE);
+            // Validation du mot de passe
+            String password = new String(passwordField.getPassword()).trim();
+            if (!isEditing && password.isEmpty()) {
+                passwordPanel.setError("Ce champ est requis");
                 valid = false;
-            } else if (!password.trim().isEmpty() && password.length() < 6) {
-                JOptionPane.showMessageDialog(this, "Le mot de passe doit contenir au moins 6 caractères", 
+            } else if (!password.isEmpty() && password.length() < 8) {
+                passwordPanel.setError("Le mot de passe doit contenir au moins 8 caractères");
+                valid = false;
+            }
+
+            // Validation du rôle (requis)
+            if (roleCombo.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(this, "Le rôle est obligatoire", 
                         "Erreur", JOptionPane.ERROR_MESSAGE);
                 valid = false;
             }
