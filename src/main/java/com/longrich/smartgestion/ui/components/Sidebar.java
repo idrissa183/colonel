@@ -147,7 +147,7 @@ public class Sidebar extends JPanel {
         addMenuItem(FontAwesomeSolid.SHOPPING_CART, "Commandes fournisseur", "commandes");
         addMenuItem(FontAwesomeSolid.FILE_INVOICE_DOLLAR, "Factures", "factures");
         addMenuItem(FontAwesomeSolid.CHART_LINE, "Ventes", "ventes");
-        addMenuItem(FontAwesomeSolid.COINS, "PV & Commissions", "pv");
+        // addMenuItem(FontAwesomeSolid.COINS, "PV & Commissions", "pv"); // Désactivé temporairement
 
         addMenuSeparator();
         addMenuGroup("SYSTÈME");

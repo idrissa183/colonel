@@ -168,8 +168,8 @@ public class AnalyticsPanel extends JPanel {
         kpiGrid.add(createKPICard("👥 Nouveaux Clients", "89", "+15.2%", PRIMARY_COLOR, "clients"));
         kpiGrid.add(createKPICard("📊 Marge Moyenne", "34.8%", "+2.1%", SUCCESS_COLOR, "marge"));
 
-        kpiGrid.add(createKPICard("🏆 PV Générés", "45,678", "+18.9%", WARNING_COLOR, "pv"));
-        kpiGrid.add(createKPICard("💸 Commissions", "12,340 €", "+22.4%", SUCCESS_COLOR, "commissions"));
+        // kpiGrid.add(createKPICard("🏆 PV Générés", "45,678", "+18.9%", WARNING_COLOR, "pv"));
+        // kpiGrid.add(createKPICard("💸 Commissions", "12,340 €", "+22.4%", SUCCESS_COLOR, "commissions"));
         kpiGrid.add(createKPICard("📈 Conversion", "3.4%", "+0.8%", INFO_COLOR, "conversion"));
         kpiGrid.add(createKPICard("⚠️ Stock Critique", "12", "-3", DANGER_COLOR, "stock"));
 
@@ -320,8 +320,9 @@ public class AnalyticsPanel extends JPanel {
 
     private void createAnalyticsTable() {
         String[] columns = {
-                "Période", "Ventes", "CA (€)", "Clients", "PV", "Commissions (€)", "Marge (%)"
+                "Période", "Ventes", "CA (€)", "Clients", "Marge (%)"
         };
+
 
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -398,25 +399,25 @@ public class AnalyticsPanel extends JPanel {
 
         if ("Aujourd'hui".equals(period)) {
             sampleData = new String[][] {
-                    { "Aujourd'hui", "15", "3,250", "8", "1,234", "485", "32.1" },
+                    { "Aujourd'hui", "15", "3,250", "8", "32.1" },
             };
         } else if ("Cette semaine".equals(period)) {
             sampleData = new String[][] {
-                    { "Lundi", "18", "4,120", "12", "1,567", "623", "33.8" },
-                    { "Mardi", "22", "5,340", "15", "2,123", "845", "31.2" },
-                    { "Mercredi", "19", "4,580", "11", "1,834", "734", "35.1" },
-                    { "Jeudi", "25", "6,120", "18", "2,456", "982", "33.4" },
-                    { "Vendredi", "21", "5,210", "14", "2,089", "836", "32.8" },
-                    { "Samedi", "28", "7,340", "22", "2,934", "1,174", "34.2" },
-                    { "Dimanche", "15", "3,680", "9", "1,478", "591", "30.9" },
+                    { "Lundi", "18", "4,120", "12", "33.8" },
+                    { "Mardi", "22", "5,340", "15", "31.2" },
+                    { "Mercredi", "19", "4,580", "11", "35.1" },
+                    { "Jeudi", "25", "6,120", "18", "33.4" },
+                    { "Vendredi", "21", "5,210", "14", "32.8" },
+                    { "Samedi", "28", "7,340", "22", "34.2" },
+                    { "Dimanche", "15", "3,680", "9", "30.9" },
             };
         } else {
             // Données mensuelles par défaut
             sampleData = new String[][] {
-                    { "Semaine 1", "145", "32,450", "89", "12,567", "5,027", "33.2" },
-                    { "Semaine 2", "167", "38,120", "102", "14,234", "5,694", "34.1" },
-                    { "Semaine 3", "134", "29,890", "78", "11,456", "4,582", "32.8" },
-                    { "Semaine 4", "189", "42,340", "125", "16,789", "6,716", "35.6" },
+                    { "Semaine 1", "145", "32,450", "89", "33.2" },
+                    { "Semaine 2", "167", "38,120", "102", "34.1" },
+                    { "Semaine 3", "134", "29,890", "78", "32.8" },
+                    { "Semaine 4", "189", "42,340", "125", "35.6" },
             };
         }
 
@@ -452,8 +453,8 @@ public class AnalyticsPanel extends JPanel {
         updateKPILabel("ventes", data[2], data[3]);
         updateKPILabel("clients", data[4], data[5]);
         updateKPILabel("marge", data[6], data[7]);
-        updateKPILabel("pv", data[8], data[9]);
-        updateKPILabel("commissions", data[10], data[11]);
+        // updateKPILabel("pv", data[8], data[9]);
+        // updateKPILabel("commissions", data[10], data[11]);
         updateKPILabel("conversion", data[12], data[13]);
         updateKPILabel("stock", data[14], data[15]);
     }
@@ -505,8 +506,6 @@ public class AnalyticsPanel extends JPanel {
                     { "ventes", "Ventes" },
                     { "clients", "Nouveaux Clients" },
                     { "marge", "Marge Moyenne" },
-                    { "pv", "PV Générés" },
-                    { "commissions", "Commissions" },
                     { "conversion", "Conversion" },
                     { "stock", "Stock Critique" }
             };

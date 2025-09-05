@@ -97,7 +97,7 @@ public class MainFrame extends JFrame {
         contentPanel.add(analyticsPanel, "analytics");
         contentPanel.add(facturePanel, "factures");
         contentPanel.add(ventePanel, "ventes");
-        contentPanel.add(pvPanel, "pv");
+        // contentPanel.add(pvPanel, "pv"); // Désactivé: PV & Commissions
         contentPanel.add(settingsPanel, "settings");
         contentPanel.add(userPanel, "users");
         contentPanel.add(backupPanel, "backup");
@@ -152,7 +152,7 @@ public class MainFrame extends JFrame {
             case "factures" -> "Gestion des factures";
             case "ventes" -> "Gestion des ventes";
             case "analytics" -> "Analytics";
-            case "pv" -> "Gestion des PV";
+            // case "pv" -> "Gestion des PV"; // Désactivé: PV & Commissions
             case "settings" -> "Paramètres";
             case "users" -> "Gestion des utilisateurs";
             case "backup" -> "Sauvegardes";
