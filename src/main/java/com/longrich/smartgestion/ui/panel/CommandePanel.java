@@ -984,46 +984,42 @@ public class CommandePanel extends JPanel {
     }
 
     private void saveCommande() {
-        // Validation complète avec gestion d'erreurs moderne
+        // Validation complète
         if (!validateCommandeFields()) {
             return;
         }
 
         if (lignesCommande.isEmpty()) {
+            showErrorMessage("Veuillez ajouter au moins un produit à la commande");
             return;
         }
 
-        // Confirmation avec détails
-        BigDecimal total = lignesCommande.stream()
-                .map(LigneCommandeTemp::getTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        String dateLivraisonText = dateLivraisonPrevuePicker.getSelectedDate() != null ? 
-            dateLivraisonPrevuePicker.getDateText() : "Non définie";
-            
-        int option = JOptionPane.showConfirmDialog(
-                this,
-                String.format("Confirmer la création de la commande fournisseur ?\n\n" +
-                        "Fournisseur: %s\n" +
-                        "Date de commande: %s\n" +
-                        "Date de livraison prévue: %s\n" +
-                        "Produits: %d\n" +
-                        "Total: %,.0f FCFA\n\n" +
-                        "Statut initial: EN_COURS",
-                        fournisseurCombo.getSelectedItem(),
-                        dateCommandePicker.getDateText(),
-                        dateLivraisonText,
-                        lignesCommande.size(),
-                        total),
-                "Confirmation de création",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE);
-
-        if (option == JOptionPane.YES_OPTION) {
-            try {
-                showInfoMessage("Sauvegarde en cours...");
+        // Créer et afficher la barre de progression
+        JProgressBar progressBar = new JProgressBar(0, 100);
+        progressBar.setStringPainted(true);
+        progressBar.setString("Initialisation...");
+        
+        JDialog progressDialog = new JDialog((java.awt.Frame) SwingUtilities.getWindowAncestor(this), 
+            "Création de la commande", true);
+        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        progressDialog.setSize(400, 120);
+        progressDialog.setLocationRelativeTo(this);
+        
+        JPanel progressPanel = new JPanel(new BorderLayout(10, 10));
+        progressPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        progressPanel.add(new JLabel("Création de la commande fournisseur en cours..."), BorderLayout.NORTH);
+        progressPanel.add(progressBar, BorderLayout.CENTER);
+        progressDialog.add(progressPanel);
+        
+        // Traitement en arrière-plan
+        SwingWorker<CommandeFournisseur, Integer> worker = new SwingWorker<CommandeFournisseur, Integer>() {
+            @Override
+            protected CommandeFournisseur doInBackground() throws Exception {
+                // Étape 1: Préparation des données
+                publish(20);
+                setProgress("Préparation des données...");
+                Thread.sleep(200);
                 
-                // Créer la commande fournisseur
                 FournisseurDTO selectedFournisseur = fournisseursList.get(fournisseurCombo.getSelectedIndex());
                 
                 CommandeFournisseurDTO commandeDTO = CommandeFournisseurDTO.builder()
@@ -1034,7 +1030,11 @@ public class CommandePanel extends JPanel {
                     .observations(observationsArea.getText())
                     .build();
                 
-                // Créer les lignes de commande
+                // Étape 2: Création des lignes
+                publish(40);
+                setProgress("Traitement des produits...");
+                Thread.sleep(300);
+                
                 List<LigneCommandeFournisseurDTO> lignesDTO = new ArrayList<>();
                 for (LigneCommandeTemp ligne : lignesCommande) {
                     ProduitDto produit = produitsList.stream()
@@ -1050,18 +1050,54 @@ public class CommandePanel extends JPanel {
                 }
                 commandeDTO.setLignes(lignesDTO);
                 
+                // Étape 3: Sauvegarde
+                publish(70);
+                setProgress("Enregistrement en base...");
+                Thread.sleep(400);
+                
                 CommandeFournisseur savedCommande = commandeFournisseurService.createCommande(commandeDTO);
                 
-                showSuccessMessage("✓ Commande fournisseur sauvegardée: " + savedCommande.getNumeroCommande());
+                // Étape 4: Finalisation
+                publish(100);
+                setProgress("Finalisation...");
+                Thread.sleep(200);
                 
-                clearCommande();
-                loadCommandes();
-                switchToListTab();
-                
-            } catch (Exception e) {
-                showErrorMessage("Erreur lors de la sauvegarde: " + e.getMessage());
+                return savedCommande;
             }
-        }
+            
+            @Override
+            protected void process(java.util.List<Integer> chunks) {
+                if (!chunks.isEmpty()) {
+                    progressBar.setValue(chunks.get(chunks.size() - 1));
+                }
+            }
+            
+            private void setProgress(String message) {
+                SwingUtilities.invokeLater(() -> progressBar.setString(message));
+            }
+            
+            @Override
+            protected void done() {
+                progressDialog.dispose();
+                try {
+                    CommandeFournisseur savedCommande = get();
+                    
+                    // Toast notification discrète
+                    showSuccessToast("Commande " + savedCommande.getNumeroCommande() + " créée avec succès");
+                    
+                    // Nettoyage automatique des champs et actualisation
+                    clearCommandeWithoutConfirmation();
+                    loadCommandes();
+                    switchToListTab();
+                    
+                } catch (Exception e) {
+                    showErrorMessage("Erreur lors de la création: " + e.getMessage());
+                }
+            }
+        };
+        
+        progressDialog.setVisible(true);
+        worker.execute();
     }
 
     private void switchToListTab() {
@@ -1090,7 +1126,11 @@ public class CommandePanel extends JPanel {
             }
         }
 
-        // Réinitialisation complète avec gestion d'erreurs
+        clearCommandeWithoutConfirmation();
+    }
+
+    private void clearCommandeWithoutConfirmation() {
+        // Réinitialisation complète sans confirmation
         fournisseurCombo.setSelectedIndex(-1);
         dateCommandePicker.setSelectedDate(LocalDate.now());
         dateLivraisonPrevuePicker.setSelectedDate(LocalDate.now().plusDays(7));
@@ -1191,6 +1231,60 @@ public class CommandePanel extends JPanel {
 
     private void showInfoMessage(String message) {
         JOptionPane.showMessageDialog(this, message, "Information", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showSuccessToast(String message) {
+        // Toast notification discrète en vert
+        JLabel successLabel = new JLabel(
+            "<html><div style='text-align: center; color: white; font-weight: bold;'>"
+            + "<span style='font-size: 16px;'>✓</span><br>"
+            + message
+            + "</div></html>");
+        successLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        JWindow toast = new JWindow();
+        toast.setBackground(new Color(0, 0, 0, 0));
+        JPanel toastPanel = new JPanel(new BorderLayout());
+        toastPanel.setBackground(new Color(34, 197, 94, 240));
+        toastPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(22, 163, 74), 2),
+            BorderFactory.createEmptyBorder(15, 25, 15, 25)));
+        toastPanel.add(successLabel);
+        toast.add(toastPanel);
+        toast.setSize(350, 90);
+        toast.setLocationRelativeTo(this);
+        
+        // Animation d'apparition
+        toast.setOpacity(0.0f);
+        toast.setVisible(true);
+        
+        Timer fadeIn = new Timer(20, null);
+        fadeIn.addActionListener(e -> {
+            float opacity = toast.getOpacity() + 0.05f;
+            if (opacity >= 1.0f) {
+                opacity = 1.0f;
+                fadeIn.stop();
+                
+                // Auto-fermeture après 2.5 secondes
+                Timer autoClose = new Timer(2500, evt -> {
+                    Timer fadeOut = new Timer(20, null);
+                    fadeOut.addActionListener(fade -> {
+                        float op = toast.getOpacity() - 0.05f;
+                        if (op <= 0.0f) {
+                            toast.dispose();
+                            fadeOut.stop();
+                        } else {
+                            toast.setOpacity(op);
+                        }
+                    });
+                    fadeOut.start();
+                });
+                autoClose.setRepeats(false);
+                autoClose.start();
+            }
+            toast.setOpacity(opacity);
+        });
+        fadeIn.start();
     }
 
     // Méthodes pour gérer les actions sur les commandes fournisseurs
